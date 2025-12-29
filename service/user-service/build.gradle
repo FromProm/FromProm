@@ -19,9 +19,16 @@ repositories {
 }
 
 dependencies {
+	// 1. AWS SDK for Java v2 (Cognito & DynamoDB)
+	implementation 'software.amazon.awssdk:cognitoidentityprovider:2.20.0'
+	implementation 'software.amazon.awssdk:dynamodb-enhanced:2.20.0'
+
+	// 2. Lombok (Getter, Setter 자동 생성)
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// 3. Spring Boot Starter (기본 설정)
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {

@@ -5,6 +5,10 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+# AWS Credentials
+src/main/resources/application.yml
+src/main/resources/application-aws.yml
+
 ### STS ###
 .apt_generated
 .classpath

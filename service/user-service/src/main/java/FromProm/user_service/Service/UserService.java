@@ -10,6 +10,8 @@ import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityPr
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpRequest;
+import FromProm.user_service.DTO.UserConfirmRequest;
 
 import java.time.Instant;
 
@@ -49,5 +51,15 @@ public class UserService {
         );
 
         userRepository.save(newUser);
+    }
+
+    public void confirmSignUp(UserConfirmRequest request) {
+        ConfirmSignUpRequest confirmSignUpRequest = ConfirmSignUpRequest.builder()
+                .clientId(clientId)
+                .username(request.getEmail()) // 이메일을 로그인 ID로 설정했으므로 username에 email 입력
+                .confirmationCode(request.getCode())
+                .build();
+
+        cognitoClient.confirmSignUp(confirmSignUpRequest);
     }
 }

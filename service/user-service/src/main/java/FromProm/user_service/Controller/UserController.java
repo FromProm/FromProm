@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import FromProm.user_service.DTO.UserConfirmRequest;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/users") // 이 컨트롤러의 기본 주소
 @RequiredArgsConstructor
@@ -37,5 +39,11 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("인증 실패: " + e.getMessage());
         }
+    }
+
+    @PostMapping("/resend-code")
+    public ResponseEntity<String> resend(@RequestBody Map<String, String> body) {
+        userService.resendCode(body.get("email"));
+        return ResponseEntity.ok("인증 코드가 재전송되었습니다.");
     }
 }

@@ -16,6 +16,8 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.GlobalSignO
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ChangePasswordRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ForgotPasswordRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmForgotPasswordRequest;
 
 import java.time.Instant;
 import java.util.Map;
@@ -152,5 +154,27 @@ public class UserService {
                 .build();
 
         cognitoClient.changePassword(changePasswordRequest);
+    }
+
+    //비밀번호 찾기(재설정)
+    // 1. 비밀번호 재설정 코드 발송
+    public void sendForgotPasswordCode(String email) {
+        software.amazon.awssdk.services.cognitoidentityprovider.model.ForgotPasswordRequest request =
+                software.amazon.awssdk.services.cognitoidentityprovider.model.ForgotPasswordRequest.builder()
+                        .clientId(clientId)
+                        .username(email)
+                        .build();
+        cognitoClient.forgotPassword(request);
+    }
+
+    // 2. 코드 검증 및 새 비밀번호 설정
+    public void confirmNewPassword(FromProm.user_service.DTO.ForgotPasswordRequest request) {
+        ConfirmForgotPasswordRequest confirmRequest = ConfirmForgotPasswordRequest.builder()
+                .clientId(clientId)
+                .username(request.getEmail())
+                .confirmationCode(request.getConfirmationCode())
+                .password(request.getNewPassword())
+                .build();
+        cognitoClient.confirmForgotPassword(confirmRequest);
     }
 }

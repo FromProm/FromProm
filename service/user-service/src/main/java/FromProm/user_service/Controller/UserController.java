@@ -126,4 +126,27 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("비밀번호 변경 실패: " + e.getMessage());
         }
     }
+
+    // 1. 비밀번호 재설정 이메일 발송 요청
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody Map<String, String> body) {
+        try {
+            String email = body.get("email"); // JSON 바디에서 추출
+            userService.sendForgotPasswordCode(email);
+            return ResponseEntity.ok("비밀번호 재설정 코드가 이메일로 발송되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("코드 발송 실패: " + e.getMessage());
+        }
+    }
+
+    // 2. 코드 확인 후 비밀번호 최종 변경
+    @PostMapping("/confirm-password")
+    public ResponseEntity<String> confirmPassword(@RequestBody FromProm.user_service.DTO.ForgotPasswordRequest request) {
+        try {
+            userService.confirmNewPassword(request);
+            return ResponseEntity.ok("비밀번호가 성공적으로 재설정되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("비밀번호 재설정 실패: " + e.getMessage());
+        }
+    }
 }

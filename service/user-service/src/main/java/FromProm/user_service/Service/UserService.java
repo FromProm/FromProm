@@ -1,6 +1,7 @@
 package FromProm.user_service.Service;
 
 import FromProm.user_service.DTO.UserLoginRequest;
+import FromProm.user_service.DTO.UserResponse;
 import FromProm.user_service.DTO.UserSignUpRequest;
 import FromProm.user_service.Entity.User;
 import FromProm.user_service.Repository.UserRepository;
@@ -15,6 +16,8 @@ import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityPr
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GlobalSignOutRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserResponse;
 
 import java.time.Instant;
 import java.util.Map;
@@ -112,5 +115,29 @@ public class UserService {
                 .build();
 
         cognitoClient.globalSignOut(signOutRequest);
+    }
+
+    public UserResponse getMyInfo(String accessToken) {
+        // 1. AccessToken으로 Cognito 유저 정보 조회
+        GetUserRequest getUserRequest = GetUserRequest.builder()
+                .accessToken(accessToken)
+                .build();
+
+        GetUserResponse response = cognitoClient.getUser(getUserRequest);
+
+        // 2. 응답 데이터 중 필요한 값(email, nickname)만 추출
+        String email = response.userAttributes().stream()
+                .filter(attr -> attr.name().equals("email"))
+                .findFirst().map(attr -> attr.value()).orElse("");
+
+        String nickname = response.userAttributes().stream()
+                .filter(attr -> attr.name().equals("nickname"))
+                .findFirst().map(attr -> attr.value()).orElse("");
+
+        return UserResponse.builder()
+                .email(email)
+                .nickname(nickname)
+                .id(response.username()) // 여기서 username은 Cognito의 sub(UUID)입니다.
+                .build();
     }
 }

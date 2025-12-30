@@ -1,6 +1,7 @@
 package FromProm.user_service.Controller;
 
 import FromProm.user_service.DTO.UserLoginRequest;
+import FromProm.user_service.DTO.UserResponse;
 import FromProm.user_service.DTO.UserSignUpRequest;
 import FromProm.user_service.Service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -93,11 +94,23 @@ public class UserController {
     public ResponseEntity<String> logout(@RequestHeader("Authorization") String bearerToken) {
         try {
             // "Bearer " 뒤의 토큰 문자열만 추출
+            // 토큰 앞 'Bearer'는 HTTP 인증의 **표준 규약(RFC 6750)임!
             String accessToken = bearerToken.substring(7);
             userService.logout(accessToken);
             return ResponseEntity.ok("성공적으로 로그아웃되었습니다. 모든 세션이 종료되었습니다.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("로그아웃 실패: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String bearerToken) {
+        try {
+            String accessToken = bearerToken.substring(7).trim();
+            UserResponse myInfo = userService.getMyInfo(accessToken);
+            return ResponseEntity.ok(myInfo);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("정보 조회 실패: " + e.getMessage());
         }
     }
 }

@@ -7,7 +7,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmSignUpRequest;
 import FromProm.user_service.DTO.UserConfirmRequest;
 
 import java.time.Instant;
@@ -58,14 +61,5 @@ public class UserService {
                 .build();
 
         cognitoClient.confirmSignUp(confirmSignUpRequest);
-    }
-
-    public void resendCode(String email) {
-        ResendConfirmationCodeRequest request = ResendConfirmationCodeRequest.builder()
-                .clientId(clientId)
-                .username(email)
-                .build();
-
-        cognitoClient.resendConfirmationCode(request);
     }
 }

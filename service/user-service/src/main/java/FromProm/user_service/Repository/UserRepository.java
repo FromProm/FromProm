@@ -12,7 +12,7 @@ public class UserRepository {
     private final DynamoDbTable<User> userTable;
 
     public UserRepository(DynamoDbEnhancedClient enhancedClient) {
-        // "UserTable"은 실제 AWS DynamoDB 콘솔에서 생성한 테이블 이름과 일치해야 합니다.
+        // "UserTable" = DynamoDB 테이블 이름과 일치해야 함
         this.userTable = enhancedClient.table("UserTable", TableSchema.fromBean(User.class));
     }
 

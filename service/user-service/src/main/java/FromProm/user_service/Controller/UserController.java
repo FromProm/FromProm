@@ -1,5 +1,6 @@
 package FromProm.user_service.Controller;
 
+import FromProm.user_service.DTO.UserLoginRequest;
 import FromProm.user_service.DTO.UserSignUpRequest;
 import FromProm.user_service.Service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import FromProm.user_service.DTO.UserConfirmRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthResponse;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -19,7 +23,7 @@ import java.util.Map;
 public class UserController {
     private final UserService userService;
 
-    // 회원가입 API: POST http://localhost:8080/api/users/signup
+    // 회원가입
     @PostMapping("/signup")
     public ResponseEntity<String> signUp(@RequestBody UserSignUpRequest request) {
         try {
@@ -31,6 +35,7 @@ public class UserController {
         }
     }
 
+    // 이메일 인증 확인
     @PostMapping("/confirm")
     public ResponseEntity<String> confirm(@RequestBody UserConfirmRequest request) {
         try {
@@ -41,9 +46,28 @@ public class UserController {
         }
     }
 
+    //이메일 인증코드 재전송
     @PostMapping("/resend-code")
     public ResponseEntity<String> resend(@RequestBody Map<String, String> body) {
         userService.resendCode(body.get("email"));
         return ResponseEntity.ok("인증 코드가 재전송되었습니다.");
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
+        try {
+            AuthenticationResultType result = userService.login(request);
+
+            // 중요: 객체를 직접 던지지 말고 Map에 담아서 JSON 응답이 잘 생성되게 합니다.
+            Map<String, String> tokens = new HashMap<>();
+            tokens.put("accessToken", result.accessToken());
+            tokens.put("idToken", result.idToken());
+            tokens.put("refreshToken", result.refreshToken());
+            tokens.put("expiresIn", result.expiresIn().toString());
+
+            return ResponseEntity.ok(tokens);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인 실패: " + e.getMessage());
+        }
     }
 }

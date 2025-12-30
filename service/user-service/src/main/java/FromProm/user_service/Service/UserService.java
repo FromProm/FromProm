@@ -1,16 +1,22 @@
 package FromProm.user_service.Service;
 
+import FromProm.user_service.DTO.UserLoginRequest;
 import FromProm.user_service.DTO.UserSignUpRequest;
 import FromProm.user_service.Entity.User;
 import FromProm.user_service.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import FromProm.user_service.DTO.UserConfirmRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
-import FromProm.user_service.DTO.UserConfirmRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
 
 import java.time.Instant;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +27,7 @@ public class UserService {
     @Value("${aws.cognito.clientId}")
     private String clientId;
 
+    // 회원가입
     public void signUp(UserSignUpRequest request) {
         // 1. Cognito 회원가입 요청
         SignUpRequest signUpRequest = SignUpRequest.builder()
@@ -50,6 +57,7 @@ public class UserService {
         userRepository.save(newUser);
     }
 
+    // 이메일 인증 확인
     public void confirmSignUp(UserConfirmRequest request) {
         ConfirmSignUpRequest confirmSignUpRequest = ConfirmSignUpRequest.builder()
                 .clientId(clientId)
@@ -60,7 +68,7 @@ public class UserService {
         cognitoClient.confirmSignUp(confirmSignUpRequest);
     }
 
-    // UserService.java에 추가
+    // 이메일 인증코드 재전송
     public void resendCode(String email) {
         ResendConfirmationCodeRequest request = ResendConfirmationCodeRequest.builder()
                 .clientId(clientId)
@@ -68,5 +76,19 @@ public class UserService {
                 .build();
 
         cognitoClient.resendConfirmationCode(request);
+    }
+
+    public AuthenticationResultType login(UserLoginRequest request) {
+        InitiateAuthRequest authRequest = InitiateAuthRequest.builder()
+                .clientId(clientId)
+                .authFlow(AuthFlowType.USER_PASSWORD_AUTH) // 사용자 아이디/비번 방식
+                .authParameters(Map.of(
+                        "USERNAME", request.getEmail(),
+                        "PASSWORD", request.getPassword()
+                ))
+                .build();
+
+        InitiateAuthResponse response = cognitoClient.initiateAuth(authRequest);
+        return response.authenticationResult();
     }
 }

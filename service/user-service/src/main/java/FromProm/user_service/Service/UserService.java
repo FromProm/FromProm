@@ -1,14 +1,11 @@
 package FromProm.user_service.Service;
 
-import FromProm.user_service.DTO.UserLoginRequest;
-import FromProm.user_service.DTO.UserResponse;
-import FromProm.user_service.DTO.UserSignUpRequest;
+import FromProm.user_service.DTO.*;
 import FromProm.user_service.Entity.User;
 import FromProm.user_service.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import FromProm.user_service.DTO.UserConfirmRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType;
@@ -18,6 +15,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.Authenticat
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GlobalSignOutRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ChangePasswordRequest;
 
 import java.time.Instant;
 import java.util.Map;
@@ -82,6 +80,7 @@ public class UserService {
         cognitoClient.resendConfirmationCode(request);
     }
 
+    // 로그인
     public AuthenticationResultType login(UserLoginRequest request) {
         InitiateAuthRequest authRequest = InitiateAuthRequest.builder()
                 .clientId(clientId)
@@ -96,6 +95,7 @@ public class UserService {
         return response.authenticationResult();
     }
 
+    // accessToken 재발급
     public AuthenticationResultType refreshAccessToken(String refreshToken) {
         InitiateAuthRequest authRequest = InitiateAuthRequest.builder()
                 .clientId(clientId)
@@ -109,6 +109,7 @@ public class UserService {
         return response.authenticationResult();
     }
 
+    // 로그아웃
     public void logout(String accessToken) {
         GlobalSignOutRequest signOutRequest = GlobalSignOutRequest.builder()
                 .accessToken(accessToken)
@@ -117,6 +118,7 @@ public class UserService {
         cognitoClient.globalSignOut(signOutRequest);
     }
 
+    //내 정보 찾기 (email, password, id)// 내 정보 조회
     public UserResponse getMyInfo(String accessToken) {
         // 1. AccessToken으로 Cognito 유저 정보 조회
         GetUserRequest getUserRequest = GetUserRequest.builder()
@@ -139,5 +141,16 @@ public class UserService {
                 .nickname(nickname)
                 .id(response.username()) // 여기서 username은 Cognito의 sub(UUID)입니다.
                 .build();
+    }
+
+    //로그인 상황에서, 비밀번호 변경
+    public void changePassword(String accessToken, PasswordChangeRequest request) {
+        ChangePasswordRequest changePasswordRequest = ChangePasswordRequest.builder()
+                .accessToken(accessToken)
+                .previousPassword(request.getOldPassword())
+                .proposedPassword(request.getNewPassword())
+                .build();
+
+        cognitoClient.changePassword(changePasswordRequest);
     }
 }

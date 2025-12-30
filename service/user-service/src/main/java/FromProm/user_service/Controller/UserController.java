@@ -1,16 +1,12 @@
 package FromProm.user_service.Controller;
 
-import FromProm.user_service.DTO.UserLoginRequest;
-import FromProm.user_service.DTO.UserResponse;
-import FromProm.user_service.DTO.UserSignUpRequest;
+import FromProm.user_service.DTO.*;
 import FromProm.user_service.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import FromProm.user_service.DTO.UserConfirmRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthResponse;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -69,6 +65,7 @@ public class UserController {
         }
     }
 
+    // 토큰 재발급
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
         try {
@@ -90,6 +87,7 @@ public class UserController {
         }
     }
 
+    // 로그아웃
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@RequestHeader("Authorization") String bearerToken) {
         try {
@@ -103,6 +101,7 @@ public class UserController {
         }
     }
 
+    //내 정보 찾기 (email, password, id)
     @GetMapping("/me")
     public ResponseEntity<?> getMyInfo(@RequestHeader("Authorization") String bearerToken) {
         try {
@@ -111,6 +110,20 @@ public class UserController {
             return ResponseEntity.ok(myInfo);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("정보 조회 실패: " + e.getMessage());
+        }
+    }
+
+    //로그인 상황에서, 비밀번호 변경
+    @PostMapping("/change-password")
+    public ResponseEntity<String> changePassword(
+            @RequestHeader("Authorization") String bearerToken,
+            @RequestBody PasswordChangeRequest request) {
+        try {
+            String accessToken = bearerToken.substring(7).trim();
+            userService.changePassword(accessToken, request);
+            return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("비밀번호 변경 실패: " + e.getMessage());
         }
     }
 }

@@ -70,4 +70,25 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인 실패: " + e.getMessage());
         }
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
+        try {
+            String refreshToken = body.get("refreshToken");
+            AuthenticationResultType result = userService.refreshAccessToken(refreshToken);
+
+            Map<String, String> tokens = new HashMap<>();
+            tokens.put("accessToken", result.accessToken());
+            tokens.put("idToken", result.idToken());
+            // 주의: RefreshToken은 보안상 새로 내려주지 않을 수도 있습니다(기존 것 재사용).
+            if (result.refreshToken() != null) {
+                tokens.put("refreshToken", result.refreshToken());
+            }
+            tokens.put("expiresIn", result.expiresIn().toString());
+
+            return ResponseEntity.ok(tokens);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰 갱신 실패: " + e.getMessage());
+        }
+    }
 }

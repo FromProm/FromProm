@@ -91,4 +91,17 @@ public class UserService {
         InitiateAuthResponse response = cognitoClient.initiateAuth(authRequest);
         return response.authenticationResult();
     }
+
+    public AuthenticationResultType refreshAccessToken(String refreshToken) {
+        InitiateAuthRequest authRequest = InitiateAuthRequest.builder()
+                .clientId(clientId)
+                .authFlow(AuthFlowType.REFRESH_TOKEN_AUTH) // 흐름이 다릅니다!
+                .authParameters(Map.of(
+                        "REFRESH_TOKEN", refreshToken
+                ))
+                .build();
+
+        InitiateAuthResponse response = cognitoClient.initiateAuth(authRequest);
+        return response.authenticationResult();
+    }
 }

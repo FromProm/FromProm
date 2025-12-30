@@ -6,10 +6,7 @@ import FromProm.user_service.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import FromProm.user_service.DTO.UserConfirmRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthResponse;
@@ -89,6 +86,18 @@ public class UserController {
             return ResponseEntity.ok(tokens);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("토큰 갱신 실패: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@RequestHeader("Authorization") String bearerToken) {
+        try {
+            // "Bearer " 뒤의 토큰 문자열만 추출
+            String accessToken = bearerToken.substring(7);
+            userService.logout(accessToken);
+            return ResponseEntity.ok("성공적으로 로그아웃되었습니다. 모든 세션이 종료되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("로그아웃 실패: " + e.getMessage());
         }
     }
 }

@@ -14,6 +14,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowTyp
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.GlobalSignOutRequest;
 
 import java.time.Instant;
 import java.util.Map;
@@ -103,5 +104,13 @@ public class UserService {
 
         InitiateAuthResponse response = cognitoClient.initiateAuth(authRequest);
         return response.authenticationResult();
+    }
+
+    public void logout(String accessToken) {
+        GlobalSignOutRequest signOutRequest = GlobalSignOutRequest.builder()
+                .accessToken(accessToken)
+                .build();
+
+        cognitoClient.globalSignOut(signOutRequest);
     }
 }

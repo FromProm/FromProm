@@ -5,24 +5,16 @@ import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
+import java.util.Optional;
 
 @Repository
 public class UserRepository {
-    private final DynamoDbTable<User> userTable;
+    private final DynamoDbTable<User> FromPromTable;
 
+    // FromProm_Table : DynamoDB의 table명이랑 동일해야 함
     public UserRepository(DynamoDbEnhancedClient enhancedClient) {
-        // "UserTable" = DynamoDB 테이블 이름과 일치해야 함
-        this.userTable = enhancedClient.table("UserTable", TableSchema.fromBean(User.class));
+        this.FromPromTable = enhancedClient.table("FromProm_Table", TableSchema.fromBean(User.class));
     }
 
-    // 유저 저장 (회원가입 시 사용)
-    public void save(User user) {
-        userTable.putItem(user);
-    }
-
-    // 유저 조회 (프로필 조회 시 사용)
-    public User findById(String id) {
-        return userTable.getItem(r -> r.key(k -> k.partitionValue(id)));
-    }
+    public void save(User user) { FromPromTable.putItem(user); }
 }

@@ -16,7 +16,6 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.GlobalSignO
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ChangePasswordRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.ForgotPasswordRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmForgotPasswordRequest;
 
 import java.time.Instant;
@@ -41,22 +40,28 @@ public class UserService {
                 .userAttributes(
                         AttributeType.builder().name("email").value(request.getEmail()).build(),
                         AttributeType.builder().name("nickname").value(request.getNickname()).build()
-
                 )
                 .build();
 
         SignUpResponse response = cognitoClient.signUp(signUpRequest);
+        String userSub = response.userSub(); // Cognito가 생성한 고유 ID
 
         // 2. 가입 성공 후 Cognito에서 준 고유 ID(sub) 가져오기
-        String userSub = response.userSub();
+        String now = Instant.now().toString(); // 현재 시간 생성
 
         // 3. DynamoDB에 프로필 정보 저장
-        User newUser = new User(
-                userSub, // id(PK)
-                request.getEmail(), // email
-                request.getNickname(), //nickname
-                Instant.now().toString() //createdAt
-        );
+        User newUser = User.builder()
+                .PK("USER#" + userSub)        // 자동 생성: PK 형식 지정
+                .SK("PROFILE")                // 자동 생성: 고정값
+                .TYPE("USER")
+                .email(request.getEmail())    // 입력값
+                .nickname(request.getNickname()) // 입력값
+                .credit(0)                 // 기본값 0
+                .bio("") // 기본값
+                .profileimage("https://default-image-url.com/user.png") // 기본값
+                .createdAt(now)               // 자동 생성: 현재 시간
+                .updatedAt(now)               // 자동 생성: 현재 시간
+                .build();
 
         userRepository.save(newUser);
     }
@@ -141,7 +146,7 @@ public class UserService {
         return UserResponse.builder()
                 .email(email)
                 .nickname(nickname)
-                .id(response.username()) // 여기서 username은 Cognito의 sub(UUID)입니다.
+                .PK(response.username()) // 여기서 username은 Cognito의 sub(UUID)입니다.
                 .build();
     }
 

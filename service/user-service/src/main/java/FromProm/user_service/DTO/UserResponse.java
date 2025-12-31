@@ -8,5 +8,5 @@ import lombok.Getter;
 public class UserResponse {
     private String email;
     private String nickname;
-    private String id; // Cognito의 sub 값
+    private String PK; // Cognito의 sub 값
 }

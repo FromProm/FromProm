@@ -1,9 +1,7 @@
 package FromProm.user_service.Entity;
 
 import lombok.*;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 @Getter
 @Setter
@@ -13,32 +11,48 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortK
 @Builder
 @DynamoDbBean
 public class User {
-    private String PK;   // Cognito의 sub
-    private String SK;           // PROFILE
+    private String PK;   // Cognito의 sub (USER#id)
+    private String SK;   // PROFILE
     private String TYPE;
     private String email;
     private String nickname;
     private int credit;
     private String bio;
-    private String profileimage;
+    private String profileImage;
     private String createdAt;
     private String updatedAt;
 
     @DynamoDbPartitionKey
+    @DynamoDbAttribute("PK")
     public String getPK() { return PK; }
 
     @DynamoDbSortKey
+    @DynamoDbAttribute("SK")
     public String getSK() { return SK; }
 
-    // 서비스 로직에서 객체 생성을 편하게 하기 위한 생성자/메서드
-    public User(String PK, String SK, String email, String nickname, String credit, String bio) {
-        this.PK = PK;
-        this.SK = SK;
-        this.email = email;
-        this.nickname = nickname;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.bio = bio;
-        this.profileimage = profileimage;
-    }
+    @DynamoDbAttribute("TYPE")
+    public String getType() { return TYPE; }
+
+    // 닉네임 중복 체크를 위한 GSI 설정 (핵심 부분!)
+    @DynamoDbSecondaryPartitionKey(indexNames = "nickname-index")
+    @DynamoDbAttribute("nickname")
+    public String getNickname() { return nickname; }
+
+    @DynamoDbAttribute("email")
+    public String getEmail() { return email; }
+
+    @DynamoDbAttribute("credit")
+    public int getCredit() { return credit; }
+
+    @DynamoDbAttribute("bio")
+    public String getBio() { return bio; }
+
+    @DynamoDbAttribute("profileImage")
+    public String getProfileImage() { return profileImage; }
+
+    @DynamoDbAttribute("createdAt")
+    public String getCreatedAt() { return createdAt; }
+
+    @DynamoDbAttribute("updatedAt")
+    public String getUpdatedAt() { return updatedAt; }
 }

@@ -29,6 +29,8 @@ dependencies {
 
 	// 3. Spring Boot Starter (기본 설정)
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework:spring-tx'
 }
 
 tasks.named('test') {

@@ -6,6 +6,7 @@ import FromProm.user_service.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType;
@@ -20,6 +21,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmForg
 
 import java.time.Instant;
 import java.util.Map;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +34,13 @@ public class UserService {
 
     // 회원가입
     public void signUp(UserSignUpRequest request) {
-        // 1. Cognito 회원가입 요청
+
+        // 1. 닉네임 중복 체크 (가장 먼저 수행)
+        if (userRepository.existsByNickname(request.getNickname())) {
+            throw new RuntimeException("이미 사용 중인 닉네임입니다.");
+        }
+
+        // 2. Cognito 회원가입 요청
         SignUpRequest signUpRequest = SignUpRequest.builder()
                 .clientId(clientId)
                 .username(request.getEmail()) // 로그인 이메일
@@ -46,10 +54,10 @@ public class UserService {
         SignUpResponse response = cognitoClient.signUp(signUpRequest);
         String userSub = response.userSub(); // Cognito가 생성한 고유 ID
 
-        // 2. 가입 성공 후 Cognito에서 준 고유 ID(sub) 가져오기
+        // 3. 가입 성공 후 Cognito에서 준 고유 ID(sub) 가져오기
         String now = Instant.now().toString(); // 현재 시간 생성
 
-        // 3. DynamoDB에 프로필 정보 저장
+        // 4. DynamoDB에 프로필 정보 저장
         User newUser = User.builder()
                 .PK("USER#" + userSub)        // 자동 생성: PK 형식 지정
                 .SK("PROFILE")                // 자동 생성: 고정값
@@ -58,7 +66,7 @@ public class UserService {
                 .nickname(request.getNickname()) // 입력값
                 .credit(0)                 // 기본값 0
                 .bio("") // 기본값
-                .profileimage("https://default-image-url.com/user.png") // 기본값
+                .profileImage("https://default-image-url.com/user.png") // 기본값
                 .createdAt(now)               // 자동 생성: 현재 시간
                 .updatedAt(now)               // 자동 생성: 현재 시간
                 .build();
@@ -181,5 +189,39 @@ public class UserService {
                 .password(request.getNewPassword())
                 .build();
         cognitoClient.confirmForgotPassword(confirmRequest);
+    }
+
+    public boolean isNicknameDuplicated(String nickname) {
+        return userRepository.existsByNickname(nickname);
+    }
+
+    @Transactional
+    public void updateProfile(String userSub, UserProfileUpdateRequest request) {
+        // 1. 기존 유저 정보 조회
+        User user = userRepository.findUser(userSub)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        // 2. 닉네임 변경 시 중복 체크 (null이 아니고, 기존과 다를 때만)
+        String newNickname = request.getNickname();
+        if (newNickname != null && !newNickname.trim().isEmpty() && !newNickname.equals(user.getNickname())) {
+            if (userRepository.existsByNickname(newNickname)) {
+                throw new RuntimeException("이미 사용 중인 닉네임입니다.");
+            }
+            user.setNickname(newNickname);
+        }
+
+        // 3. 소개글 변경 (값이 있을 때만 반영)
+        if (request.getBio() != null) {
+            user.setBio(request.getBio());
+        }
+
+        // 4. 프로필 이미지 변경 (값이 있을 때만 반영)
+        if (request.getProfileImage() != null) {
+            user.setProfileImage(request.getProfileImage());
+        }
+
+        // 5. 업데이트 날짜 갱신 및 저장
+        user.setUpdatedAt(LocalDateTime.now().toString());
+        userRepository.update(user);
     }
 }

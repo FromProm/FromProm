@@ -5,6 +5,7 @@ import FromProm.user_service.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
 
@@ -148,5 +149,21 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("비밀번호 재설정 실패: " + e.getMessage());
         }
+    }
+
+    @PostMapping("/check-nickname")
+    public ResponseEntity<Boolean> checkNickname(@RequestBody NicknameCheckRequest request) {
+        // request.getNickname()으로 값을 꺼냅니다.
+        boolean isExisted = userService.isNicknameDuplicated(request.getNickname());
+        return ResponseEntity.ok(isExisted);
+    }
+
+    @PatchMapping("/profile")
+    public ResponseEntity<?> updateProfile(
+            // @AuthenticationPrincipal String userSub, // 나중에 복구할 것
+            @RequestHeader("Authorization") String userSub, // 테스트용 임시 헤더
+            @RequestBody UserProfileUpdateRequest request) {
+        userService.updateProfile(userSub, request);
+        return ResponseEntity.ok("프로필이 수정되었습니다.");
     }
 }

@@ -6,6 +6,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
 
 import java.util.Optional;
 
@@ -50,5 +51,15 @@ public class UserRepository {
                         .partitionValue(userSub)
                         .sortValue("PROFILE")))
         );
+    }
+
+    public void deleteUser(String pk) {
+        // PK와 SK("PROFILE")를 조합하여 삭제 키 생성
+        Key key = Key.builder()
+                .partitionValue(pk)
+                .sortValue("PROFILE")
+                .build();
+
+        userTable.deleteItem(key);
     }
 }

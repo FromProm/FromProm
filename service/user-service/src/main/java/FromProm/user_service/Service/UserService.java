@@ -224,4 +224,29 @@ public class UserService {
         user.setUpdatedAt(LocalDateTime.now().toString());
         userRepository.update(user);
     }
+
+    // application-aws.yml의 설정값을 가져옴
+    @Value("${aws.cognito.userPoolId}")
+    private String userPoolId;
+
+    @Transactional
+    public void withdraw(String userSub) {
+        // 1. DynamoDB 데이터 삭제 (PK: USER#uuid, SK: PROFILE)
+        userRepository.deleteUser(userSub);
+
+        // 2. Cognito 유저 삭제
+        String pureUuid = userSub.replace("USER#", "");
+        try {
+            AdminDeleteUserRequest deleteUserRequest = AdminDeleteUserRequest.builder()
+                    .userPoolId(userPoolId) // 주입받은 ID 사용
+                    .username(pureUuid)     // userSub는 Cognito의 Username(uuid)과 동일
+                    .build();
+
+            cognitoClient.adminDeleteUser(deleteUserRequest);
+            System.out.println("DEBUG: 회원탈퇴 완료 (DB + Cognito) -> " + userSub);
+        } catch (Exception e) {
+            // Cognito 삭제 실패 시 예외 처리 (이미 삭제되었거나 권한 문제 등)
+            throw new RuntimeException("Cognito 사용자 삭제 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
 }

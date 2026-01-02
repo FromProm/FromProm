@@ -5,7 +5,6 @@ import FromProm.user_service.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
 
@@ -165,5 +164,11 @@ public class UserController {
             @RequestBody UserProfileUpdateRequest request) {
         userService.updateProfile(userSub, request);
         return ResponseEntity.ok("프로필이 수정되었습니다.");
+    }
+
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<String> withdraw(@RequestHeader("Authorization") String userSub) {
+        userService.withdraw(userSub);
+        return ResponseEntity.ok("회원 탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사합니다.");
     }
 }

@@ -1,7 +1,9 @@
 package FromProm.user_service.Service;
 
 import FromProm.user_service.DTO.*;
+import FromProm.user_service.Entity.Credit;
 import FromProm.user_service.Entity.User;
+import FromProm.user_service.Repository.CreditRepository;
 import FromProm.user_service.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +30,7 @@ import java.time.LocalDateTime;
 public class UserService {
     private final CognitoIdentityProviderClient cognitoClient;
     private final UserRepository userRepository;
+    private final CreditRepository creditRepository;
 
     @Value("${aws.cognito.clientId}")
     private String clientId;
@@ -248,5 +251,73 @@ public class UserService {
             // Cognito 삭제 실패 시 예외 처리 (이미 삭제되었거나 권한 문제 등)
             throw new RuntimeException("Cognito 사용자 삭제 중 오류가 발생했습니다: " + e.getMessage());
         }
+    }
+
+    @Transactional
+    public void chargeCredit(String userSub, int amount) {
+        // 1. 유저 정보 조회
+        User user = userRepository.findUser(userSub)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        // 2. 새로운 잔액 계산
+        int oldBalance = user.getCredit();
+        int newBalance = oldBalance + amount;
+
+        // 3. 유저 엔티티 잔액 업데이트
+        user.setCredit(newBalance);
+        user.setUpdatedAt(LocalDateTime.now().toString());
+
+        // 4. 내역(History) 객체 생성
+        // 별도의 CreditHistory 클래스를 만들거나, Map/Generic 엔티티를 사용합니다.
+        Credit history = Credit.builder()
+                .PK(userSub)
+                .SK("CREDIT#" + System.currentTimeMillis()) // 고유 타임스탬프
+                .type("CREDIT")
+                .amount(amount)
+                .balance(newBalance)
+                .description("크레딧 충전")
+                .createdAt(LocalDateTime.now().toString())
+                .build();
+
+        // 5. DB 저장 (둘 다 성공해야함)
+        userRepository.update(user); // 유저 잔액 갱신
+        creditRepository.save(history); // 내역 저장
+    }
+
+    @Transactional
+    public void useCredit(String userSub, CreditUseRequest request) {
+        // 1. 유저 정보 조회
+        User user = userRepository.findUser(userSub)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        // 2. 잔액 검증 (핵심!)
+        if (user.getCredit() < request.getAmount()) {
+            throw new RuntimeException("잔액이 부족합니다. 현재 잔액: " + user.getCredit());
+        }
+
+        // 3. 새로운 잔액 계산 (차감)
+        int oldBalance = user.getCredit();
+        int newBalance = oldBalance - request.getAmount();
+
+        // 4. 유저 엔티티 잔액 업데이트
+        user.setCredit(newBalance);
+        user.setUpdatedAt(LocalDateTime.now().toString());
+
+        // 5. 사용 내역(History) 객체 생성
+        Credit history = Credit.builder()
+                .PK(userSub)
+                .SK("CREDIT#" + System.currentTimeMillis())
+                .type("CREDIT")
+                .amount(-request.getAmount()) // 사용은 음수(-)로 기록해서 구분
+                .balance(newBalance)
+                .description(request.getDescription())
+                .createdAt(LocalDateTime.now().toString())
+                .build();
+
+        // 6. DB 저장
+        userRepository.update(user);
+        creditRepository.save(history);
+
+        System.out.println("DEBUG: 크레딧 사용 완료 -> " + request.getAmount() + "원 차감");
     }
 }

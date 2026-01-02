@@ -171,4 +171,22 @@ public class UserController {
         userService.withdraw(userSub);
         return ResponseEntity.ok("회원 탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사합니다.");
     }
+
+    @PostMapping("/credit/charge")
+    public ResponseEntity<String> chargeCredit(
+            @RequestHeader("Authorization") String userSub,
+            @RequestBody CreditChargeRequest request
+    ) {
+        userService.chargeCredit(userSub, request.getAmount());
+        return ResponseEntity.ok(request.getAmount() + "원이 성공적으로 충전되었습니다.");
+    }
+
+    @PostMapping("/credit/use")
+    public ResponseEntity<String> useCredit(
+            @RequestHeader("Authorization") String userSub,
+            @RequestBody CreditUseRequest request
+    ) {
+        userService.useCredit(userSub, request);
+        return ResponseEntity.ok(request.getAmount() + "원이 사용되었습니다.");
+    }
 }

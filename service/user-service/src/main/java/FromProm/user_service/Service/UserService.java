@@ -9,17 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthResponse;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.GlobalSignOutRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.GetUserResponse;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.ChangePasswordRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.ConfirmForgotPasswordRequest;
 
 import java.time.Instant;
 import java.util.Map;
@@ -35,10 +26,13 @@ public class UserService {
     @Value("${aws.cognito.clientId}")
     private String clientId;
 
+    @Value("${aws.cognito.userPoolId}")
+    private String userPoolId;
+
     // 회원가입
     public void signUp(UserSignUpRequest request) {
 
-        // 1. 닉네임 중복 체크 (가장 먼저 수행)
+        // 1. 닉네임 중복 체크
         if (userRepository.existsByNickname(request.getNickname())) {
             throw new RuntimeException("이미 사용 중인 닉네임입니다.");
         }
@@ -117,7 +111,7 @@ public class UserService {
     public AuthenticationResultType refreshAccessToken(String refreshToken) {
         InitiateAuthRequest authRequest = InitiateAuthRequest.builder()
                 .clientId(clientId)
-                .authFlow(AuthFlowType.REFRESH_TOKEN_AUTH) // 흐름이 다릅니다!
+                .authFlow(AuthFlowType.REFRESH_TOKEN_AUTH)
                 .authParameters(Map.of(
                         "REFRESH_TOKEN", refreshToken
                 ))
@@ -136,7 +130,7 @@ public class UserService {
         cognitoClient.globalSignOut(signOutRequest);
     }
 
-    //내 정보 찾기 (email, password, id)// 내 정보 조회
+    //내 정보 찾기 (email, password, id)
     public UserResponse getMyInfo(String accessToken) {
         // 1. AccessToken으로 Cognito 유저 정보 조회
         GetUserRequest getUserRequest = GetUserRequest.builder()
@@ -157,7 +151,7 @@ public class UserService {
         return UserResponse.builder()
                 .email(email)
                 .nickname(nickname)
-                .PK(response.username()) // 여기서 username은 Cognito의 sub(UUID)입니다.
+                .PK(response.username()) // 여기서 username은 Cognito의 sub(UUID)
                 .build();
     }
 
@@ -228,10 +222,6 @@ public class UserService {
         userRepository.update(user);
     }
 
-    // application-aws.yml의 설정값을 가져옴
-    @Value("${aws.cognito.userPoolId}")
-    private String userPoolId;
-
     @Transactional
     public void withdraw(String userSub) {
         // 1. DynamoDB 데이터 삭제 (PK: USER#uuid, SK: PROFILE)
@@ -268,7 +258,6 @@ public class UserService {
         user.setUpdatedAt(LocalDateTime.now().toString());
 
         // 4. 내역(History) 객체 생성
-        // 별도의 CreditHistory 클래스를 만들거나, Map/Generic 엔티티를 사용합니다.
         Credit history = Credit.builder()
                 .PK(userSub)
                 .SK("CREDIT#" + System.currentTimeMillis()) // 고유 타임스탬프
@@ -279,7 +268,7 @@ public class UserService {
                 .createdAt(LocalDateTime.now().toString())
                 .build();
 
-        // 5. DB 저장 (둘 다 성공해야함)
+        // 5. DB 저장
         userRepository.update(user); // 유저 잔액 갱신
         creditRepository.save(history); // 내역 저장
     }
@@ -290,7 +279,7 @@ public class UserService {
         User user = userRepository.findUser(userSub)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
-        // 2. 잔액 검증 (핵심!)
+        // 2. 잔액 검증
         if (user.getCredit() < request.getAmount()) {
             throw new RuntimeException("잔액이 부족합니다. 현재 잔액: " + user.getCredit());
         }
@@ -317,7 +306,5 @@ public class UserService {
         // 6. DB 저장
         userRepository.update(user);
         creditRepository.save(history);
-
-        System.out.println("DEBUG: 크레딧 사용 완료 -> " + request.getAmount() + "원 차감");
     }
 }

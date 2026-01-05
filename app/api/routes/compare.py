@@ -39,8 +39,19 @@ async def compare_models(request: CompareRequest):
         )
         result_b = await orchestrator.run(request_b)
         
-        # 편차 계산
-        variance_score = abs(result_a.final_score - result_b.final_score)
+        # 편차 계산 (각 지표별 평균 편차)
+        variance_score = 0.0
+        count = 0
+        
+        for metric in ['token_usage', 'information_density', 'consistency', 'model_variance', 'hallucination', 'relevance']:
+            score_a = getattr(result_a, metric)
+            score_b = getattr(result_b, metric)
+            if score_a and score_b:
+                variance_score += abs(score_a.score - score_b.score)
+                count += 1
+        
+        if count > 0:
+            variance_score = variance_score / count / 100  # 0-1 범위로 정규화
         
         return CompareResponse(
             model_a=request.model_a,

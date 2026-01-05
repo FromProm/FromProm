@@ -79,6 +79,7 @@ class RunStage:
                 'input_index': i,
                 'input_content': example_input.content,
                 'input_type': example_input.input_type,
+                'filled_prompt': filled_prompt,  # 디버깅용: 실제 LLM에 전달된 프롬프트
                 'outputs': outputs,
                 'model': model,
                 'token_usage': total_token_usage
@@ -96,6 +97,28 @@ class RunStage:
             return settings.default_models["type_a"]
     
     def _fill_prompt(self, prompt: str, input_content: str) -> str:
-        """프롬프트의 {{}} 플레이스홀더를 실제 입력으로 치환"""
-        # 간단한 구현 - 실제로는 더 정교한 템플릿 엔진 필요
-        return prompt.replace("{{}}", input_content).replace("{{input}}", input_content)
+        """프롬프트의 {{변수명}} 플레이스홀더를 실제 입력으로 치환"""
+        import json
+        import re
+        
+        result = prompt
+        has_placeholder = bool(re.search(r'\{\{.*?\}\}', prompt))
+        
+        # 1. input_content가 JSON인 경우 파싱해서 각 키별로 치환
+        try:
+            data = json.loads(input_content)
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    # {{key}} 형태를 value로 치환
+                    result = result.replace(f"{{{{{key}}}}}", str(value))
+        except (json.JSONDecodeError, TypeError):
+            pass
+        
+        # 2. 기본 플레이스홀더 치환 (JSON이 아닌 경우)
+        result = result.replace("{{}}", input_content).replace("{{input}}", input_content)
+        
+        # 3. 플레이스홀더가 없었으면 맨 뒤에 입력 추가
+        if not has_placeholder:
+            result = f"{result}\n\n{input_content}"
+        
+        return result

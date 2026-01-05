@@ -431,3 +431,87 @@ class DynamoDBS3Repository(BaseRepository):
         except Exception as e:
             logger.error(f"Failed to get job outputs: {str(e)}")
             return None
+    
+    # ============================================
+    # 새 스키마용 저장 메서드 (WAS 연동용)
+    # ============================================
+    
+    async def save_completed_job(
+        self,
+        job: 'JobResponse',
+        title: str,
+        description: Optional[str] = None,
+        user_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        완료된 Job을 새 스키마로 S3/DynamoDB에 저장
+        
+        Returns:
+            저장 결과 정보 (s3_url, dynamodb_pk 등)
+        """
+        from app.core.schemas import convert_job_to_dynamodb_record, create_s3_examples_data
+        
+        try:
+            prompt_id = job.request_id
+            
+            # 1. S3에 examples.json 저장
+            s3_examples_data = create_s3_examples_data(job)
+            s3_key = f"prompts/{prompt_id}/examples.json"
+            
+            self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=s3_key,
+                Body=json.dumps(s3_examples_data.model_dump(), ensure_ascii=False, indent=2),
+                ContentType='application/json',
+                Metadata={
+                    'prompt-id': prompt_id,
+                    'prompt-type': job.prompt_type.value,
+                    'created-at': s3_examples_data.created_at
+                }
+            )
+            
+            s3_url = f"s3://{self.bucket_name}/{s3_key}"
+            logger.info(f"S3 examples saved: {s3_url}")
+            
+            # 2. TYPE_B_IMAGE인 경우 이미지도 S3에 저장 (TODO: 실제 이미지 데이터 처리)
+            # 현재는 URL만 생성, 실제 이미지 업로드는 별도 처리 필요
+            
+            # 3. DynamoDB에 새 스키마로 저장
+            dynamodb_record = convert_job_to_dynamodb_record(
+                job=job,
+                title=title,
+                description=description,
+                user_id=user_id,
+                s3_bucket=self.bucket_name
+            )
+            
+            # DynamoDB에 저장 (새 테이블 또는 기존 테이블에 새 형식으로)
+            item = dynamodb_record.model_dump(by_alias=True)
+            
+            # Decimal 변환 (DynamoDB는 float 대신 Decimal 사용)
+            item = self._convert_floats_to_decimal(item)
+            
+            self.table.put_item(Item=item)
+            logger.info(f"DynamoDB record saved: PK={dynamodb_record.pk}")
+            
+            return {
+                "success": True,
+                "prompt_id": prompt_id,
+                "s3_url": s3_url,
+                "dynamodb_pk": dynamodb_record.pk,
+                "dynamodb_sk": dynamodb_record.sk
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to save completed job: {str(e)}")
+            raise StorageError(f"Failed to save completed job: {str(e)}")
+    
+    def _convert_floats_to_decimal(self, obj: Any) -> Any:
+        """float를 Decimal로 변환 (DynamoDB 호환)"""
+        if isinstance(obj, float):
+            return Decimal(str(obj))
+        elif isinstance(obj, dict):
+            return {k: self._convert_floats_to_decimal(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_floats_to_decimal(item) for item in obj]
+        return obj

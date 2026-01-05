@@ -199,3 +199,79 @@ async def get_job_outputs_from_s3(job_id: str):
             return {"error": "Storage backend does not support direct output access"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get outputs: {str(e)}")
+
+
+@router.post("/debug/prompt/preview")
+async def preview_filled_prompt(
+    prompt: str,
+    example_input: str
+):
+    """프롬프트에 입력이 어떻게 채워지는지 미리보기"""
+    import json
+    import re
+    
+    result = prompt
+    has_placeholder = bool(re.search(r'\{\{.*?\}\}', prompt))
+    
+    # 1. JSON 파싱 시도
+    try:
+        data = json.loads(example_input)
+        if isinstance(data, dict):
+            for key, value in data.items():
+                result = result.replace(f"{{{{{key}}}}}", str(value))
+    except (json.JSONDecodeError, TypeError):
+        pass
+    
+    # 2. 기본 플레이스홀더 치환
+    result = result.replace("{{}}", example_input).replace("{{input}}", example_input)
+    
+    # 3. 플레이스홀더 없으면 맨 뒤에 추가
+    if not has_placeholder:
+        result = f"{result}\n\n{example_input}"
+    
+    return {
+        "original_prompt": prompt,
+        "example_input": example_input,
+        "has_placeholder": has_placeholder,
+        "filled_prompt": result
+    }
+
+@router.get("/debug/jobs/{job_id}/prompts")
+async def get_job_filled_prompts(job_id: str):
+    """작업에서 실제 LLM에 전달된 프롬프트들 확인"""
+    try:
+        from app.main import context
+        storage = context.get_storage()
+        job = await storage.get_job(job_id)
+        
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        if not job.result or not job.result.execution_results:
+            return {
+                "job_id": job_id,
+                "status": job.status.value,
+                "message": "No execution results yet",
+                "filled_prompts": []
+            }
+        
+        filled_prompts = []
+        executions = job.result.execution_results.get('executions', [])
+        
+        for exec_data in executions:
+            filled_prompts.append({
+                "input_index": exec_data.get('input_index'),
+                "input_content": exec_data.get('input_content'),
+                "filled_prompt": exec_data.get('filled_prompt', 'N/A - 이전 버전에서 실행됨'),
+                "model": exec_data.get('model')
+            })
+        
+        return {
+            "job_id": job_id,
+            "original_prompt": job.prompt,
+            "filled_prompts": filled_prompts
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get prompts: {str(e)}")

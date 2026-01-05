@@ -181,6 +181,28 @@ class VarianceStage:
         return (similarity + 1) / 2
     
     def _fill_prompt(self, prompt: str, input_content: str) -> str:
-        """프롬프트에 입력 내용 삽입"""
-        # 간단한 플레이스홀더 치환 (실제 구현에 맞게 수정 필요)
-        return prompt.replace("{{input}}", input_content).replace("{{content}}", input_content)
+        """프롬프트의 {{변수명}} 플레이스홀더를 실제 입력으로 치환"""
+        import json
+        import re
+        
+        result = prompt
+        has_placeholder = bool(re.search(r'\{\{.*?\}\}', prompt))
+        
+        # 1. input_content가 JSON인 경우 파싱해서 각 키별로 치환
+        try:
+            data = json.loads(input_content)
+            if isinstance(data, dict):
+                for key, value in data.items():
+                    # {{key}} 형태를 value로 치환
+                    result = result.replace(f"{{{{{key}}}}}", str(value))
+        except (json.JSONDecodeError, TypeError):
+            pass
+        
+        # 2. 기본 플레이스홀더 치환 (JSON이 아닌 경우)
+        result = result.replace("{{}}", input_content).replace("{{input}}", input_content)
+        
+        # 3. 플레이스홀더가 없었으면 맨 뒤에 입력 추가
+        if not has_placeholder:
+            result = f"{result}\n\n{input_content}"
+        
+        return result

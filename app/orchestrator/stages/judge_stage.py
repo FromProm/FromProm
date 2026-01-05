@@ -145,22 +145,42 @@ class JudgeStage:
             judge = self.context.get_judge()
             
             # LLM에게 문장별 claim type 분류 요청
-            prompt = f"""
-다음 텍스트를 문장별로 분석하여 FACT_VERIFIABLE 타입에 해당하는 문장만 추출해주세요.
+            prompt = f"""[작업]
+아래 <분석대상> 안의 텍스트를 문장 단위로 분리한 뒤, 각 문장을 6가지 타입으로 분류하고 TYPE_1에 해당하는 문장만 추출하세요.
 
-Claim 타입 정의:
-- FACT_VERIFIABLE: 외부 근거로 참/거짓 판정 가능한 사실적 주장
-- FACT_UNVERIFIABLE: 사실처럼 보이나 검증 불가능
-- OPINION_JUDGEMENT: 의견/평가/주관적 판단
-- CREATIVE_CONTENT: 창작 설정/허구적 내용
-- PREDICTION_SPECULATION: 미래 예측/추정
-- INSTRUCTIONAL: 방법/절차 설명
+[6가지 타입 정의]
+TYPE_1 (FACT_VERIFIABLE) - 추출 대상 ✓
+: 외부 자료(뉴스, 위키, 공식문서 등)로 참/거짓 검증이 가능한 객관적 사실
+: 날짜, 숫자, 인물, 사건 등 구체적 정보가 포함된 문장
 
-텍스트:
+TYPE_2 (FACT_UNVERIFIABLE) - 제외 ✗
+: 사실처럼 보이지만 검증 불가능한 주장
+
+TYPE_3 (OPINION) - 제외 ✗
+: 주관적 판단, 평가, 의견 (좋다, 최고다, 아름답다 등)
+
+TYPE_4 (PREDICTION) - 제외 ✗
+: 미래 예측, 전망
+
+TYPE_5 (INSTRUCTION) - 제외 ✗
+: 방법, 절차, 사용법 설명
+
+TYPE_6 (CREATIVE) - 제외 ✗
+: 창작, 마케팅 문구, 가정/상상
+
+[무조건 제외]
+- 인사말, 맺음말
+- 템플릿 변수 포함 문장
+- 이 지시문 안의 예시들
+
+<분석대상>
 {output}
+</분석대상>
 
-FACT_VERIFIABLE 문장만 한 줄씩 반환해주세요. 없으면 "NONE"을 반환하세요.
-"""
+[출력 규칙]
+- TYPE_1 문장만 한 줄에 하나씩 출력
+- TYPE_1이 없으면 NONE 출력
+- 분석대상 바깥의 텍스트는 절대 출력하지 마세요"""
             
             result = await judge.analyze_text(prompt)
             
@@ -168,7 +188,25 @@ FACT_VERIFIABLE 문장만 한 줄씩 반환해주세요. 없으면 "NONE"을 반
                 return []
             
             # 결과를 줄별로 분리하여 반환
-            claims = [line.strip() for line in result.split('\n') if line.strip()]
+            claims = []
+            for line in result.split('\n'):
+                line = line.strip()
+                # 빈 줄, 번호 매기기, 불필요한 텍스트 필터링
+                if not line:
+                    continue
+                if line.upper() == "NONE":
+                    continue
+                if line.startswith("FACT_VERIFIABLE"):
+                    continue
+                if "{{" in line and "}}" in line:  # 템플릿 변수 포함 문장 제외
+                    continue
+                # 인사말/불필요 문구 필터링
+                skip_patterns = ["안녕하세요", "알겠습니다", "감사합니다", "네,", "좋습니다", 
+                               "작성해 드리겠습니다", "소개합니다", "소개해드릴게요"]
+                if any(pattern in line for pattern in skip_patterns):
+                    continue
+                claims.append(line)
+            
             return claims
             
         except Exception as e:

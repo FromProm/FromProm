@@ -109,8 +109,12 @@ class SQLiteRepository(BaseRepository):
                 if key == 'result' and value:
                     set_clauses.append("result = ?")
                     values.append(json.dumps(value.model_dump()))
-                elif key in ['status', 'error_message']:
-                    set_clauses.append(f"{key} = ?")
+                elif key == 'status':
+                    set_clauses.append("status = ?")
+                    # JobStatus enum인 경우 .value로 변환
+                    values.append(value.value if hasattr(value, 'value') else value)
+                elif key == 'error_message':
+                    set_clauses.append("error_message = ?")
                     values.append(value)
             
             if not set_clauses:
@@ -168,7 +172,7 @@ class SQLiteRepository(BaseRepository):
             result = EvaluationResult(**result_data)
         
         return JobResponse(
-            id=row[0],
+            request_id=row[0],
             status=JobStatus(row[1]),
             prompt=row[2],
             prompt_type=PromptType(row[3]),
@@ -180,3 +184,121 @@ class SQLiteRepository(BaseRepository):
             created_at=datetime.fromisoformat(row[9]),
             updated_at=datetime.fromisoformat(row[10])
         )
+    
+    # ============================================
+    # 새 스키마용 저장 메서드 (로컬 테스트용)
+    # ============================================
+    
+    async def save_completed_job(
+        self,
+        job: 'JobResponse',
+        title: str,
+        description: Optional[str] = None,
+        user_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        완료된 Job을 S3 + DynamoDB에 저장
+        """
+        import os
+        import boto3
+        from decimal import Decimal
+        from app.core.schemas import convert_job_to_dynamodb_record, create_s3_examples_data
+        from app.core.config import settings
+        
+        def convert_floats(obj):
+            """float를 Decimal로 변환"""
+            if isinstance(obj, float):
+                return Decimal(str(obj))
+            elif isinstance(obj, dict):
+                return {k: convert_floats(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_floats(item) for item in obj]
+            return obj
+        
+        try:
+            prompt_id = job.request_id
+            
+            # 1. 로컬에도 백업 저장
+            output_dir = f"outputs/{prompt_id}"
+            os.makedirs(output_dir, exist_ok=True)
+            
+            # examples.json 생성
+            s3_examples_data = create_s3_examples_data(job)
+            examples_path = f"{output_dir}/examples.json"
+            with open(examples_path, 'w', encoding='utf-8') as f:
+                json.dump(s3_examples_data.model_dump(), f, ensure_ascii=False, indent=2)
+            
+            # DynamoDB 형식 레코드 생성
+            dynamodb_record = convert_job_to_dynamodb_record(
+                job=job,
+                title=title,
+                description=description,
+                user_id=user_id,
+                s3_bucket=settings.s3_bucket_name
+            )
+            
+            record_path = f"{output_dir}/dynamodb_record.json"
+            with open(record_path, 'w', encoding='utf-8') as f:
+                json.dump(dynamodb_record.model_dump(by_alias=True), f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"Local backup saved: {output_dir}")
+            
+            s3_url = None
+            dynamodb_pk = None
+            
+            # AWS 클라이언트 생성
+            if settings.aws_access_key_id:
+                # 2. S3에 업로드
+                try:
+                    s3_client = boto3.client(
+                        's3',
+                        region_name=settings.aws_region,
+                        aws_access_key_id=settings.aws_access_key_id,
+                        aws_secret_access_key=settings.aws_secret_access_key
+                    )
+                    
+                    s3_key = f"prompts/{prompt_id}/examples.json"
+                    s3_client.put_object(
+                        Bucket=settings.s3_bucket_name,
+                        Key=s3_key,
+                        Body=json.dumps(s3_examples_data.model_dump(), ensure_ascii=False, indent=2),
+                        ContentType='application/json'
+                    )
+                    
+                    s3_url = f"s3://{settings.s3_bucket_name}/{s3_key}"
+                    logger.info(f"S3 upload success: {s3_url}")
+                    
+                except Exception as s3_error:
+                    logger.warning(f"S3 upload failed: {str(s3_error)}")
+                
+                # 3. DynamoDB에 저장
+                try:
+                    dynamodb = boto3.resource(
+                        'dynamodb',
+                        region_name=settings.aws_region,
+                        aws_access_key_id=settings.aws_access_key_id,
+                        aws_secret_access_key=settings.aws_secret_access_key
+                    )
+                    
+                    table = dynamodb.Table(settings.table_name)
+                    item = dynamodb_record.model_dump(by_alias=True)
+                    item = convert_floats(item)
+                    
+                    table.put_item(Item=item)
+                    dynamodb_pk = dynamodb_record.pk
+                    logger.info(f"DynamoDB save success: PK={dynamodb_pk}")
+                    
+                except Exception as ddb_error:
+                    logger.warning(f"DynamoDB save failed: {str(ddb_error)}")
+            
+            return {
+                "success": True,
+                "prompt_id": prompt_id,
+                "local_path": output_dir,
+                "s3_url": s3_url,
+                "dynamodb_pk": dynamodb_pk
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to save completed job: {str(e)}")
+            raise StorageError(f"Failed to save completed job: {str(e)}")

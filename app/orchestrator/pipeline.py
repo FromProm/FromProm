@@ -116,7 +116,7 @@ class Orchestrator:
             # 실제 AI 출력 결과 포함
             final_result.execution_results = execution_results
             
-            logger.info(f"Pipeline completed successfully. Final score: {final_result.final_score}")
+            logger.info("Pipeline completed successfully")
             return final_result
             
         except Exception as e:

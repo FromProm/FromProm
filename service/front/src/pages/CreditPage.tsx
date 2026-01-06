@@ -47,34 +47,6 @@ const CreditPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
-      {/* 헤더 */}
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-xl sticky top-0 z-50 shadow-sm">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/marketplace" className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-900 rounded-md flex items-center justify-center">
-                <span className="text-white font-bold text-sm">F</span>
-              </div>
-              <span className="text-xl font-semibold text-gray-900 tracking-tight">FromProm</span>
-            </Link>
-            
-            <div className="flex items-center space-x-4">
-              <Link 
-                to="/marketplace" 
-                className="text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors"
-              >
-                마켓플레이스
-              </Link>
-              <Link 
-                to="/auth/login" 
-                className="bg-blue-900 text-white font-medium px-4 py-2 rounded-md text-sm hover:bg-blue-800 transition-colors"
-              >
-                Sign in
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
 
       {/* 메인 콘텐츠 */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

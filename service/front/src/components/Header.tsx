@@ -47,7 +47,7 @@ const Header = () => {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* 로고 */}
-          <Link to="/marketplace" className="flex items-center space-x-3">
+          <Link to="/" className="flex items-center space-x-3">
             <div className="w-13 h-14 rounded-md overflow-hidden flex items-center justify-center">
               {/* 이미지가 있으면 이미지를 사용하고, 없으면 기본 아이콘 사용 */}
               <img 
@@ -90,6 +90,12 @@ const Header = () => {
                 </button>
                 {showMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
+                    <Link
+                      to="/marketplace"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      마켓플레이스
+                    </Link>
                     <Link
                       to="/cart"
                       className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -151,6 +157,12 @@ const Header = () => {
               </>
             ) : (
               <div className="flex items-center space-x-4">
+                <Link
+                  to="/marketplace"
+                  className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                >
+                  Marketplace
+                </Link>
                 <Link
                   to="/auth/login"
                   className="bg-blue-600 text-white font-medium px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"

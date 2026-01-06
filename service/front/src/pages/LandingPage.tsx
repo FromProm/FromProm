@@ -5,6 +5,13 @@ import { useAuthStore } from '../store/authStore';
 const LandingPage = () => {
   const { isAuthenticated } = useAuthStore();
 
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('idToken');
+    window.location.reload();
+  };
+
   return (
     <div className="relative min-h-screen bg-black">
       {/* 조금 더 밝은 배경 */}
@@ -32,7 +39,8 @@ const LandingPage = () => {
                   onError={(e) => {
                     // 이미지 로드 실패 시 기본 아이콘으로 대체
                     e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling.style.display = 'flex';
+                    const sibling = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (sibling) sibling.style.display = 'flex';
                   }}
                 />
                 <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center" style={{display: 'none'}}>
@@ -61,12 +69,20 @@ const LandingPage = () => {
               </nav>
 
               {isAuthenticated ? (
-                <Link
-                  to="/marketplace"
-                  className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors"
-                >
-                  Dashboard
-                </Link>
+                <div className="flex items-center space-x-4">
+                  <Link
+                    to="/dashboard"
+                    className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-300 hover:text-white font-medium text-sm transition-colors"
+                  >
+                    로그아웃
+                  </button>
+                </div>
               ) : (
                 <div className="flex items-center space-x-4">
                   <Link

@@ -6,12 +6,24 @@ interface AuthStore extends AuthState {
   logout: () => void;
   register: (email: string, password: string, name: string, role: 'buyer' | 'seller') => Promise<void>;
   setUser: (user: User | null) => void;
+  checkAuth: () => void;
 }
+
+// 초기 인증 상태 확인
+const getInitialAuthState = () => {
+  const token = localStorage.getItem('accessToken');
+  return !!token;
+};
 
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
-  isAuthenticated: false,
+  isAuthenticated: getInitialAuthState(),
   isLoading: false,
+
+  checkAuth: () => {
+    const token = localStorage.getItem('accessToken');
+    set({ isAuthenticated: !!token });
+  },
 
   login: async (email: string, password: string) => {
     set({ isLoading: true });

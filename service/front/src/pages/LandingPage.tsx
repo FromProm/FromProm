@@ -5,6 +5,13 @@ import { useAuthStore } from '../store/authStore';
 const LandingPage = () => {
   const { isAuthenticated } = useAuthStore();
 
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('idToken');
+    window.location.reload();
+  };
+
   return (
     <div className="relative min-h-screen bg-black">
       {/* 조금 더 밝은 배경 */}
@@ -15,7 +22,7 @@ const LandingPage = () => {
 
       {/* 헤더 */}
       <header className="relative z-10 border-b border-blue-900/30 bg-blue-900/20 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <motion.div
               className="flex items-center space-x-3"
@@ -32,7 +39,8 @@ const LandingPage = () => {
                   onError={(e) => {
                     // 이미지 로드 실패 시 기본 아이콘으로 대체
                     e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling.style.display = 'flex';
+                    const sibling = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (sibling) sibling.style.display = 'flex';
                   }}
                 />
                 <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center" style={{display: 'none'}}>
@@ -61,12 +69,20 @@ const LandingPage = () => {
               </nav>
 
               {isAuthenticated ? (
-                <Link
-                  to="/marketplace"
-                  className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors"
-                >
-                  Dashboard
-                </Link>
+                <div className="flex items-center space-x-4">
+                  <Link
+                    to="/dashboard"
+                    className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-300 hover:text-white font-medium text-sm transition-colors"
+                  >
+                    로그아웃
+                  </button>
+                </div>
               ) : (
                 <div className="flex items-center space-x-4">
                   <Link
@@ -90,7 +106,7 @@ const LandingPage = () => {
 
       {/* 메인 콘텐츠 */}
       <main className="relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+        <div className="w-full px-4 sm:px-6 lg:px-8 pt-20 pb-16">
           {/* 히어로 섹션 */}
           <div className="text-center max-w-4xl mx-auto">
             <motion.div
@@ -208,7 +224,7 @@ const LandingPage = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.8 }}
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-16">
             <div className="text-center mb-12">
               <h2 className="text-2xl font-bold text-white mb-4">
                 Trusted by leading AI teams

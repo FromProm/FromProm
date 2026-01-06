@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { userApi } from '../services/api';
 
 const CreditPage = () => {
   const [selectedAmount, setSelectedAmount] = useState(1000);
@@ -8,9 +9,23 @@ const CreditPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [currentCredits, setCurrentCredits] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 현재 사용자 크레딧 (더미 데이터)
-  const [currentCredits, setCurrentCredits] = useState(2450);
+  // 사용자 크레딧 정보 가져오기
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await userApi.getMe();
+        setCurrentCredits(response.data.credit || 0);
+      } catch (error) {
+        console.error('Failed to fetch user info:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUserInfo();
+  }, []);
 
   // 미리 정의된 충전 금액 옵션
   const creditPackages = [
@@ -24,15 +39,22 @@ const CreditPage = () => {
   const handlePurchase = async () => {
     setIsProcessing(true);
     
-    // 실제 결제 처리 시뮬레이션
-    setTimeout(() => {
+    try {
       const finalAmount = selectedAmount === 0 ? parseInt(customAmount) : selectedAmount;
       const bonus = creditPackages.find(pkg => pkg.credits === finalAmount)?.bonus || 0;
+      const totalAmount = finalAmount + bonus;
       
-      setCurrentCredits(prev => prev + finalAmount + bonus);
-      setIsProcessing(false);
+      // 실제 API 호출
+      await userApi.chargeCredit(totalAmount);
+      
+      // 성공 시 크레딧 업데이트
+      setCurrentCredits(prev => prev + totalAmount);
       setShowSuccessModal(true);
-    }, 2000);
+    } catch (error: any) {
+      alert(error.response?.data?.message || '크레딧 충전에 실패했습니다.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const getPrice = (credits: number) => {
@@ -45,36 +67,16 @@ const CreditPage = () => {
     return pkg ? pkg.bonus : 0;
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white flex items-center justify-center">
+        <div className="text-gray-600">로딩 중...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
-      {/* 헤더 */}
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-xl sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/marketplace" className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-900 rounded-md flex items-center justify-center">
-                <span className="text-white font-bold text-sm">F</span>
-              </div>
-              <span className="text-xl font-semibold text-gray-900 tracking-tight">FromProm</span>
-            </Link>
-            
-            <div className="flex items-center space-x-4">
-              <Link 
-                to="/marketplace" 
-                className="text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors"
-              >
-                마켓플레이스
-              </Link>
-              <Link 
-                to="/auth/login" 
-                className="bg-blue-900 text-white font-medium px-4 py-2 rounded-md text-sm hover:bg-blue-800 transition-colors"
-              >
-                Sign in
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
 
       {/* 메인 콘텐츠 */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

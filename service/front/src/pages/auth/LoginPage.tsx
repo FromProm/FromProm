@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
+import { userApi } from '../../services/api';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -14,10 +13,18 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      const response = await userApi.login({ email, password });
+      const { accessToken, refreshToken, idToken } = response.data;
+      
+      // 토큰 저장
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      localStorage.setItem('idToken', idToken);
+      
       navigate('/marketplace');
-    } catch (error) {
-      console.error('Login failed:', error);
+    } catch (error: any) {
+      const message = error.response?.data || '로그인에 실패했습니다.';
+      alert(message);
     } finally {
       setIsLoading(false);
     }

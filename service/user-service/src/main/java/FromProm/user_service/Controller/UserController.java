@@ -157,36 +157,83 @@ public class UserController {
         return ResponseEntity.ok(isExisted);
     }
 
+    // 프로필 수정 (닉네임, 소개글, 프로필 이미지)
     @PatchMapping("/profile")
     public ResponseEntity<?> updateProfile(
-            // @AuthenticationPrincipal String userSub, // 나중에 복구할 것
-            @RequestHeader("Authorization") String userSub, // 테스트용 임시 헤더
+            @RequestHeader("Authorization") String bearerToken,
             @RequestBody UserProfileUpdateRequest request) {
-        userService.updateProfile(userSub, request);
-        return ResponseEntity.ok("프로필이 수정되었습니다.");
+        try {
+            // 1. Bearer 토큰에서 accessToken 추출
+            String accessToken = bearerToken.substring(7).trim();
+            // 2. accessToken으로 Cognito에서 사용자 정보 조회
+            UserResponse userInfo = userService.getMyInfo(accessToken);
+            // 3. PK는 이미 USER#uuid 형식이므로 그대로 사용
+            String userSub = userInfo.getPK();
+            // 4. 프로필 업데이트 수행
+            userService.updateProfile(userSub, request);
+            return ResponseEntity.ok("프로필이 수정되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("프로필 수정 실패: " + e.getMessage());
+        }
     }
 
+    // 회원 탈퇴
     @DeleteMapping("/withdraw")
-    public ResponseEntity<String> withdraw(@RequestHeader("Authorization") String userSub) {
-        userService.withdraw(userSub);
-        return ResponseEntity.ok("회원 탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사합니다.");
+    public ResponseEntity<String> withdraw(@RequestHeader("Authorization") String bearerToken) {
+        try {
+            // 1. Bearer 토큰에서 accessToken 추출
+            String accessToken = bearerToken.substring(7).trim();
+            // 2. accessToken으로 Cognito에서 사용자 정보 조회
+            UserResponse userInfo = userService.getMyInfo(accessToken);
+            // 3. PK는 이미 USER#uuid 형식이므로 그대로 사용
+            String userSub = userInfo.getPK();
+            // 4. 회원 탈퇴 수행 (DynamoDB + Cognito 삭제)
+            userService.withdraw(userSub);
+            return ResponseEntity.ok("회원 탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사합니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("회원 탈퇴 실패: " + e.getMessage());
+        }
     }
 
+    // 크레딧 충전
     @PostMapping("/credit/charge")
     public ResponseEntity<String> chargeCredit(
-            @RequestHeader("Authorization") String userSub,
+            @RequestHeader("Authorization") String bearerToken,
             @RequestBody CreditChargeRequest request
     ) {
-        userService.chargeCredit(userSub, request.getAmount());
-        return ResponseEntity.ok(request.getAmount() + "원이 성공적으로 충전되었습니다.");
+        try {
+            // 1. Bearer 토큰에서 accessToken 추출
+            String accessToken = bearerToken.substring(7).trim();
+            // 2. accessToken으로 Cognito에서 사용자 정보 조회
+            UserResponse userInfo = userService.getMyInfo(accessToken);
+            // 3. PK는 이미 USER#uuid 형식이므로 그대로 사용
+            String userSub = userInfo.getPK();
+            // 4. 크레딧 충전 수행
+            userService.chargeCredit(userSub, request.getAmount());
+            return ResponseEntity.ok(request.getAmount() + "원이 성공적으로 충전되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("크레딧 충전 실패: " + e.getMessage());
+        }
     }
 
+    // 크레딧 사용
     @PostMapping("/credit/use")
     public ResponseEntity<String> useCredit(
-            @RequestHeader("Authorization") String userSub,
+            @RequestHeader("Authorization") String bearerToken,
             @RequestBody CreditUseRequest request
     ) {
-        userService.useCredit(userSub, request);
-        return ResponseEntity.ok(request.getAmount() + "원이 사용되었습니다.");
+        try {
+            // 1. Bearer 토큰에서 accessToken 추출
+            String accessToken = bearerToken.substring(7).trim();
+            // 2. accessToken으로 Cognito에서 사용자 정보 조회
+            UserResponse userInfo = userService.getMyInfo(accessToken);
+            // 3. PK는 이미 USER#uuid 형식이므로 그대로 사용
+            String userSub = userInfo.getPK();
+            // 4. 크레딧 사용 수행
+            userService.useCredit(userSub, request);
+            return ResponseEntity.ok(request.getAmount() + "원이 사용되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("크레딧 사용 실패: " + e.getMessage());
+        }
     }
 }

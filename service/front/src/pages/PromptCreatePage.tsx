@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { categories } from '../services/dummyData';
 
 const PromptCreatePage = () => {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -24,6 +25,23 @@ const PromptCreatePage = () => {
   ]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 로그인 상태 확인
+  useEffect(() => {
+    let isMounted = true;
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      if (isMounted) {
+        alert('로그인이 필요한 서비스입니다.');
+        navigate('/auth/login');
+      }
+    } else {
+      setIsAuthenticated(true);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate]);
 
   const llmModels = [
     { name: 'GPT-4', versions: ['gpt-4-turbo-preview', 'gpt-4-0125-preview', 'gpt-4-1106-preview'] },
@@ -71,43 +89,17 @@ const PromptCreatePage = () => {
 
   const selectedModel = llmModels.find(model => model.name === formData.llmModel);
 
+  // 인증 확인 중이면 로딩 표시
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white flex items-center justify-center">
+        <div className="text-gray-600">로딩 중...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
-      {/* 헤더 */}
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/marketplace" className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-900 rounded-md flex items-center justify-center">
-                <span className="text-white font-bold text-sm">F</span>
-              </div>
-              <span className="text-xl font-semibold text-gray-900 tracking-tight">FromProm</span>
-            </Link>
-
-            <div className="flex items-center space-x-4">
-              <Link
-                to="/credits"
-                className="text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors"
-              >
-                크레딧 충전
-              </Link>
-              <Link
-                to="/marketplace"
-                className="text-gray-600 hover:text-gray-900 font-medium text-sm transition-colors"
-              >
-                마켓플레이스
-              </Link>
-              <Link
-                to="/auth/login"
-                className="bg-blue-900 text-white font-medium px-4 py-2 rounded-md text-sm hover:bg-blue-800 transition-colors"
-              >
-                Sign in
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* 메인 콘텐츠 */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div

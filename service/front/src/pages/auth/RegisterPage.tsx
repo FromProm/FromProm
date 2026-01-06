@@ -1,22 +1,23 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
+import { userApi } from '../../services/api';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
-    name: '',
     nickname: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+  const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
-  const { register } = useAuthStore();
+  const [isSignUpComplete, setIsSignUpComplete] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // 1단계: 회원가입 요청 (이메일 인증 코드 발송)
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
@@ -24,20 +25,57 @@ const RegisterPage = () => {
       return;
     }
 
-    if (!isEmailVerified) {
-      alert('이메일 인증을 완료해주세요.');
+    setIsLoading(true);
+    
+    try {
+      await userApi.signUp({
+        email: formData.email,
+        password: formData.password,
+        nickname: formData.nickname,
+      });
+      setIsSignUpComplete(true);
+      setIsEmailSent(true);
+      alert('회원가입이 완료되었습니다. 이메일로 전송된 인증 코드를 입력해주세요.');
+    } catch (error: any) {
+      const message = error.response?.data || '회원가입에 실패했습니다.';
+      alert(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 2단계: 이메일 인증 코드 확인
+  const handleVerifyCode = async () => {
+    if (!verificationCode) {
+      alert('인증 코드를 입력해주세요.');
       return;
     }
 
     setIsLoading(true);
-    
     try {
-      await register(formData.email, formData.password, formData.name, 'buyer');
-      navigate('/marketplace');
-    } catch (error) {
-      console.error('Registration failed:', error);
+      await userApi.confirm({
+        email: formData.email,
+        code: verificationCode,
+      });
+      setIsEmailVerified(true);
+      alert('이메일 인증이 완료되었습니다! 로그인 페이지로 이동합니다.');
+      navigate('/auth/login');
+    } catch (error: any) {
+      const message = error.response?.data || '인증에 실패했습니다.';
+      alert(message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 인증 코드 재전송
+  const handleResendCode = async () => {
+    try {
+      await userApi.resendCode(formData.email);
+      alert('인증 코드가 재전송되었습니다.');
+    } catch (error: any) {
+      const message = error.response?.data || '코드 재전송에 실패했습니다.';
+      alert(message);
     }
   };
 
@@ -46,19 +84,6 @@ const RegisterPage = () => {
       ...prev,
       [e.target.name]: e.target.value
     }));
-  };
-
-  const handleEmailVerification = async () => {
-    if (!formData.email) {
-      alert('이메일을 입력해주세요.');
-      return;
-    }
-
-    setIsEmailSent(true);
-    setTimeout(() => {
-      setIsEmailVerified(true);
-      alert('이메일 인증이 완료되었습니다!');
-    }, 2000);
   };
 
   return (
@@ -107,24 +132,55 @@ const RegisterPage = () => {
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 py-8 px-4 shadow-2xl sm:rounded-xl sm:px-10">
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              {/* 이름 */}
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-300">
-                  이름 *
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="mt-1 w-full px-3 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  placeholder="홍길동"
-                />
-              </div>
+            {/* 회원가입 완료 후 인증 코드 입력 화면 */}
+            {isSignUpComplete ? (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-white">이메일 인증</h3>
+                  <p className="mt-2 text-sm text-gray-400">
+                    {formData.email}로 전송된 인증 코드를 입력해주세요.
+                  </p>
+                </div>
 
+                <div>
+                  <label htmlFor="verificationCode" className="block text-sm font-medium text-gray-300">
+                    인증 코드
+                  </label>
+                  <input
+                    id="verificationCode"
+                    type="text"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    className="mt-1 w-full px-3 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-center text-lg tracking-widest"
+                    placeholder="000000"
+                    maxLength={6}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleVerifyCode}
+                  disabled={isLoading}
+                  className="w-full py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isLoading ? '확인 중...' : '인증 확인'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  className="w-full py-2 text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  인증 코드 재전송
+                </button>
+              </div>
+            ) : (
+            <form className="space-y-6" onSubmit={handleSignUp}>
               {/* 닉네임 */}
               <div>
                 <label htmlFor="nickname" className="block text-sm font-medium text-gray-300">
@@ -148,40 +204,16 @@ const RegisterPage = () => {
                 <label htmlFor="email" className="block text-sm font-medium text-gray-300">
                   이메일 *
                 </label>
-                <div className="mt-1 flex space-x-2">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="flex-1 px-3 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    placeholder="your@email.com"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleEmailVerification}
-                    disabled={isEmailSent || isEmailVerified}
-                    className={`px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                      isEmailVerified
-                        ? 'bg-green-100 text-green-700 border border-green-300'
-                        : isEmailSent
-                        ? 'bg-gray-100 text-gray-500 border border-gray-300 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
-                    }`}
-                  >
-                    {isEmailVerified ? '인증완료' : isEmailSent ? '전송됨' : '인증'}
-                  </button>
-                </div>
-                {isEmailVerified && (
-                  <p className="mt-1 text-xs text-green-600 flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    이메일 인증이 완료되었습니다
-                  </p>
-                )}
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="mt-1 w-full px-3 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  placeholder="your@email.com"
+                />
               </div>
 
               {/* 비밀번호 */}
@@ -249,6 +281,7 @@ const RegisterPage = () => {
                 {isLoading ? '가입 중...' : '회원가입'}
               </button>
             </form>
+            )}
 
             <div className="mt-6">
               <div className="relative">

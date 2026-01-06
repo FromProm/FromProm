@@ -6,7 +6,6 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -15,7 +14,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class LikeService {
+public class InteractionService {
     private final DynamoDbEnhancedClient enhancedClient;
     private final DynamoDbClient dynamoDbClient; // 일반 클라이언트 추가
     private final String TABLE_NAME = "FromProm_Table"; // 실제 테이블명으로 변경
@@ -102,5 +101,77 @@ public class LikeService {
                                 .build()
                 )
                 .build());
+    }
+
+    // 북마크 등록
+    public void addBookmark(String userId, String promptId, String promptTitle) {
+        String now = OffsetDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+
+        Map<String, AttributeValue> bookmarkItem = new HashMap<>();
+        bookmarkItem.put("PK", AttributeValue.builder().s("USER#" + userId).build());
+        bookmarkItem.put("SK", AttributeValue.builder().s("BOOKMARK#" + promptId).build());
+        bookmarkItem.put("GSI1_PK", AttributeValue.builder().s("USER_BOOKMARKS#" + userId).build());
+        bookmarkItem.put("GSI1_SK", AttributeValue.builder().s(now).build());
+        bookmarkItem.put("type", AttributeValue.builder().s("BOOKMARK").build());
+        bookmarkItem.put("targetPromptId", AttributeValue.builder().s(promptId).build());
+        bookmarkItem.put("title", AttributeValue.builder().s(promptTitle).build());
+        bookmarkItem.put("createdAt", AttributeValue.builder().s(now).build());
+
+        dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
+                .transactItems(
+                        TransactWriteItem.builder()
+                                .put(Put.builder()
+                                        .tableName(TABLE_NAME)
+                                        .item(bookmarkItem)
+                                        .conditionExpression("attribute_not_exists(PK)")
+                                        .build())
+                                .build(),
+                        TransactWriteItem.builder()
+                                .update(Update.builder()
+                                        .tableName(TABLE_NAME)
+                                        .key(Map.of(
+                                                "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                                                "SK", AttributeValue.builder().s("METADATA").build()
+                                        ))
+                                        .updateExpression("SET bookmarkCount = if_not_exists(bookmarkCount, :zero) + :inc")
+                                        .expressionAttributeValues(Map.of(
+                                                ":inc", AttributeValue.builder().n("1").build(),
+                                                ":zero", AttributeValue.builder().n("0").build()
+                                        ))
+                                        .build())
+                                .build()
+                ).build());
+    }
+
+    // 북마크 취소
+    public void deleteBookmark(String userId, String promptId) {
+        dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
+                .transactItems(
+                        TransactWriteItem.builder()
+                                .delete(Delete.builder()
+                                        .tableName(TABLE_NAME)
+                                        .key(Map.of(
+                                                "PK", AttributeValue.builder().s("USER#" + userId).build(),
+                                                "SK", AttributeValue.builder().s("BOOKMARK#" + promptId).build()
+                                        ))
+                                        .conditionExpression("attribute_exists(PK)")
+                                        .build())
+                                .build(),
+                        TransactWriteItem.builder()
+                                .update(Update.builder()
+                                        .tableName(TABLE_NAME)
+                                        .key(Map.of(
+                                                "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                                                "SK", AttributeValue.builder().s("METADATA").build()
+                                        ))
+                                        .updateExpression("SET bookmarkCount = bookmarkCount - :dec")
+                                        .expressionAttributeValues(Map.of(
+                                                ":dec", AttributeValue.builder().n("1").build(),
+                                                ":zero", AttributeValue.builder().n("0").build()
+                                        ))
+                                        .conditionExpression("bookmarkCount > :zero")
+                                        .build())
+                                .build()
+                ).build());
     }
 }

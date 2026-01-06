@@ -155,7 +155,7 @@ const Header = () => {
                   to="/auth/login"
                   className="bg-blue-600 text-white font-medium px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
                 >
-                  로그인
+                  Sign in
                 </Link>
               </div>
             )}

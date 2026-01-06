@@ -144,6 +144,12 @@ const Header = () => {
                     >
                       판매 분석
                     </Link>
+                    <Link
+                      to="/dashboard/settings"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      개인정보 설정
+                    </Link>
                     <div className="border-t border-gray-100 my-1"></div>
                     <button
                       onClick={handleLogout}

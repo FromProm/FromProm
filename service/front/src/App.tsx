@@ -17,6 +17,7 @@ import DashboardPage from './pages/dashboard/DashboardPage';
 import PurchasedPromptsPage from './pages/dashboard/PurchasedPromptsPage';
 import SellingPromptsPage from './pages/dashboard/SellingPromptsPage';
 import AnalyticsPage from './pages/dashboard/AnalyticsPage';
+import SettingsPage from './pages/dashboard/SettingsPage';
 
 // Components
 import Layout from './components/Layout';
@@ -94,6 +95,14 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <AnalyticsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/dashboard/settings"
+                            element={
+                                <ProtectedRoute>
+                                    <SettingsPage />
                                 </ProtectedRoute>
                             }
                         />

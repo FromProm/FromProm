@@ -47,6 +47,37 @@ export const userApi = {
   // 닉네임 중복 확인
   checkNickname: (nickname: string) =>
     api.post('/api/users/check-nickname', { nickname }),
+
+  // 토큰 재발급
+  refreshToken: (refreshToken: string) =>
+    api.post('/api/users/refresh', { refreshToken }),
+
+  // 비밀번호 변경 (로그인 상태)
+  changePassword: (data: { oldPassword: string; newPassword: string }) =>
+    api.post('/api/users/change-password', data),
+
+  // 비밀번호 찾기 - 이메일 발송
+  forgotPassword: (email: string) =>
+    api.post('/api/users/forgot-password', { email }),
+
+  // 비밀번호 찾기 - 코드 확인 및 새 비밀번호 설정
+  confirmPassword: (data: { email: string; confirmationCode: string; newPassword: string }) =>
+    api.post('/api/users/confirm-password', data),
+
+  // 프로필 수정 (닉네임, 소개글, 프로필 이미지)
+  updateProfile: (data: { nickname?: string; bio?: string; profileImage?: string }) =>
+    api.patch('/api/users/profile', data),
+
+  // 회원 탈퇴
+  withdraw: () => api.delete('/api/users/withdraw'),
+
+  // 크레딧 충전
+  chargeCredit: (amount: number) =>
+    api.post('/api/users/credit/charge', { amount }),
+
+  // 크레딧 사용
+  useCredit: (data: { amount: number; description: string }) =>
+    api.post('/api/users/credit/use', data),
 };
 
 export default api;

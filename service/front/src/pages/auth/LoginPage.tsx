@@ -21,7 +21,6 @@ const LoginPage = () => {
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('idToken', idToken);
       
-      alert('로그인 성공!');
       navigate('/marketplace');
     } catch (error: any) {
       const message = error.response?.data || '로그인에 실패했습니다.';

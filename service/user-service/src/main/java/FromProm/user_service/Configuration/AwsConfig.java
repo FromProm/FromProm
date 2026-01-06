@@ -3,6 +3,7 @@ package FromProm.user_service.Configuration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -21,14 +22,12 @@ public class AwsConfig {
     @Value("${aws.credentials.secretKey}")
     private String secretKey;
 
-    // 1. AWS 인증 정보 객체 생성
     private StaticCredentialsProvider getCredentials() {
         return StaticCredentialsProvider.create(
                 AwsBasicCredentials.create(accessKey, secretKey)
         );
     }
 
-    // 2. Cognito 연결 클라이언트
     @Bean
     public CognitoIdentityProviderClient cognitoClient() {
         return CognitoIdentityProviderClient.builder()
@@ -37,8 +36,8 @@ public class AwsConfig {
                 .build();
     }
 
-    // 3. DynamoDB 연결 클라이언트 (기본)
     @Bean
+    @Primary // 우선순위를 부여하여 충돌 방지
     public DynamoDbClient dynamoDbClient() {
         return DynamoDbClient.builder()
                 .region(Region.of(region))
@@ -46,11 +45,10 @@ public class AwsConfig {
                 .build();
     }
 
-    // 4. DynamoDB Enhanced 클라이언트 (Entity 매핑용)
     @Bean
-    public DynamoDbEnhancedClient enhancedClient() {
+    public DynamoDbEnhancedClient dynamoDbEnhancedClient(DynamoDbClient dynamoDbClient) {
         return DynamoDbEnhancedClient.builder()
-                .dynamoDbClient(dynamoDbClient())
+                .dynamoDbClient(dynamoDbClient)
                 .build();
     }
 }

@@ -130,28 +130,33 @@ public class UserService {
         cognitoClient.globalSignOut(signOutRequest);
     }
 
-    //내 정보 찾기 (email, password, id)
+    //내 정보 찾기 (email, nickname, bio, credit)
     public UserResponse getMyInfo(String accessToken) {
-        // 1. AccessToken으로 Cognito 유저 정보 조회
+        // 1. AccessToken으로 Cognito에서 'sub'(고유ID)와 'email' 가져오기
         GetUserRequest getUserRequest = GetUserRequest.builder()
                 .accessToken(accessToken)
                 .build();
-
         GetUserResponse response = cognitoClient.getUser(getUserRequest);
 
-        // 2. 응답 데이터 중 필요한 값(email, nickname)만 추출
+        String userSub = response.userAttributes().stream()
+                .filter(attr -> attr.name().equals("sub"))
+                .findFirst().map(attr -> attr.value()).orElse("");
+
         String email = response.userAttributes().stream()
                 .filter(attr -> attr.name().equals("email"))
                 .findFirst().map(attr -> attr.value()).orElse("");
 
-        String nickname = response.userAttributes().stream()
-                .filter(attr -> attr.name().equals("nickname"))
-                .findFirst().map(attr -> attr.value()).orElse("");
+        // 2. DynamoDB에서 해당 유저의 전체 데이터(nickname, bio, credit 등) 조회
+        // PK 형식을 맞추기 위해 "USER#"를 붙여줍니다.
+        User user = userRepository.findUser("USER#" + userSub)
+                .orElseThrow(() -> new RuntimeException("DB에서 사용자 정보를 찾을 수 없습니다."));
 
+        // 3. 최종 응답 생성
         return UserResponse.builder()
-                .email(email)
-                .nickname(nickname)
-                .PK(response.username()) // 여기서 username은 Cognito의 sub(UUID)
+                .email(email)            // Cognito에서 가져온 값
+                .nickname(user.getNickname()) // DB에서 가져온 값
+                .bio(user.getBio())           // DB에서 가져온 값
+                .credit(user.getCredit())     // DB에서 가져온 값
                 .build();
     }
 

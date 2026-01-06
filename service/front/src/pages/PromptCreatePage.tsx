@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { categories } from '../services/dummyData';
 
 const PromptCreatePage = () => {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -24,6 +25,23 @@ const PromptCreatePage = () => {
   ]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 로그인 상태 확인
+  useEffect(() => {
+    let isMounted = true;
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      if (isMounted) {
+        alert('로그인이 필요한 서비스입니다.');
+        navigate('/auth/login');
+      }
+    } else {
+      setIsAuthenticated(true);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate]);
 
   const llmModels = [
     { name: 'GPT-4', versions: ['gpt-4-turbo-preview', 'gpt-4-0125-preview', 'gpt-4-1106-preview'] },
@@ -70,6 +88,15 @@ const PromptCreatePage = () => {
   };
 
   const selectedModel = llmModels.find(model => model.name === formData.llmModel);
+
+  // 인증 확인 중이면 로딩 표시
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white flex items-center justify-center">
+        <div className="text-gray-600">로딩 중...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">

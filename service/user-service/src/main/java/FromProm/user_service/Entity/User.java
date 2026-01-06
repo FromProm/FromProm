@@ -13,7 +13,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 public class User {
     private String PK;   // Cognito의 sub (USER#id)
     private String SK;   // PROFILE
-    private String TYPE;
+    private String type;
     private String email;
     private String nickname;
     private int credit;
@@ -30,8 +30,8 @@ public class User {
     @DynamoDbAttribute("SK")
     public String getSK() { return SK; }
 
-    @DynamoDbAttribute("TYPE")
-    public String getType() { return TYPE; }
+    @DynamoDbAttribute("type")
+    public String getType() { return type; }
 
     // 닉네임 중복 체크를 위한 GSI 설정 (핵심 부분!)
     @DynamoDbSecondaryPartitionKey(indexNames = "nickname-index")

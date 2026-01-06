@@ -58,7 +58,7 @@ public class UserService {
         User newUser = User.builder()
                 .PK("USER#" + userSub)        // 자동 생성: PK 형식 지정
                 .SK("PROFILE")                // 자동 생성: 고정값
-                .TYPE("USER")
+                .type("USER")
                 .email(request.getEmail())    // 입력값
                 .nickname(request.getNickname()) // 입력값
                 .credit(0)                 // 기본값 0
@@ -157,7 +157,7 @@ public class UserService {
                 .nickname(user.getNickname()) // DB에서 가져온 값
                 .bio(user.getBio())           // DB에서 가져온 값
                 .credit(user.getCredit())     // DB에서 가져온 값
-                .PK(user.getPK())
+                .PK(user.getPK())             // DB에서 가져온 값
                 .build();
     }
 

@@ -201,7 +201,7 @@ const DashboardPage = () => {
                 </Link>
 
                 <Link
-                  to="/credits"
+                  to="/credit"
                   className="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors group"
                 >
                   <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">

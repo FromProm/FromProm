@@ -4,15 +4,12 @@ import { motion } from 'framer-motion';
 import { dummyPrompts, categories } from '../services/dummyData';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
-import { useAuthStore } from '../store/authStore';
 
 const MarketplacePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const { addToCart, isInCart, getItemCount } = useCartStore();
+  const { addToCart, isInCart } = useCartStore();
   const { isPurchased } = usePurchaseStore();
-  const { isAuthenticated, logout } = useAuthStore();
-  const cartItemCount = getItemCount();
 
   const handleAddToCart = (prompt: any, e: React.MouseEvent) => {
     e.stopPropagation(); // 카드 클릭 이벤트 방지
@@ -38,116 +35,6 @@ const MarketplacePage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
-      {/* 헤더 */}
-      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-3">
-              <div className="w-13 h-14 rounded-md overflow-hidden flex items-center justify-center">
-                {/* 이미지가 있으면 이미지를 사용하고, 없으면 기본 아이콘 사용 */}
-                <img
-                  src="/logo.png"
-                  alt="FromProm Logo"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    // 이미지 로드 실패 시 기본 아이콘으로 대체
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling.style.display = 'flex';
-                  }}
-                />
-                <div className="w-10 h-10 bg-blue-600 rounded-md flex items-center justify-center" style={{ display: 'none' }}>
-                  <span className="text-white font-bold text-base">F</span>
-                </div>
-              </div>
-              <span className="text-xl font-semibold text-gray-900 tracking-tight">FromProm</span>
-            </Link>
-
-            <div className="flex items-center space-x-6">
-              {/* 로그인한 사용자용 메뉴 */}
-              {isAuthenticated ? (
-                <>
-                  <Link
-                    to="/dashboard/purchased"
-                    className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors"
-                  >
-                    MyPage
-                  </Link>
-                  <Link
-                    to="/cart"
-                    className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6m0 0h15.5M17 21a2 2 0 100-4 2 2 0 000 4zM9 21a2 2 0 100-4 2 2 0 000 4z" />
-                    </svg>
-                    {cartItemCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
-                        {cartItemCount}
-                      </span>
-                    )}
-                  </Link>
-                  <Link
-                    to="/credits"
-                    className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors"
-                  >
-                    크레딧 충전
-                  </Link>
-                  <Link
-                    to="/prompt/create"
-                    className="border border-blue-600 text-blue-600 font-medium px-4 py-2 rounded-md text-sm hover:bg-blue-50 transition-colors"
-                  >
-                    프롬프트 등록
-                  </Link>
-                  <button
-                    onClick={() => {
-                      logout();
-                      window.location.href = '/';
-                    }}
-                    className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors"
-                  >
-                    로그아웃
-                  </button>
-                </>
-              ) : (
-                /* 로그인하지 않은 사용자용 메뉴 */
-                <>
-                  <Link
-                    to="/cart"
-                    className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5-6m0 0h15.5M17 21a2 2 0 100-4 2 2 0 000 4zM9 21a2 2 0 100-4 2 2 0 000 4z" />
-                    </svg>
-                    {cartItemCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
-                        {cartItemCount}
-                      </span>
-                    )}
-                  </Link>
-                  <Link
-                    to="/credits"
-                    className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors"
-                  >
-                    크레딧 충전
-                  </Link>
-                  <Link
-                    to="/prompt/create"
-                    className="border border-blue-600 text-blue-600 font-medium px-4 py-2 rounded-md text-sm hover:bg-blue-50 transition-colors"
-                  >
-                    프롬프트 등록
-                  </Link>
-                  <Link
-                    to="/auth/login"
-                    className="bg-blue-600 text-white font-medium px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
-                  >
-                    로그인
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* 메인 콘텐츠 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 페이지 헤더 */}

@@ -1,12 +1,27 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
 import { usePurchaseStore } from '../../store/purchaseStore';
 import { useCartStore } from '../../store/cartStore';
+import { userApi } from '../../services/api';
 
 const DashboardPage = () => {
-  const { user } = useAuthStore();
+  const [nickname, setNickname] = useState<string>('');
   const { getPurchasedPrompts } = usePurchaseStore();
   const { getItemCount } = useCartStore();
+
+  // 사용자 정보 가져오기
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await userApi.getMe();
+        setNickname(response.data.nickname || '사용자');
+      } catch (error) {
+        console.error('Failed to fetch user info:', error);
+        setNickname('사용자');
+      }
+    };
+    fetchUserInfo();
+  }, []);
   
   const purchasedPrompts = getPurchasedPrompts();
   const cartItemCount = getItemCount();
@@ -37,7 +52,7 @@ const DashboardPage = () => {
         {/* 헤더 */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">대시보드</h1>
-          <p className="text-gray-600">안녕하세요, {user?.name}님! 프롬프트 활동을 한눈에 확인해보세요.</p>
+          <p className="text-gray-600">안녕하세요, {nickname}님! 프롬프트 활동을 한눈에 확인해보세요.</p>
         </div>
 
         {/* 통계 카드 */}

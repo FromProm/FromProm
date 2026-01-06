@@ -45,17 +45,17 @@ function App() {
         <QueryClientProvider client={queryClient}>
             <Router>
                 <Routes>
-                    {/* 공개 라우트 */}
+                    {/* 공개 라우트 - Header 없음 */}
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/auth/login" element={<LoginPage />} />
                     <Route path="/auth/register" element={<RegisterPage />} />
-                    <Route path="/marketplace" element={<MarketplacePage />} />
                     <Route path="/cart" element={<CartPage />} />
-                    <Route path="/prompt/create" element={<PromptCreatePage />} />
-                    <Route path="/credits" element={<CreditPage />} />
 
-                    {/* 보호된 라우트 */}
+                    {/* Header가 있는 라우트 */}
                     <Route element={<Layout />}>
+                        <Route path="/marketplace" element={<MarketplacePage />} />
+                        <Route path="/prompt/create" element={<PromptCreatePage />} />
+                        <Route path="/credit" element={<CreditPage />} />
                         <Route path="/prompt/:id" element={<PromptDetailPage />} />
                         <Route
                             path="/purchase/:id"

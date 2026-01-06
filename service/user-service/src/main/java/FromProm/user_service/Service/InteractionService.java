@@ -24,7 +24,7 @@ public class InteractionService {
     private final String TABLE_NAME = "FromProm_Table"; // 실제 테이블명으로 변경
     private final CognitoIdentityProviderClient cognitoClient;
 
-    public void addLike(String userId, String promptId, String promptTitle) {
+    public void addLike(String userId, String promptId) {
         String now = OffsetDateTime.now(ZoneOffset.UTC)
                 .format(DateTimeFormatter.ISO_INSTANT);
 
@@ -36,7 +36,7 @@ public class InteractionService {
         likeItem.put("LIKE_INDEX_SK", AttributeValue.builder().s(now).build());
         likeItem.put("type", AttributeValue.builder().s("LIKE").build());
         likeItem.put("targetPromptId", AttributeValue.builder().s(promptId).build());
-        likeItem.put("title", AttributeValue.builder().s(promptTitle).build());
+        //likeItem.put("title", AttributeValue.builder().s(promptTitle).build());
         likeItem.put("createdAt", AttributeValue.builder().s(now).build());
 
         // 2. 트랜잭션 실행
@@ -109,7 +109,7 @@ public class InteractionService {
     }
 
     // 북마크 등록
-    public void addBookmark(String userId, String promptId, String promptTitle) {
+    public void addBookmark(String userId, String promptId) {
         String now = OffsetDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
 
         Map<String, AttributeValue> bookmarkItem = new HashMap<>();
@@ -119,7 +119,7 @@ public class InteractionService {
         bookmarkItem.put("BOOKMARK_INDEX_SK", AttributeValue.builder().s(now).build());
         bookmarkItem.put("type", AttributeValue.builder().s("BOOKMARK").build());
         bookmarkItem.put("targetPromptId", AttributeValue.builder().s(promptId).build());
-        bookmarkItem.put("title", AttributeValue.builder().s(promptTitle).build());
+        //bookmarkItem.put("title", AttributeValue.builder().s(promptTitle).build());
         bookmarkItem.put("createdAt", AttributeValue.builder().s(now).build());
 
         dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
@@ -128,7 +128,7 @@ public class InteractionService {
                                 .put(Put.builder()
                                         .tableName(TABLE_NAME)
                                         .item(bookmarkItem)
-                                        .conditionExpression("attribute_not_exists(PK)")
+                                        .conditionExpression("attribute_not_exists(PK)") // 중복 북마크 방지
                                         .build())
                                 .build(),
                         TransactWriteItem.builder()

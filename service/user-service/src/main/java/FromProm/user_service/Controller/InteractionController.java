@@ -17,15 +17,12 @@ public class InteractionController {
     @PostMapping("/{promptId}/like")
     public ResponseEntity<String> addLike(
             @PathVariable String promptId,
-            @RequestParam String title,
             @RequestHeader("Authorization") String authHeader) { // Authorization 헤더 사용
 
         // 1. 토큰에서 실제 유저 ID 추출
         String userId = likeService.getUserIdFromToken(authHeader);
-
         // 2. 추출된 ID로 좋아요 로직 실행
-        likeService.addLike(userId, promptId, title);
-
+        likeService.addLike(userId, promptId); // ID만 넘김
         return ResponseEntity.ok("좋아요 성공! (User: " + userId + ")");
     }
 
@@ -47,11 +44,10 @@ public class InteractionController {
     @PostMapping("/{promptId}/bookmark")
     public ResponseEntity<String> addBookmark(
             @PathVariable String promptId,
-            @RequestParam String title,
             @RequestHeader("Authorization") String authHeader) {
 
         String userId = likeService.getUserIdFromToken(authHeader);
-        likeService.addBookmark(userId, promptId, title);
+        likeService.addBookmark(userId, promptId);
         return ResponseEntity.ok("북마크 저장 완료 (User: " + userId + ")");
     }
 
@@ -67,19 +63,19 @@ public class InteractionController {
     }
 
     @PostMapping("/{promptId}/comments")
-    public ResponseEntity<String> addComment(@PathVariable String promptId, @RequestBody CommentRequest req, @RequestHeader("X-USER-SUB") String userId) {
+    public ResponseEntity<String> addComment(@PathVariable String promptId, @RequestBody CommentRequest req, @RequestHeader("Authorization") String userId) {
         likeService.addComment(userId, "MyNickname", promptId, req.getContent());
         return ResponseEntity.ok("댓글 등록 완료");
     }
 
     @PatchMapping("/{promptId}/comments")
-    public ResponseEntity<String> updateComment(@PathVariable String promptId, @RequestParam String commentSk, @RequestBody CommentRequest req, @RequestHeader("X-USER-SUB") String userId) {
+    public ResponseEntity<String> updateComment(@PathVariable String promptId, @RequestParam String commentSk, @RequestBody CommentRequest req, @RequestHeader("Authorization") String userId) {
         likeService.updateComment(promptId, commentSk, userId, req.getContent());
         return ResponseEntity.ok("댓글 수정 완료");
     }
 
     @DeleteMapping("/{promptId}/comments")
-    public ResponseEntity<String> deleteComment(@PathVariable String promptId, @RequestParam String commentSk, @RequestHeader("X-USER-SUB") String userId) {
+    public ResponseEntity<String> deleteComment(@PathVariable String promptId, @RequestParam String commentSk, @RequestHeader("Authorization") String userId) {
         likeService.deleteComment(promptId, commentSk, userId);
         return ResponseEntity.ok("댓글 삭제 완료");
     }

@@ -157,6 +157,7 @@ public class UserService {
                 .nickname(user.getNickname()) // DB에서 가져온 값
                 .bio(user.getBio())           // DB에서 가져온 값
                 .credit(user.getCredit())     // DB에서 가져온 값
+                .PK(user.getPK())             // DB에서 가져온 값
                 .build();
     }
 

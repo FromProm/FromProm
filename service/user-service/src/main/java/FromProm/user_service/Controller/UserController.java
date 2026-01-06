@@ -167,8 +167,8 @@ public class UserController {
             String accessToken = bearerToken.substring(7).trim();
             // 2. accessToken으로 Cognito에서 사용자 정보 조회
             UserResponse userInfo = userService.getMyInfo(accessToken);
-            // 3. DynamoDB PK 형식으로 변환 (USER#uuid)
-            String userSub = "USER#" + userInfo.getPK();
+            // 3. PK는 이미 USER#uuid 형식이므로 그대로 사용
+            String userSub = userInfo.getPK();
             // 4. 프로필 업데이트 수행
             userService.updateProfile(userSub, request);
             return ResponseEntity.ok("프로필이 수정되었습니다.");
@@ -185,8 +185,8 @@ public class UserController {
             String accessToken = bearerToken.substring(7).trim();
             // 2. accessToken으로 Cognito에서 사용자 정보 조회
             UserResponse userInfo = userService.getMyInfo(accessToken);
-            // 3. DynamoDB PK 형식으로 변환 (USER#uuid)
-            String userSub = "USER#" + userInfo.getPK();
+            // 3. PK는 이미 USER#uuid 형식이므로 그대로 사용
+            String userSub = userInfo.getPK();
             // 4. 회원 탈퇴 수행 (DynamoDB + Cognito 삭제)
             userService.withdraw(userSub);
             return ResponseEntity.ok("회원 탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사합니다.");
@@ -206,8 +206,8 @@ public class UserController {
             String accessToken = bearerToken.substring(7).trim();
             // 2. accessToken으로 Cognito에서 사용자 정보 조회
             UserResponse userInfo = userService.getMyInfo(accessToken);
-            // 3. DynamoDB PK 형식으로 변환 (USER#uuid)
-            String userSub = "USER#" + userInfo.getPK();
+            // 3. PK는 이미 USER#uuid 형식이므로 그대로 사용
+            String userSub = userInfo.getPK();
             // 4. 크레딧 충전 수행
             userService.chargeCredit(userSub, request.getAmount());
             return ResponseEntity.ok(request.getAmount() + "원이 성공적으로 충전되었습니다.");
@@ -227,8 +227,8 @@ public class UserController {
             String accessToken = bearerToken.substring(7).trim();
             // 2. accessToken으로 Cognito에서 사용자 정보 조회
             UserResponse userInfo = userService.getMyInfo(accessToken);
-            // 3. DynamoDB PK 형식으로 변환 (USER#uuid)
-            String userSub = "USER#" + userInfo.getPK();
+            // 3. PK는 이미 USER#uuid 형식이므로 그대로 사용
+            String userSub = userInfo.getPK();
             // 4. 크레딧 사용 수행
             userService.useCredit(userSub, request);
             return ResponseEntity.ok(request.getAmount() + "원이 사용되었습니다.");

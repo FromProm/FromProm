@@ -6,6 +6,13 @@ import { userApi } from '../../services/api';
 
 const DashboardPage = () => {
   const [nickname, setNickname] = useState<string>('');
+  const [bio, setBio] = useState<string>('');
+  const [credit, setCredit] = useState<number>(0);
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [editBio, setEditBio] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+  
   const { getPurchasedPrompts } = usePurchaseStore();
   const { getItemCount } = useCartStore();
 
@@ -15,6 +22,9 @@ const DashboardPage = () => {
       try {
         const response = await userApi.getMe();
         setNickname(response.data.nickname || '사용자');
+        setBio(response.data.bio || '');
+        setCredit(response.data.credit || 0);
+        setEditBio(response.data.bio || '');
       } catch (error) {
         console.error('Failed to fetch user info:', error);
         setNickname('사용자');
@@ -22,6 +32,28 @@ const DashboardPage = () => {
     };
     fetchUserInfo();
   }, []);
+
+  // 자기소개 저장
+  const handleSaveBio = async () => {
+    setIsSaving(true);
+    setMessage({ type: '', text: '' });
+    try {
+      await userApi.updateProfile({ bio: editBio });
+      setBio(editBio);
+      setIsEditingBio(false);
+      setMessage({ type: 'success', text: '자기소개가 저장되었습니다.' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.response?.data?.message || '저장에 실패했습니다.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditBio(bio);
+    setIsEditingBio(false);
+  };
   
   const purchasedPrompts = getPurchasedPrompts();
   const cartItemCount = getItemCount();
@@ -55,6 +87,80 @@ const DashboardPage = () => {
           <p className="text-gray-600">안녕하세요, {nickname}님! 프롬프트 활동을 한눈에 확인해보세요.</p>
         </div>
 
+        {/* 메시지 표시 */}
+        {message.text && (
+          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {message.text}
+          </div>
+        )}
+
+        {/* 프로필 및 크레딧 카드 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* 자기소개 카드 */}
+          <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">자기소개</h3>
+              {!isEditingBio && (
+                <button
+                  onClick={() => setIsEditingBio(true)}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  수정
+                </button>
+              )}
+            </div>
+            {isEditingBio ? (
+              <div>
+                <textarea
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value)}
+                  placeholder="자기소개를 입력하세요..."
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
+                  rows={3}
+                  maxLength={200}
+                />
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-xs text-gray-500">{editBio.length}/200</span>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={handleCancelEdit}
+                      className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={handleSaveBio}
+                      disabled={isSaving}
+                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {isSaving ? '저장 중...' : '저장'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-600">
+                {bio || '아직 자기소개가 없습니다. 수정 버튼을 눌러 자기소개를 작성해보세요!'}
+              </p>
+            )}
+          </div>
+
+          {/* 크레딧 카드 */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white shadow-lg shadow-blue-500/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-medium mb-1">보유 크레딧</h2>
+                <p className="text-3xl font-bold">{credit.toLocaleString()}P</p>
+              </div>
+              <Link
+                to="/credit"
+                className="bg-white/20 hover:bg-white/30 text-white font-medium px-4 py-2 rounded-lg transition-colors"
+              >
+                충전하기
+              </Link>
+            </div>
+          </div>
+        </div>
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* 구매한 프롬프트 수 */}

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { userApi } from '../services/api';
 
 const CreditPage = () => {
   const [selectedAmount, setSelectedAmount] = useState(1000);
@@ -8,9 +9,23 @@ const CreditPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [currentCredits, setCurrentCredits] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 현재 사용자 크레딧 (더미 데이터)
-  const [currentCredits, setCurrentCredits] = useState(2450);
+  // 사용자 크레딧 정보 가져오기
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const response = await userApi.getMe();
+        setCurrentCredits(response.data.credit || 0);
+      } catch (error) {
+        console.error('Failed to fetch user info:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUserInfo();
+  }, []);
 
   // 미리 정의된 충전 금액 옵션
   const creditPackages = [
@@ -24,15 +39,22 @@ const CreditPage = () => {
   const handlePurchase = async () => {
     setIsProcessing(true);
     
-    // 실제 결제 처리 시뮬레이션
-    setTimeout(() => {
+    try {
       const finalAmount = selectedAmount === 0 ? parseInt(customAmount) : selectedAmount;
       const bonus = creditPackages.find(pkg => pkg.credits === finalAmount)?.bonus || 0;
+      const totalAmount = finalAmount + bonus;
       
-      setCurrentCredits(prev => prev + finalAmount + bonus);
-      setIsProcessing(false);
+      // 실제 API 호출
+      await userApi.chargeCredit(totalAmount);
+      
+      // 성공 시 크레딧 업데이트
+      setCurrentCredits(prev => prev + totalAmount);
       setShowSuccessModal(true);
-    }, 2000);
+    } catch (error: any) {
+      alert(error.response?.data?.message || '크레딧 충전에 실패했습니다.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const getPrice = (credits: number) => {
@@ -44,6 +66,14 @@ const CreditPage = () => {
     const pkg = creditPackages.find(p => p.credits === credits);
     return pkg ? pkg.bonus : 0;
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white flex items-center justify-center">
+        <div className="text-gray-600">로딩 중...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">

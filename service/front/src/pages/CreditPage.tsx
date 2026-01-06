@@ -49,7 +49,7 @@ const CreditPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
       {/* 헤더 */}
       <header className="border-b border-gray-200 bg-white/80 backdrop-blur-xl sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link to="/marketplace" className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-blue-900 rounded-md flex items-center justify-center">

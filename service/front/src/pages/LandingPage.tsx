@@ -15,7 +15,7 @@ const LandingPage = () => {
 
       {/* 헤더 */}
       <header className="relative z-10 border-b border-blue-900/30 bg-blue-900/20 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <motion.div
               className="flex items-center space-x-3"
@@ -90,7 +90,7 @@ const LandingPage = () => {
 
       {/* 메인 콘텐츠 */}
       <main className="relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+        <div className="w-full px-4 sm:px-6 lg:px-8 pt-20 pb-16">
           {/* 히어로 섹션 */}
           <div className="text-center max-w-4xl mx-auto">
             <motion.div
@@ -208,7 +208,7 @@ const LandingPage = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.8 }}
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-16">
             <div className="text-center mb-12">
               <h2 className="text-2xl font-bold text-white mb-4">
                 Trusted by leading AI teams

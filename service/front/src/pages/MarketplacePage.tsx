@@ -36,17 +36,17 @@ const MarketplacePage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
       {/* 메인 콘텐츠 */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* 페이지 헤더 */}
-        <div className="mb-8">
+        <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">프롬프트 마켓플레이스</h1>
           <p className="text-gray-600">검증된 고품질 AI 프롬프트를 찾아보세요</p>
         </div>
 
         {/* 검색 및 필터 */}
-        <div className="mb-8 space-y-4">
+        <div className="mb-8 space-y-4 flex flex-col items-center">
           {/* 검색바 */}
-          <div className="relative max-w-md">
+          <div className="relative w-full max-w-md">
             <input
               type="text"
               placeholder="프롬프트 검색..."
@@ -62,7 +62,7 @@ const MarketplacePage = () => {
           </div>
 
           {/* 카테고리 필터 */}
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
             {categories.map((category) => (
               <button
                 key={category}

@@ -1,16 +1,22 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
+import { useCartStore } from '../store/cartStore';
+import { usePurchaseStore } from '../store/purchaseStore';
 import LightRays from '../components/LightRays';
 import SplitText from '../components/SplitText';
 
 const LandingPage = () => {
   const { isAuthenticated } = useAuthStore();
+  const { clearCart } = useCartStore();
+  const { clearPurchases } = usePurchaseStore();
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('idToken');
+    clearCart();
+    clearPurchases();
     window.location.reload();
   };
 

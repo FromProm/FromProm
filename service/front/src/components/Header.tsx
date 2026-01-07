@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
+import { usePurchaseStore } from '../store/purchaseStore';
 import { userApi } from '../services/api';
 
 const Header = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [nickname, setNickname] = useState<string>('');
-  const { getItemCount } = useCartStore();
+  const { getItemCount, clearCart } = useCartStore();
+  const { clearPurchases } = usePurchaseStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const cartItemCount = getItemCount();
 
   // 로그인 상태 확인 및 사용자 정보 가져오기
@@ -36,9 +39,17 @@ const Header = () => {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('idToken');
+      clearCart();
+      clearPurchases();
       setIsAuthenticated(false);
       setShowMenu(false);
-      navigate('/');
+      
+      // 현재 페이지가 마켓플레이스면 마켓플레이스에 머무르고, 아니면 랜딩페이지로
+      if (location.pathname === '/marketplace' || location.pathname.startsWith('/prompt/')) {
+        navigate('/marketplace');
+      } else {
+        navigate('/');
+      }
     }
   };
 

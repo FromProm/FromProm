@@ -36,11 +36,11 @@ class Orchestrator:
         }
     
     async def run(self, job_request: JobCreateRequest) -> EvaluationResult:
-        """전체 파이프라인 실행"""
+        """전체 파이프라인 실행 (병렬 처리)"""
         logger.info(f"Starting pipeline for prompt type: {job_request.prompt_type}")
         
         try:
-            # 1. 프롬프트 실행 단계
+            # [1단계] 프롬프트 실행 - 출력 생성 (선행 필수)
             execution_results = await self.stages['run'].execute(
                 job_request.prompt,
                 job_request.example_inputs,
@@ -51,56 +51,98 @@ class Orchestrator:
             # 실행 결과 보존 (S3 저장용)
             self._last_execution_results = execution_results
             
-            # 2. 토큰 사용량 계산
-            token_score = await self.stages['token'].execute(
-                job_request.prompt,
-                execution_results
-            )
+            # [2단계] 임베딩 + 독립 지표들 병렬 실행
+            # 임베딩은 일관성 계산에 필요하므로 함께 실행
+            parallel_tasks = []
+            task_names = []
             
-            # 3. 정보 밀도 계산 (TYPE_A, TYPE_B_TEXT만)
-            density_score = None
+            # 토큰 계산 (항상)
+            parallel_tasks.append(
+                self.stages['token'].execute(job_request.prompt, execution_results)
+            )
+            task_names.append('token')
+            
+            # 정보 밀도 (TYPE_A, TYPE_B_TEXT)
             if job_request.prompt_type in [PromptType.TYPE_A, PromptType.TYPE_B_TEXT]:
-                density_score = await self.stages['density'].execute(execution_results)
+                parallel_tasks.append(
+                    self.stages['density'].execute(execution_results)
+                )
+                task_names.append('density')
             
-            # 4. 임베딩 생성 (일관성, 관련성, 환각 탐지용)
-            embeddings = await self.stages['embed'].execute(
-                execution_results,
-                job_request.example_inputs,
-                job_request.prompt_type
+            # 임베딩 생성 (일관성 계산용)
+            parallel_tasks.append(
+                self.stages['embed'].execute(
+                    execution_results,
+                    job_request.example_inputs,
+                    job_request.prompt_type
+                )
             )
+            task_names.append('embed')
             
-            # 5. 일관성 계산 (TYPE_A, TYPE_B_IMAGE)
+            # 정확도 계산 (모든 타입)
+            parallel_tasks.append(
+                self.stages['relevance'].execute(
+                    job_request.prompt,
+                    job_request.example_inputs,
+                    execution_results,
+                    job_request.prompt_type
+                )
+            )
+            task_names.append('relevance')
+            
+            # 환각 탐지 (TYPE_A만)
+            if job_request.prompt_type == PromptType.TYPE_A:
+                parallel_tasks.append(
+                    self.stages['judge'].execute(
+                        job_request.example_inputs,
+                        execution_results
+                    )
+                )
+                task_names.append('judge')
+            
+            # 모델별 편차 (모든 타입)
+            parallel_tasks.append(
+                self.stages['variance'].execute(
+                    job_request.prompt,
+                    job_request.example_inputs,
+                    job_request.prompt_type,
+                    job_request.recommended_model
+                )
+            )
+            task_names.append('variance')
+            
+            # 병렬 실행
+            logger.info(f"Running {len(parallel_tasks)} tasks in parallel: {task_names}")
+            parallel_results = await asyncio.gather(*parallel_tasks, return_exceptions=True)
+            
+            # 결과 매핑
+            results_map = {}
+            for name, result in zip(task_names, parallel_results):
+                if isinstance(result, Exception):
+                    logger.error(f"Task {name} failed: {str(result)}")
+                    results_map[name] = None
+                else:
+                    results_map[name] = result
+            
+            # 결과 추출
+            token_score = results_map.get('token')
+            density_score = results_map.get('density')
+            embeddings = results_map.get('embed')
+            relevance_score = results_map.get('relevance')
+            hallucination_score = results_map.get('judge')
+            variance_score = results_map.get('variance')
+            
+            # [3단계] 일관성 계산 (임베딩 완료 후)
             consistency_score = None
             if job_request.prompt_type in [PromptType.TYPE_A, PromptType.TYPE_B_IMAGE]:
-                consistency_score = await self.stages['consistency'].execute(
-                    embeddings['outputs']
-                )
+                if embeddings and 'outputs' in embeddings:
+                    consistency_score = await self.stages['consistency'].execute(
+                        embeddings['outputs']
+                    )
+                else:
+                    logger.warning("Embeddings not available for consistency calculation")
             
-            # 6. 정확도 계산 (모든 타입) - AI 기반 조건 준수 평가
-            relevance_score = await self.stages['relevance'].execute(
-                job_request.prompt,
-                job_request.example_inputs,
-                execution_results,
-                job_request.prompt_type
-            )
-            
-            # 7. 환각 탐지 (TYPE_A만)
-            hallucination_score = None
-            if job_request.prompt_type == PromptType.TYPE_A:
-                hallucination_score = await self.stages['judge'].execute(
-                    job_request.example_inputs,
-                    execution_results
-                )
-            
-            # 8. 모델별 편차 (모든 타입)
-            variance_score = await self.stages['variance'].execute(
-                job_request.prompt,
-                job_request.example_inputs,
-                job_request.prompt_type,
-                job_request.recommended_model
-            )
-            
-            # 9. 최종 점수 집계
+            # [4단계] 최종 점수 집계
             final_result = await self.stages['aggregate'].execute(
                 job_request.prompt_type,
                 {
@@ -116,7 +158,7 @@ class Orchestrator:
             # 실제 AI 출력 결과 포함
             final_result.execution_results = execution_results
             
-            logger.info("Pipeline completed successfully")
+            logger.info("Pipeline completed successfully (parallel execution)")
             return final_result
             
         except Exception as e:

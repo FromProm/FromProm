@@ -1,133 +1,159 @@
-# Prompt Evaluation System
+# Prompt Evaluation API
 
-프롬프트 품질을 종합적으로 평가하는 FastAPI 기반 시스템입니다.
+AI 프롬프트 평가를 위한 고성능 병렬 처리 API
 
-## 🚀 **빠른 시작**
+## 🚀 주요 기능
 
-### 1. 저장소 클론
+- **병렬 파이프라인**: 6개 지표 동시 계산
+- **환각 탐지**: MCP 기반 실시간 사실 검증
+- **다중 모델 지원**: Claude, Cohere, Nova 임베딩
+- **배치 최적화**: AI Agent + MCP 병렬 호출
+
+## 📊 성능
+
+- **기존**: 10분 (순차 처리)
+- **현재**: 2분 40초 (병렬 최적화)
+- **개선율**: 73% 단축
+
+## 🛠️ 설치 및 실행
+
+### 1. 환경 설정
+
 ```bash
-git clone https://github.com/your-username/prompt-eval.git
-cd prompt-eval
-```
-
-### 2. 가상환경 생성 및 활성화
-```bash
-# 가상환경 생성
+# Python 3.10+ 필요
 python -m venv venv
 
-# 활성화 (Windows)
+# Windows
 venv\Scripts\activate
 
-# 활성화 (Mac/Linux)
+# Mac/Linux  
 source venv/bin/activate
 ```
 
-### 3. 의존성 설치
+### 2. 의존성 설치
+
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
-### 4. 환경 변수 설정
-```bash
-# .env 파일 생성
-cp .env.example .env
+### 3. 환경 변수 설정
 
-# .env 파일 편집
-STORAGE_BACKEND=sqlite
-MOCK_MODE=true
+`.env.example`을 복사해서 `.env` 파일 생성:
+```bash
+cp .env.example .env
+```
+
+`.env` 파일에서 필수 값들 설정:
+```env
+# AWS Bedrock 사용을 위한 필수 설정
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your_aws_access_key_here
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key_here
+
+# 개발/테스트시에는 Mock 모드 사용 가능
+MOCK_MODE=false  # true로 설정하면 AWS 없이 테스트 가능
+```
+
+**AWS 설정 방법**:
+1. AWS 콘솔에서 IAM 사용자 생성
+2. Bedrock 서비스 권한 부여
+3. Access Key 생성 후 `.env`에 입력
+
+### 4. MCP 서버 설치 (선택사항)
+
+```bash
+# uv 설치 (https://docs.astral.sh/uv/getting-started/installation/)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# MCP 서버들 설치
+uvx wikipedia-mcp
+uvx duckduckgo-mcp-server
+uvx arxiv-mcp-server  
+uvx mcp-server-fetch
 ```
 
 ### 5. 서버 실행
+
 ```bash
 python run.py
 ```
 
-### 6. API 문서 확인
-브라우저에서 http://localhost:8000/docs 접속
+## 📝 API 사용법
 
-## 📊 **주요 기능**
+### 평가 작업 생성
 
-### 평가 지표
-- **토큰 사용량**: 고정 프롬프트의 효율성
-- **정보 밀도**: n-gram 기반 중복률 분석
-- **응답 일관성**: Centroid 기반 벡터 유사도
-- **관련성**: 입력-출력 의미적 연관성
-- **환각 탐지**: AI Judge 기반 사실성 검증
-- **모델 편차**: 버전/모델 간 성능 차이
-
-### 프롬프트 타입
-- **TYPE_A (Information)**: 정답/사실/근거 요구 프롬프트
-- **TYPE_B_TEXT (Creative Text)**: 창작/상상/스토리 텍스트
-- **TYPE_B_IMAGE (Creative Image)**: 이미지 관련 창작
-
-## ⚙️ **설정 옵션**
-
-### 저장소 백엔드
-```env
-# 로컬 개발
-STORAGE_BACKEND=sqlite
-
-# 단순 프로덕션
-STORAGE_BACKEND=s3
-
-# 고성능 프로덕션
-STORAGE_BACKEND=dynamodb_s3
-```
-
-### AI 모드
-```env
-# 테스트/개발 (무료)
-MOCK_MODE=true
-
-# 실제 AWS Bedrock 사용
-MOCK_MODE=false
-```
-
-## 🧪 **API 사용 예시**
-
-### 작업 생성
 ```bash
-curl -X POST "http://localhost:8000/api/v1/jobs" \
+curl -X POST "http://localhost:8000/jobs" \
   -H "Content-Type: application/json" \
   -d '{
-    "prompt": "다음 질문에 답하세요: {{}}",
+    "prompt": "다음 질문에 대해 정확하고 상세한 답변을 제공해주세요.",
     "example_inputs": [
-      {"content": "파리의 인구는?", "input_type": "text"},
-      {"content": "지구의 나이는?", "input_type": "text"},
-      {"content": "광속은 얼마인가?", "input_type": "text"}
+      {"content": "OpenAI가 GPT-4를 언제 발표했나요?"},
+      {"content": "지구에서 태양까지의 거리는?"},
+      {"content": "물의 화학식은 무엇인가요?"}
     ],
-    "prompt_type": "type_a",
+    "prompt_type": "TYPE_A",
     "repeat_count": 5
   }'
 ```
 
-## 🏗️ **아키텍처**
+### 결과 조회
 
-```
-app/
-├── main.py                 # FastAPI 엔트리포인트
-├── api/routes/            # API 라우터
-├── core/                  # 핵심 설정/스키마
-├── orchestrator/          # 파이프라인 오케스트레이터
-│   ├── pipeline.py        # 메인 파이프라인
-│   └── stages/           # 각 평가 단계
-├── adapters/             # 외부 서비스 어댑터
-│   ├── runner/           # 모델 실행
-│   ├── embedder/         # 임베딩 생성
-│   └── judge/            # 환각 탐지
-├── storage/              # 데이터 저장
-└── cache/                # 캐싱
+```bash
+curl "http://localhost:8000/jobs/{job_id}"
 ```
 
-## 🤝 **기여하기**
+## 🔧 아키텍처
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### 병렬 파이프라인
+```
+출력 생성 (15개 LLM 호출 병렬)
+    ↓
+6개 지표 동시 계산
+├── 토큰 수 계산
+├── 정보 밀도 
+├── 임베딩 (Cohere+Nova 병렬)
+├── 정확도 계산  
+├── 환각탐지 (MCP 배치 병렬)
+└── 모델 편차
+```
 
-## 📄 **라이선스**
+### 환각탐지 최적화
+- **배치 MCP 선택**: AI Agent 1번 호출로 모든 claim 처리
+- **병렬 검증**: 40개 claim 동시 검증
+- **캐싱**: 중복 claim 재검증 방지
 
-This project is licensed under the MIT License."# test-ai" 
-"# test-ai" 
+## 📋 지표 설명
+
+1. **토큰 사용량**: tiktoken 기반 토큰 수 계산
+2. **정보 밀도**: n-gram 기반 정보량 측정  
+3. **일관성**: 임베딩 유사도 기반 응답 일관성
+4. **정확도**: AI 기반 프롬프트 요구사항 충족도
+5. **환각탐지**: MCP 기반 사실 검증 (0-100점)
+6. **모델 편차**: 다중 모델 간 응답 차이
+
+## 🌐 MCP 서버
+
+환각탐지에 사용되는 무료 MCP 서버들:
+- **Wikipedia**: 위키피디아 검색
+- **DuckDuckGo**: 웹 검색
+- **ArXiv**: 학술 논문 검색
+- **Web Scraper**: 웹 페이지 스크래핑
+
+## 🔍 문제 해결
+
+### AWS 권한 오류
+```
+AWS_ACCESS_KEY_ID와 AWS_SECRET_ACCESS_KEY 확인
+Bedrock 서비스 권한 필요
+```
+
+### MCP 서버 오류
+```
+uv 설치 확인: https://docs.astral.sh/uv/
+MCP 서버들이 정상 설치되었는지 확인
+```
+
+## 📄 라이선스
+
+MIT License

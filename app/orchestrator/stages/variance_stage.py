@@ -1,4 +1,5 @@
 import logging
+import asyncio
 import numpy as np
 from typing import Dict, Any, Optional, List
 from app.orchestrator.context import ExecutionContext
@@ -64,40 +65,47 @@ class VarianceStage:
                 # 프롬프트에 입력 삽입
                 filled_prompt = self._fill_prompt(prompt, example_input.content)
                 
-                # 각 모델로 실행
-                model_outputs = {}
+                # 각 모델로 병렬 실행
+                model_tasks = []
                 for model in models:
-                    try:
-                        result = await runner.invoke(
-                            model=model,
-                            prompt=filled_prompt,
-                            input_type=example_input.input_type
-                        )
-                        model_outputs[model] = result['output']
-                    except Exception as e:
-                        logger.error(f"Failed to run {model}: {str(e)}")
-                        model_outputs[model] = ""  # 실패시 빈 출력
+                    task = self._run_single_model(runner, model, filled_prompt, example_input.input_type)
+                    model_tasks.append(task)
                 
-                # 출력들을 임베딩으로 변환
-                embeddings = {}
+                # 병렬 실행
+                model_results = await asyncio.gather(*model_tasks, return_exceptions=True)
+                
+                # 결과 매핑
+                model_outputs = {}
+                for model, result in zip(models, model_results):
+                    if isinstance(result, Exception):
+                        logger.error(f"Failed to run {model}: {str(result)}")
+                        model_outputs[model] = ""  # 실패시 빈 출력
+                    else:
+                        model_outputs[model] = result
+                
+                # 출력들을 임베딩으로 병렬 변환
+                embedding_tasks = []
+                valid_models = []
                 for model, output in model_outputs.items():
-                    if not output.strip():
-                        embeddings[model] = None
-                        continue
+                    if output.strip():  # 빈 출력이 아닌 경우만
+                        task = self._embed_single_output(embedder, output, prompt_type)
+                        embedding_tasks.append(task)
+                        valid_models.append(model)
+                
+                # 병렬 임베딩
+                if embedding_tasks:
+                    embedding_results = await asyncio.gather(*embedding_tasks, return_exceptions=True)
                     
-                    try:
-                        # 프롬프트 타입에 따라 적절한 임베딩 모델 선택
-                        if prompt_type == PromptType.TYPE_B_IMAGE:
-                            # 이미지 출력: Nova Multimodal 사용
-                            embedding = await embedder.embed_multimodal(output)
+                    # 결과 매핑
+                    embeddings = {}
+                    for model, result in zip(valid_models, embedding_results):
+                        if isinstance(result, Exception):
+                            logger.error(f"Failed to embed output from {model}: {str(result)}")
+                            embeddings[model] = None
                         else:
-                            # 텍스트 출력: Titan Text 사용
-                            embedding = await embedder.embed_text(output)
-                        
-                        embeddings[model] = embedding
-                    except Exception as e:
-                        logger.error(f"Failed to embed output from {model}: {str(e)}")
-                        embeddings[model] = None
+                            embeddings[model] = result
+                else:
+                    embeddings = {}
                 
                 # 유효한 임베딩만 필터링
                 valid_embeddings = {k: v for k, v in embeddings.items() if v is not None}
@@ -137,6 +145,35 @@ class VarianceStage:
         except Exception as e:
             logger.error(f"Variance calculation failed: {str(e)}")
             return MetricScore(score=0.0, details={'error': str(e)})
+
+    async def _run_single_model(self, runner, model: str, prompt: str, input_type: str) -> str:
+        """단일 모델 실행"""
+        try:
+            result = await runner.invoke(
+                model=model,
+                prompt=prompt,
+                input_type=input_type
+            )
+            return result['output']
+        except Exception as e:
+            logger.error(f"Model {model} execution failed: {str(e)}")
+            return ""
+
+    async def _embed_single_output(self, embedder, output: str, prompt_type: PromptType) -> Optional[List[float]]:
+        """단일 출력 임베딩"""
+        try:
+            # 프롬프트 타입에 따라 적절한 임베딩 모델 선택
+            if prompt_type == PromptType.TYPE_B_IMAGE:
+                # 이미지 출력: Cohere v4 사용 (TYPE_B_IMAGE 요구사항)
+                embedding = await embedder.embed_cohere_v4(output)
+            else:
+                # 텍스트 출력: Titan Text 사용
+                embedding = await embedder.embed_text(output)
+            
+            return embedding
+        except Exception as e:
+            logger.error(f"Embedding failed: {str(e)}")
+            return None
     
     def _calculate_model_variance(self, embeddings: Dict[str, List[float]]) -> float:
         """모델 간 임베딩 유사도 기반 일관성 계산"""

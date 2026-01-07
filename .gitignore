@@ -24,43 +24,36 @@ wheels/
 venv/
 env/
 ENV/
-.venv/
-.env/
 
 # Environment Variables
 .env
-.env.local
-.env.production
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Logs
-*.log
-logs/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# AWS
-.aws/
+# Logs
+*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Outputs
+outputs/
 
 # Cache
 .cache/
 .pytest_cache/
 
-# Coverage
-htmlcov/
-.coverage
-.coverage.*
-coverage.xml
+# MCP - 설정 파일은 포함하되 캐시는 제외
+.kiro/cache/
+.kiro/logs/
+!.kiro/settings/

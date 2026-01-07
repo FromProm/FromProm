@@ -21,7 +21,7 @@ class RunStage:
         repeat_count: int = 5
     ) -> Dict[str, Any]:
         """
-        예시 입력들에 대해 프롬프트를 실행하고 결과 수집
+        예시 입력들에 대해 프롬프트를 병렬 실행하고 결과 수집
         
         Returns:
             {
@@ -37,54 +37,70 @@ class RunStage:
                 ]
             }
         """
-        logger.info(f"Executing prompt with {len(example_inputs)} inputs, {repeat_count} repeats each")
+        logger.info(f"Executing prompt with {len(example_inputs)} inputs, {repeat_count} repeats each (parallel)")
         
         runner = self.context.get_runner()
-        executions = []
         
         # 모델 선택
         model = recommended_model or self._get_default_model(example_inputs)
         
+        # 모든 실행 태스크 생성 (입력별 × 반복별)
+        all_tasks = []
+        task_info = []  # 태스크 정보 저장
+        
         for i, example_input in enumerate(example_inputs):
-            logger.info(f"Processing input {i+1}/{len(example_inputs)}")
-            
             # 프롬프트에 입력 삽입
             filled_prompt = self._fill_prompt(prompt, example_input.content)
             
-            # 반복 실행
+            # 각 입력에 대해 repeat_count만큼 태스크 생성
+            for repeat in range(repeat_count):
+                task = runner.invoke(
+                    model=model,
+                    prompt=filled_prompt,
+                    input_type=example_input.input_type
+                )
+                all_tasks.append(task)
+                task_info.append({
+                    'input_index': i,
+                    'repeat_index': repeat,
+                    'input_content': example_input.content
+                })
+        
+        logger.info(f"Running {len(all_tasks)} LLM calls in parallel")
+        
+        # 모든 태스크 병렬 실행
+        results = await asyncio.gather(*all_tasks, return_exceptions=True)
+        
+        # 결과를 입력별로 그룹화
+        executions = []
+        for i in range(len(example_inputs)):
             outputs = []
             total_token_usage = {'input_tokens': 0, 'output_tokens': 0, 'total_tokens': 0}
             
-            for repeat in range(repeat_count):
-                try:
-                    result = await runner.invoke(
-                        model=model,
-                        prompt=filled_prompt,
-                        input_type=example_input.input_type
-                    )
-                    
-                    outputs.append(result['output'])
-                    
-                    # 토큰 사용량 누적
-                    if 'token_usage' in result:
-                        for key in total_token_usage:
-                            total_token_usage[key] += result['token_usage'].get(key, 0)
-                    
-                except Exception as e:
-                    logger.error(f"Failed to execute repeat {repeat+1} for input {i+1}: {str(e)}")
-                    # 실패한 경우 빈 출력으로 처리
-                    outputs.append("")
+            # 해당 입력의 결과들 수집
+            for j, (result, info) in enumerate(zip(results, task_info)):
+                if info['input_index'] == i:
+                    if isinstance(result, Exception):
+                        logger.error(f"Failed execution for input {i+1}, repeat {info['repeat_index']+1}: {str(result)}")
+                        outputs.append("")  # 실패시 빈 출력
+                    else:
+                        outputs.append(result['output'])
+                        
+                        # 토큰 사용량 누적
+                        if 'token_usage' in result:
+                            for key in total_token_usage:
+                                total_token_usage[key] += result['token_usage'].get(key, 0)
             
             executions.append({
                 'input_index': i,
-                'input_content': example_input.content,
-                'input_type': example_input.input_type,
-                'filled_prompt': filled_prompt,  # 디버깅용: 실제 LLM에 전달된 프롬프트
+                'input_content': example_inputs[i].content,
+                'input_type': example_inputs[i].input_type,
                 'outputs': outputs,
                 'model': model,
                 'token_usage': total_token_usage
             })
         
+        logger.info(f"Parallel execution completed: {len(executions)} inputs processed")
         return {'executions': executions}
     
     def _get_default_model(self, example_inputs: List[ExampleInput]) -> str:

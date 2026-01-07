@@ -198,6 +198,39 @@ public class UserService {
         return userRepository.existsByNickname(nickname);
     }
 
+    
+    // 이메일 중복 확인
+    public boolean isEmailDuplicated(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    // 인증 코드 저장용 (간단한 메모리 저장, 실제 운영에서는 Redis 등 사용 권장)
+    private final java.util.concurrent.ConcurrentHashMap<String, String> verificationCodes = new java.util.concurrent.ConcurrentHashMap<>();
+
+    // 이메일 인증 코드 발송
+    public void sendVerificationCode(String email) {
+        // 6자리 랜덤 코드 생성
+        String code = String.format("%06d", new java.util.Random().nextInt(1000000));
+        verificationCodes.put(email, code);
+
+        // AWS SES를 통해 이메일 발송 (Cognito의 forgotPassword 기능 활용)
+        // 실제로는 SES나 다른 이메일 서비스를 사용해야 하지만,
+        // 여기서는 간단히 콘솔에 출력하고 코드를 저장합니다.
+        System.out.println("========================================");
+        System.out.println("인증 코드 발송: " + email + " -> " + code);
+        System.out.println("========================================");
+    }
+
+    // 인증 코드 확인
+    public boolean verifyCode(String email, String code) {
+        String savedCode = verificationCodes.get(email);
+        if (savedCode != null && savedCode.equals(code)) {
+            verificationCodes.remove(email); // 인증 성공 시 코드 삭제
+            return true;
+        }
+        return false;
+    }
+    
     @Transactional
     public void updateProfile(String userSub, UserProfileUpdateRequest request) {
         // 1. 기존 유저 정보 조회

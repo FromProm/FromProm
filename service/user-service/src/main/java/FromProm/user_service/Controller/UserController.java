@@ -157,6 +157,48 @@ public class UserController {
         return ResponseEntity.ok(isExisted);
     }
 
+    
+    // 이메일 중복 확인
+    @PostMapping("/check-email")
+    public ResponseEntity<Boolean> checkEmail(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        boolean isExisted = userService.isEmailDuplicated(email);
+        return ResponseEntity.ok(isExisted);
+    }
+
+    // 이메일 인증 코드 발송 (회원가입 전)
+    @PostMapping("/send-verification-code")
+    public ResponseEntity<String> sendVerificationCode(@RequestBody Map<String, String> body) {
+        try {
+            String email = body.get("email");
+            // 이메일 중복 확인
+            if (userService.isEmailDuplicated(email)) {
+                return ResponseEntity.badRequest().body("이미 가입된 이메일입니다.");
+            }
+            userService.sendVerificationCode(email);
+            return ResponseEntity.ok("인증 코드가 이메일로 발송되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("인증 코드 발송 실패: " + e.getMessage());
+        }
+    }
+
+    // 이메일 인증 코드 확인 (회원가입 전)
+    @PostMapping("/verify-code")
+    public ResponseEntity<String> verifyCode(@RequestBody Map<String, String> body) {
+        try {
+            String email = body.get("email");
+            String code = body.get("code");
+            boolean isValid = userService.verifyCode(email, code);
+            if (isValid) {
+                return ResponseEntity.ok("인증이 완료되었습니다.");
+            } else {
+                return ResponseEntity.badRequest().body("인증 코드가 일치하지 않습니다.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("인증 실패: " + e.getMessage());
+        }
+    }
+    
     // 프로필 수정 (닉네임, 소개글, 프로필 이미지)
     @PatchMapping("/profile")
     public ResponseEntity<?> updateProfile(

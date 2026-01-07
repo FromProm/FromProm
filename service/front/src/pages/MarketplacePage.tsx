@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { dummyPrompts, categories } from '../services/dummyData';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
@@ -57,7 +57,7 @@ const MarketplacePage = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+    <div className="min-h-screen bg-white">
       {/* 메인 콘텐츠 */}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* 페이지 헤더 */}
@@ -143,12 +143,12 @@ const MarketplacePage = () => {
               delay={index * 0.1}
             >
               <div
-                className="bg-white border border-gray-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 hover:border-gray-300 transition-all cursor-pointer group h-[320px] flex flex-col"
+                className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-blue-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 hover:border-blue-300 transition-all cursor-pointer group h-[320px] flex flex-col"
                 onClick={() => window.location.href = `/prompt/${prompt.id}`}
               >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                  <span className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">
                     {prompt.category}
                   </span>
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -159,7 +159,7 @@ const MarketplacePage = () => {
                 </div>
               </div>
 
-              <h3 className="text-gray-900 text-lg font-semibold mb-2 group-hover:text-gray-700 transition-colors line-clamp-1">
+              <h3 className="text-gray-900 text-lg font-semibold mb-2 group-hover:text-blue-900 transition-colors line-clamp-1">
                 {prompt.title}
               </h3>
 
@@ -177,7 +177,7 @@ const MarketplacePage = () => {
               </div>
 
               {/* 통계 정보 */}
-              <div className="flex items-center justify-between text-xs text-gray-500 border-t border-gray-200 pt-4">
+              <div className="flex items-center justify-between text-xs text-gray-500 border-t border-blue-200 pt-4">
                 <div className="flex items-center space-x-4">
                   <span className="flex items-center space-x-1">
                     <span>👁</span>

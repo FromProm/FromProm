@@ -43,7 +43,7 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm">
+    <header className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border-b border-blue-200 shadow-sm">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* 로고 */}

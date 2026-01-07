@@ -38,6 +38,8 @@ public class User {
     @DynamoDbAttribute("nickname")
     public String getNickname() { return nickname; }
 
+    // 이메일 중복 체크를 위한 GSI 설정
+    @DynamoDbSecondaryPartitionKey(indexNames = "email-index")
     @DynamoDbAttribute("email")
     public String getEmail() { return email; }
 

@@ -31,7 +31,7 @@ public class User {
     public String getSK() { return SK; }
 
     @DynamoDbAttribute("type")
-    public String getType() { return type; }
+    public String gettype() { return type; }
 
     // 닉네임 중복 체크를 위한 GSI 설정 (핵심 부분!)
     @DynamoDbSecondaryPartitionKey(indexNames = "nickname-index")

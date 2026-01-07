@@ -48,31 +48,34 @@ public class UserService {
                 )
                 .build();
 
-        SignUpResponse response = cognitoClient.signUp(signUpRequest);
-        String userSub = response.userSub(); // Cognito가 생성한 고유 ID
+        cognitoClient.signUp(signUpRequest);
 
-        // 3. 가입 성공 후 Cognito에서 준 고유 ID(sub) 가져오기
-        String now = Instant.now().toString(); // 현재 시간 생성
-
-        // 4. DynamoDB에 프로필 정보 저장
-        User newUser = User.builder()
-                .PK("USER#" + userSub)        // 자동 생성: PK 형식 지정
-                .SK("PROFILE")                // 자동 생성: 고정값
-                .type("USER")
-                .email(request.getEmail())    // 입력값
-                .nickname(request.getNickname()) // 입력값
-                .credit(0)                 // 기본값 0
-                .bio("") // 기본값
-                .profileImage("https://default-image-url.com/user.png") // 기본값
-                .createdAt(now)               // 자동 생성: 현재 시간
-                .updatedAt(now)               // 자동 생성: 현재 시간
-                .build();
-
-        userRepository.save(newUser);
+//        SignUpResponse response = cognitoClient.signUp(signUpRequest);
+//        String userSub = response.userSub(); // Cognito가 생성한 고유 ID
+//
+//        // 3. 가입 성공 후 Cognito에서 준 고유 ID(sub) 가져오기
+//        String now = Instant.now().toString(); // 현재 시간 생성
+//
+//        // 4. DynamoDB에 프로필 정보 저장
+//        User newUser = User.builder()
+//                .PK("USER#" + userSub)        // 자동 생성: PK 형식 지정
+//                .SK("PROFILE")                // 자동 생성: 고정값
+//                .type("USER")
+//                .email(request.getEmail())    // 입력값
+//                .nickname(request.getNickname()) // 입력값
+//                .credit(0)                 // 기본값 0
+//                .bio("") // 기본값
+//                .profileImage("https://default-image-url.com/user.png") // 기본값
+//                .createdAt(now)               // 자동 생성: 현재 시간
+//                .updatedAt(now)               // 자동 생성: 현재 시간
+//                .build();
+//
+//        userRepository.save(newUser);
     }
 
     // 이메일 인증 확인
     public void confirmSignUp(UserConfirmRequest request) {
+        // 1. Cognito 인증 확인 요청
         ConfirmSignUpRequest confirmSignUpRequest = ConfirmSignUpRequest.builder()
                 .clientId(clientId)
                 .username(request.getEmail()) // 이메일을 로그인 ID로 설정했으므로 username에 email 입력
@@ -80,6 +83,37 @@ public class UserService {
                 .build();
 
         cognitoClient.confirmSignUp(confirmSignUpRequest);
+
+        // 2. 인증이 성공했다면, Cognito에서 'sub' 값을 가져오기 (PK 생성을 위함)
+        AdminGetUserResponse cognitoUser = cognitoClient.adminGetUser(AdminGetUserRequest.builder()
+                .userPoolId(userPoolId)
+                .username(request.getEmail())
+                .build());
+
+        String userSub = cognitoUser.userAttributes().stream()
+                .filter(attr -> attr.name().equals("sub"))
+                .findFirst()
+                .map(AttributeType::value)
+                .orElseThrow(() -> new RuntimeException("Cognito에서 sub 정보를 찾을 수 없습니다."));
+
+        String originalNickname = cognitoUser.userAttributes().stream()
+                .filter(a -> a.name().equals("nickname")).findFirst().map(AttributeType::value).orElse("");
+
+        // 3. DynamoDB에 유저 정보 저장
+        User newUser = User.builder()
+                .PK("USER#" + userSub)
+                .SK("PROFILE")
+                .type("USER")
+                .email(request.getEmail())
+                .nickname(originalNickname)
+                .bio("")                                                // 기본값
+                .profileImage("https://default-image-url.com/user.png") // 기본값
+                .credit(0)
+                .createdAt(Instant.now().toString())               // 자동 생성: 현재 시간
+                .updatedAt(Instant.now().toString())               // 자동 생성: 현재 시간
+                .build();
+
+        userRepository.save(newUser);
     }
 
     // 이메일 인증코드 재전송

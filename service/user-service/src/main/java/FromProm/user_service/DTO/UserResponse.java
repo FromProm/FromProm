@@ -11,5 +11,4 @@ public class UserResponse {
     private String nickname;
     private String bio;
     private int credit;
-    private String PK;
 }

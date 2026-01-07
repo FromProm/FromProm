@@ -3,16 +3,16 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { dummyPrompts } from '../services/dummyData';
 import { usePurchaseStore } from '../store/purchaseStore';
-import { useAuthStore } from '../store/authStore';
+import { userApi } from '../services/api';
 
 const PurchasePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
   const { addPurchasedPrompt, isPurchased } = usePurchaseStore();
   const [prompt, setPrompt] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [purchaseComplete, setPurchaseComplete] = useState(false);
+  const [credit, setCredit] = useState<number>(0);
 
   useEffect(() => {
     if (id) {
@@ -24,21 +24,34 @@ const PurchasePage = () => {
         setPurchaseComplete(true);
       }
     }
+
+    // 크레딧 정보 가져오기
+    userApi.getMe()
+      .then((response) => {
+        setCredit(response.data.credit || 0);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch user info:', error);
+      });
   }, [id, isPurchased]);
 
   const handlePurchase = async () => {
-    if (!user) {
-      navigate('/auth/login');
+    if (!prompt) return;
+
+    if (credit < prompt.price) {
+      alert('크레딧이 부족합니다. 충전 후 다시 시도해주세요.');
+      navigate('/credit');
       return;
     }
-
-    if (!prompt) return;
 
     setIsProcessing(true);
 
     try {
-      // 시뮬레이션: 구매 처리
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 크레딧 사용 API 호출
+      await userApi.useCredit({
+        amount: prompt.price,
+        description: `프롬프트 구매: ${prompt.title}`
+      });
 
       // 구매한 프롬프트로 추가
       addPurchasedPrompt({
@@ -47,8 +60,9 @@ const PurchasePage = () => {
       });
 
       setPurchaseComplete(true);
-    } catch (error) {
-      console.error('구매 처리 중 오류:', error);
+    } catch (error: any) {
+      const message = error.response?.data || '구매 처리 중 오류가 발생했습니다.';
+      alert(message);
     } finally {
       setIsProcessing(false);
     }
@@ -208,17 +222,13 @@ const PurchasePage = () => {
                 </div>
               </div>
 
-              {!user ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-600 text-center">구매하려면 로그인이 필요합니다</p>
-                  <Link
-                    to="/auth/login"
-                    className="w-full bg-blue-900 text-white font-medium py-3 rounded-lg hover:bg-blue-800 transition-colors flex items-center justify-center"
-                  >
-                    로그인하기
-                  </Link>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">보유 크레딧</span>
+                  <span className={`font-medium ${credit >= (prompt?.price || 0) ? 'text-green-600' : 'text-red-600'}`}>
+                    {credit}P
+                  </span>
                 </div>
-              ) : (
                 <button
                   onClick={handlePurchase}
                   disabled={isProcessing}
@@ -233,10 +243,10 @@ const PurchasePage = () => {
                       구매 처리 중...
                     </>
                   ) : (
-                    '지금 구매하기'
+                    '구매하기'
                   )}
                 </button>
-              )}
+              </div>
 
               <div className="mt-4 text-center">
                 <p className="text-xs text-gray-500">

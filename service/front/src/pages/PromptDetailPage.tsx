@@ -1,24 +1,37 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { dummyPrompts } from '../services/dummyData';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
-import { useAuthStore } from '../store/authStore';
+import { userApi } from '../services/api';
 
 const PromptDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const prompt = dummyPrompts.find(p => p.id === id);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [credit, setCredit] = useState<number>(0);
   const { addToCart, isInCart } = useCartStore();
-  const { isPurchased } = usePurchaseStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isPurchased, addPurchasedPrompt } = usePurchaseStore();
 
   const isAlreadyInCart = prompt ? isInCart(prompt.id) : false;
   const isAlreadyPurchased = prompt ? isPurchased(prompt.id) : false;
 
   const isLoggedIn = () => !!localStorage.getItem('accessToken');
+
+  useEffect(() => {
+    if (isLoggedIn()) {
+      userApi.getMe()
+        .then((response) => {
+          setCredit(response.data.credit || 0);
+        })
+        .catch((error) => {
+          console.error('Failed to fetch user info:', error);
+        });
+    }
+  }, []);
 
   const handleAddToCart = () => {
     if (!isLoggedIn()) {
@@ -417,14 +430,48 @@ const PromptDetailPage = () => {
                 취소
               </button>
               <button
-                onClick={() => {
-                  // 실제 결제 처리 로직
-                  alert('결제가 완료되었습니다! 프롬프트를 확인해보세요.');
-                  setShowPaymentModal(false);
+                onClick={async () => {
+                  if (!prompt) return;
+                  
+                  if (credit < prompt.price) {
+                    alert('크레딧이 부족합니다. 충전 후 다시 시도해주세요.');
+                    setShowPaymentModal(false);
+                    navigate('/credit');
+                    return;
+                  }
+                  
+                  setIsPurchasing(true);
+                  try {
+                    await userApi.useCredit({
+                      amount: prompt.price,
+                      description: `프롬프트 구매: ${prompt.title}`
+                    });
+                    
+                    addPurchasedPrompt({
+                      id: prompt.id,
+                      title: prompt.title,
+                      price: prompt.price,
+                      category: prompt.category,
+                      sellerName: prompt.sellerName,
+                      description: prompt.description,
+                      rating: prompt.rating,
+                      content: prompt.preview
+                    });
+                    
+                    setShowPaymentModal(false);
+                    alert('결제가 완료되었습니다! 프롬프트를 확인해보세요.');
+                    navigate('/dashboard/purchased');
+                  } catch (error: any) {
+                    const message = error.response?.data || '결제 처리 중 오류가 발생했습니다.';
+                    alert(message);
+                  } finally {
+                    setIsPurchasing(false);
+                  }
                 }}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors font-semibold"
+                disabled={isPurchasing}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {prompt.price}P 결제하기
+                {isPurchasing ? '처리 중...' : `${prompt.price}P 결제하기`}
               </button>
             </div>
           </motion.div>

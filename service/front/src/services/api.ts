@@ -48,6 +48,19 @@ export const userApi = {
   checkNickname: (nickname: string) =>
     api.post('/api/users/check-nickname', { nickname }),
 
+
+  // 이메일 중복 확인
+  checkEmail: (email: string) =>
+    api.post('/api/users/check-email', { email }),
+
+  // 이메일 인증 코드 발송 (회원가입 전)
+  sendVerificationCode: (email: string) =>
+    api.post('/api/users/send-verification-code', { email }),
+
+  // 이메일 인증 코드 확인 (회원가입 전)
+  verifyCode: (email: string, code: string) =>
+    api.post('/api/users/verify-code', { email, code }),
+
   // 토큰 재발급
   refreshToken: (refreshToken: string) =>
     api.post('/api/users/refresh', { refreshToken }),

@@ -40,6 +40,20 @@ public class UserRepository {
                 .count() > 0;
     }
 
+    // GSI를 이용한 이메일 중복 체크
+    public boolean existsByEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+
+        // GSI를 통해 쿼리한 결과의 전체 아이템 개수를 스트림으로 카운트
+        return userTable.index("email-index")
+                .query(q -> q.queryConditional(QueryConditional.keyEqualTo(k -> k.partitionValue(email))))
+                .stream()
+                .flatMap(page -> page.items().stream())
+                .count() > 0;
+    }
+
     public void update(User user) {
         // putItem은 동일한 PK/SK가 있으면 덮어쓰기(Upsert)로 동작합니다.
         userTable.putItem(user);

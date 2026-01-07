@@ -157,6 +157,48 @@ public class UserController {
         return ResponseEntity.ok(isExisted);
     }
 
+    
+    // 이메일 중복 확인
+    @PostMapping("/check-email")
+    public ResponseEntity<Boolean> checkEmail(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        boolean isExisted = userService.isEmailDuplicated(email);
+        return ResponseEntity.ok(isExisted);
+    }
+
+    // 이메일 인증 코드 발송 (회원가입 전)
+    @PostMapping("/send-verification-code")
+    public ResponseEntity<String> sendVerificationCode(@RequestBody Map<String, String> body) {
+        try {
+            String email = body.get("email");
+            // 이메일 중복 확인
+            if (userService.isEmailDuplicated(email)) {
+                return ResponseEntity.badRequest().body("이미 가입된 이메일입니다.");
+            }
+            userService.sendVerificationCode(email);
+            return ResponseEntity.ok("인증 코드가 이메일로 발송되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("인증 코드 발송 실패: " + e.getMessage());
+        }
+    }
+
+    // 이메일 인증 코드 확인 (회원가입 전)
+    @PostMapping("/verify-code")
+    public ResponseEntity<String> verifyCode(@RequestBody Map<String, String> body) {
+        try {
+            String email = body.get("email");
+            String code = body.get("code");
+            boolean isValid = userService.verifyCode(email, code);
+            if (isValid) {
+                return ResponseEntity.ok("인증이 완료되었습니다.");
+            } else {
+                return ResponseEntity.badRequest().body("인증 코드가 일치하지 않습니다.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("인증 실패: " + e.getMessage());
+        }
+    }
+    
     // 프로필 수정 (닉네임, 소개글, 프로필 이미지)
     @PatchMapping("/profile")
     public ResponseEntity<?> updateProfile(
@@ -181,16 +223,19 @@ public class UserController {
     @DeleteMapping("/withdraw")
     public ResponseEntity<String> withdraw(@RequestHeader("Authorization") String bearerToken) {
         try {
-            // 1. Bearer 토큰에서 accessToken 추출
-            String accessToken = bearerToken.substring(7).trim();
-            // 2. accessToken으로 Cognito에서 사용자 정보 조회
-            UserResponse userInfo = userService.getMyInfo(accessToken);
-            // 3. PK는 이미 USER#uuid 형식이므로 그대로 사용
-            String userSub = userInfo.getPK();
-            // 4. 회원 탈퇴 수행 (DynamoDB + Cognito 삭제)
-            userService.withdraw(userSub);
-            return ResponseEntity.ok("회원 탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사합니다.");
+            // 1. "Bearer " 제거 및 공백 제거
+            String cleanToken = bearerToken.replace("Bearer ", "").trim();
+
+            // 2. [중요] 정규식 패턴(A-Z, a-z, 0-9, -, _, ., =)에 맞지 않는 모든 유령 문자 제거
+            cleanToken = cleanToken.replaceAll("[^A-Za-z0-9\\-_\\.=]", "");
+
+            // 3. 로그로 깨끗해진 토큰 길이 확인
+            System.out.println("DEBUG: Cleaned Token Length -> " + cleanToken.length());
+
+            userService.withdrawWithToken(cleanToken);
+            return ResponseEntity.ok("회원 탈퇴가 완료되었습니다.");
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("회원 탈퇴 실패: " + e.getMessage());
         }
     }

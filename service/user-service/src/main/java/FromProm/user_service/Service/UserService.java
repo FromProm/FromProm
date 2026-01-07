@@ -48,31 +48,13 @@ public class UserService {
                 )
                 .build();
 
-        SignUpResponse response = cognitoClient.signUp(signUpRequest);
-        String userSub = response.userSub(); // Cognito가 생성한 고유 ID
+        cognitoClient.signUp(signUpRequest);
 
-        // 3. 가입 성공 후 Cognito에서 준 고유 ID(sub) 가져오기
-        String now = Instant.now().toString(); // 현재 시간 생성
-
-        // 4. DynamoDB에 프로필 정보 저장
-        User newUser = User.builder()
-                .PK("USER#" + userSub)        // 자동 생성: PK 형식 지정
-                .SK("PROFILE")                // 자동 생성: 고정값
-                .type("USER")
-                .email(request.getEmail())    // 입력값
-                .nickname(request.getNickname()) // 입력값
-                .credit(0)                 // 기본값 0
-                .bio("") // 기본값
-                .profileImage("https://default-image-url.com/user.png") // 기본값
-                .createdAt(now)               // 자동 생성: 현재 시간
-                .updatedAt(now)               // 자동 생성: 현재 시간
-                .build();
-
-        userRepository.save(newUser);
     }
 
     // 이메일 인증 확인
     public void confirmSignUp(UserConfirmRequest request) {
+        // 1. Cognito 인증 확인 요청
         ConfirmSignUpRequest confirmSignUpRequest = ConfirmSignUpRequest.builder()
                 .clientId(clientId)
                 .username(request.getEmail()) // 이메일을 로그인 ID로 설정했으므로 username에 email 입력
@@ -80,6 +62,37 @@ public class UserService {
                 .build();
 
         cognitoClient.confirmSignUp(confirmSignUpRequest);
+
+        // 2. 인증이 성공했다면, Cognito에서 'sub' 값을 가져오기 (PK 생성을 위함)
+        AdminGetUserResponse cognitoUser = cognitoClient.adminGetUser(AdminGetUserRequest.builder()
+                .userPoolId(userPoolId)
+                .username(request.getEmail())
+                .build());
+
+        String userSub = cognitoUser.userAttributes().stream()
+                .filter(attr -> attr.name().equals("sub"))
+                .findFirst()
+                .map(AttributeType::value)
+                .orElseThrow(() -> new RuntimeException("Cognito에서 sub 정보를 찾을 수 없습니다."));
+
+        String originalNickname = cognitoUser.userAttributes().stream()
+                .filter(a -> a.name().equals("nickname")).findFirst().map(AttributeType::value).orElse("");
+
+        // 3. DynamoDB에 유저 정보 저장
+        User newUser = User.builder()
+                .PK("USER#" + userSub)
+                .SK("PROFILE")
+                .type("USER")
+                .email(request.getEmail())
+                .nickname(originalNickname)
+                .bio("")                                                // 기본값
+                .profileImage("https://default-image-url.com/user.png") // 기본값
+                .credit(0)
+                .createdAt(Instant.now().toString())               // 자동 생성: 현재 시간
+                .updatedAt(Instant.now().toString())               // 자동 생성: 현재 시간
+                .build();
+
+        userRepository.save(newUser);
     }
 
     // 이메일 인증코드 재전송
@@ -198,6 +211,39 @@ public class UserService {
         return userRepository.existsByNickname(nickname);
     }
 
+    
+    // 이메일 중복 확인
+    public boolean isEmailDuplicated(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    // 인증 코드 저장용 (간단한 메모리 저장, 실제 운영에서는 Redis 등 사용 권장)
+    private final java.util.concurrent.ConcurrentHashMap<String, String> verificationCodes = new java.util.concurrent.ConcurrentHashMap<>();
+
+    // 이메일 인증 코드 발송
+    public void sendVerificationCode(String email) {
+        // 6자리 랜덤 코드 생성
+        String code = String.format("%06d", new java.util.Random().nextInt(1000000));
+        verificationCodes.put(email, code);
+
+        // AWS SES를 통해 이메일 발송 (Cognito의 forgotPassword 기능 활용)
+        // 실제로는 SES나 다른 이메일 서비스를 사용해야 하지만,
+        // 여기서는 간단히 콘솔에 출력하고 코드를 저장합니다.
+        System.out.println("========================================");
+        System.out.println("인증 코드 발송: " + email + " -> " + code);
+        System.out.println("========================================");
+    }
+
+    // 인증 코드 확인
+    public boolean verifyCode(String email, String code) {
+        String savedCode = verificationCodes.get(email);
+        if (savedCode != null && savedCode.equals(code)) {
+            verificationCodes.remove(email); // 인증 성공 시 코드 삭제
+            return true;
+        }
+        return false;
+    }
+    
     @Transactional
     public void updateProfile(String userSub, UserProfileUpdateRequest request) {
         // 1. 기존 유저 정보 조회
@@ -228,6 +274,7 @@ public class UserService {
         userRepository.update(user);
     }
 
+    //회원 탈퇴
     @Transactional
     public void withdraw(String userSub) {
         // 1. DynamoDB 데이터 삭제 (PK: USER#uuid, SK: PROFILE)
@@ -242,11 +289,28 @@ public class UserService {
                     .build();
 
             cognitoClient.adminDeleteUser(deleteUserRequest);
-            System.out.println("DEBUG: 회원탈퇴 완료 (DB + Cognito) -> " + userSub);
         } catch (Exception e) {
             // Cognito 삭제 실패 시 예외 처리 (이미 삭제되었거나 권한 문제 등)
             throw new RuntimeException("Cognito 사용자 삭제 중 오류가 발생했습니다: " + e.getMessage());
         }
+    }
+
+    public void withdrawWithToken(String accessToken) {
+        // 1. AccessToken으로 Cognito에서 'sub' 조회 (유저 본인 확인)
+        GetUserRequest getUserRequest = GetUserRequest.builder()
+                .accessToken(accessToken)
+                .build();
+
+        GetUserResponse response = cognitoClient.getUser(getUserRequest);
+
+        String userSub = response.userAttributes().stream()
+                .filter(attr -> attr.name().equals("sub"))
+                .findFirst()
+                .map(AttributeType::value)
+                .orElseThrow(() -> new RuntimeException("사용자 ID를 찾을 수 없습니다."));
+
+        // 2. 기존 withdraw 로직 호출 (PK 형식에 맞게 "USER#" 추가)
+        withdraw("USER#" + userSub);
     }
 
     @Transactional

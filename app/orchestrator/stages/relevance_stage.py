@@ -1,5 +1,6 @@
 import logging
 import json
+import asyncio
 from typing import Dict, Any, List
 from app.orchestrator.context import ExecutionContext
 from app.core.schemas import MetricScore, ExampleInput, PromptType
@@ -21,80 +22,118 @@ class RelevanceStage:
         prompt_type: PromptType
     ) -> MetricScore:
         """
-        정확도 점수 계산
+        정확도 점수 계산 (병렬 처리)
         1. 입력 프롬프트에서 명시적 조건과 방향성 추출
         2. AI 판단을 통한 조건 준수 여부 평가
         3. 100점 만점 점수 계산
         """
-        logger.info("Calculating accuracy score using AI-based evaluation")
+        logger.info("Calculating accuracy score using AI-based evaluation (parallel)")
         
         try:
             judge = self.context.get_judge()
             executions = execution_results['executions']
             
-            all_accuracy_scores = []
-            details = {'per_input_scores': [], 'extracted_conditions': []}
+            # 모든 입력에 대해 병렬로 처리
+            logger.info(f"Processing {len(example_inputs)} inputs in parallel")
             
-            for i, example_input in enumerate(example_inputs):
-                logger.info(f"Processing input {i+1}/{len(example_inputs)}")
-                
+            async def process_single_input(i: int, example_input: ExampleInput):
+                """단일 입력 처리"""
                 # 1. 입력 프롬프트에서 조건과 방향성 추출
                 conditions = await self._extract_conditions(judge, prompt, example_input.content)
-                details['extracted_conditions'].append({
-                    'input_index': i,
-                    'conditions': conditions
-                })
                 
                 if not conditions.get('explicit_conditions') and not conditions.get('direction'):
                     logger.warning(f"No conditions extracted for input {i}")
-                    all_accuracy_scores.append(50.0)  # 중간 점수
-                    continue
+                    return {
+                        'input_index': i,
+                        'score': 50.0,
+                        'conditions': conditions,
+                        'evaluation_details': []
+                    }
                 
                 # 해당 입력의 출력들 찾기
                 exec_data = next((e for e in executions if e['input_index'] == i), None)
                 if not exec_data:
                     logger.warning(f"No execution data for input {i}")
-                    all_accuracy_scores.append(0.0)
-                    continue
+                    return {
+                        'input_index': i,
+                        'score': 0.0,
+                        'conditions': conditions,
+                        'evaluation_details': []
+                    }
                 
-                # 2. 각 출력에 대해 조건 준수 평가
-                output_scores = []
-                evaluation_details = []
-                
-                for j, output in enumerate(exec_data['outputs']):
+                # 2. 각 출력에 대해 조건 준수 평가 (병렬)
+                async def evaluate_single_output(j: int, output: str):
                     if not output.strip():
-                        output_scores.append(0.0)
-                        continue
+                        return {'output_index': j, 'score': 0.0, 'evaluation': None}
                     
-                    # AI 판단 요청
                     evaluation = await self._evaluate_compliance(
                         judge, conditions, output, example_input.input_type, prompt_type
                     )
-                    
                     score = self._calculate_compliance_score(evaluation)
-                    output_scores.append(score)
-                    evaluation_details.append({
-                        'output_index': j,
-                        'evaluation': evaluation,
-                        'score': score
-                    })
+                    return {'output_index': j, 'score': score, 'evaluation': evaluation}
                 
-                # 해당 입력의 평균 점수
+                # 출력들 병렬 평가
+                output_tasks = [
+                    evaluate_single_output(j, output) 
+                    for j, output in enumerate(exec_data['outputs'])
+                ]
+                output_results = await asyncio.gather(*output_tasks, return_exceptions=True)
+                
+                # 결과 처리
+                output_scores = []
+                evaluation_details = []
+                for result in output_results:
+                    if isinstance(result, Exception):
+                        logger.error(f"Output evaluation failed: {str(result)}")
+                        output_scores.append(0.0)
+                    else:
+                        output_scores.append(result['score'])
+                        evaluation_details.append(result)
+                
                 input_score = sum(output_scores) / len(output_scores) if output_scores else 0.0
-                all_accuracy_scores.append(input_score)
                 
-                details['per_input_scores'].append({
+                return {
                     'input_index': i,
                     'score': input_score,
-                    'output_count': len(output_scores),
-                    'evaluation_details': evaluation_details
-                })
+                    'conditions': conditions,
+                    'evaluation_details': evaluation_details,
+                    'output_count': len(output_scores)
+                }
+            
+            # 모든 입력 병렬 처리
+            import asyncio
+            input_tasks = [
+                process_single_input(i, example_input)
+                for i, example_input in enumerate(example_inputs)
+            ]
+            input_results = await asyncio.gather(*input_tasks, return_exceptions=True)
+            
+            # 결과 집계
+            all_accuracy_scores = []
+            details = {'per_input_scores': [], 'extracted_conditions': []}
+            
+            for result in input_results:
+                if isinstance(result, Exception):
+                    logger.error(f"Input processing failed: {str(result)}")
+                    all_accuracy_scores.append(0.0)
+                else:
+                    all_accuracy_scores.append(result['score'])
+                    details['extracted_conditions'].append({
+                        'input_index': result['input_index'],
+                        'conditions': result['conditions']
+                    })
+                    details['per_input_scores'].append({
+                        'input_index': result['input_index'],
+                        'score': result['score'],
+                        'output_count': result.get('output_count', 0),
+                        'evaluation_details': result['evaluation_details']
+                    })
             
             # 전체 평균 점수 (100점 만점)
             final_score = sum(all_accuracy_scores) / len(all_accuracy_scores) if all_accuracy_scores else 0.0
             
             details['final_score'] = final_score
-            details['note'] = 'AI-based accuracy evaluation, score out of 100'
+            details['note'] = 'AI-based accuracy evaluation (parallel), score out of 100'
             
             logger.info(f"Accuracy score: {final_score:.3f}")
             return MetricScore(score=final_score, details=details)

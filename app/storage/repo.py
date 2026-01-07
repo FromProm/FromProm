@@ -32,11 +32,11 @@ class BaseRepository(ABC):
         pass
     
     @abstractmethod
-    async def list_jobs(self, page: int = 1, size: int = 10) -> List[JobResponse]:
+    async def list_jobs(self, page: int = 1, size: int = 10, request_id: Optional[str] = None) -> List[JobResponse]:
         """작업 목록 조회"""
         pass
     
     @abstractmethod
-    async def count_jobs(self) -> int:
+    async def count_jobs(self, request_id: Optional[str] = None) -> int:
         """전체 작업 수"""
         pass

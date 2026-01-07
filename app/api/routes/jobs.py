@@ -18,6 +18,10 @@ router = APIRouter(tags=["jobs"])
 # 재시도 설정
 MAX_RETRY_COUNT = 3
 
+# 작업 큐 (한 번에 하나씩만 처리)
+job_queue = asyncio.Queue(maxsize=1)
+job_processing = False
+
 # Context will be injected from main.py
 def get_context():
     from app.main import context
@@ -29,7 +33,7 @@ def get_context():
 async def create_job(request: JobCreateRequest, background_tasks: BackgroundTasks):
     """프롬프트 평가 작업 생성"""
     try:
-        # 작업 생성
+        # 작업은 항상 생성 (대기열에 추가)
         context = get_context()
         storage = context.get_storage()
         job_id = await storage.create_job(request.model_dump())
@@ -41,11 +45,22 @@ async def create_job(request: JobCreateRequest, background_tasks: BackgroundTask
             metadata={"prompt_type": request.prompt_type.value}
         )
         
-        # 백그라운드에서 실행
-        background_tasks.add_task(run_evaluation, job_id, request, retry_count=0)
+        # 대기열에 추가
+        background_tasks.add_task(run_evaluation_with_queue, job_id, request, retry_count=0)
         
-        # 생성된 작업 반환
+        # 생성된 작업 반환 (대기 상태로)
         job = await storage.get_job(job_id)
+        
+        # 현재 처리 상태에 따라 메시지 추가
+        global job_processing
+        if job_processing:
+            structured_logger.info(
+                "Job queued",
+                request_id=job_id,
+                stage="queue_management",
+                metadata={"message": "Job added to queue, will start after current job completes"}
+            )
+        
         return job
         
     except Exception as e:
@@ -55,6 +70,40 @@ async def create_job(request: JobCreateRequest, background_tasks: BackgroundTask
             error_type=type(e).__name__
         )
         raise HTTPException(status_code=500, detail=str(e))
+
+async def run_evaluation_with_queue(job_id: str, request: JobCreateRequest, retry_count: int = 0):
+    """큐를 사용한 평가 실행"""
+    global job_processing
+    
+    # 현재 처리 중인 작업이 있으면 대기
+    while job_processing:
+        structured_logger.info(
+            "Job waiting in queue",
+            request_id=job_id,
+            stage="queue_waiting"
+        )
+        await asyncio.sleep(5)  # 5초마다 확인
+    
+    try:
+        # 작업 시작 표시
+        job_processing = True
+        structured_logger.info(
+            "Job processing started",
+            request_id=job_id,
+            stage="queue_processing"
+        )
+        
+        # 실제 평가 실행
+        await run_evaluation(job_id, request, retry_count)
+        
+    finally:
+        # 작업 완료 표시
+        job_processing = False
+        structured_logger.info(
+            "Job processing completed",
+            request_id=job_id,
+            stage="queue_processing"
+        )
 
 @router.get("/jobs/{job_id}", response_model=JobResponse)
 async def get_job(job_id: str):
@@ -80,17 +129,27 @@ async def get_job(job_id: str):
         )
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/jobs/status")
+async def get_processing_status():
+    """현재 처리 상태 확인"""
+    global job_processing
+    return {
+        "processing": job_processing,
+        "message": "Job is currently processing" if job_processing else "Ready to accept new jobs"
+    }
+
 @router.get("/jobs", response_model=JobListResponse)
 async def list_jobs(
     page: int = Query(1, ge=1),
-    size: int = Query(10, ge=1, le=100)
+    size: int = Query(10, ge=1, le=100),
+    request_id: Optional[str] = Query(None, description="특정 request_id로 필터링")
 ):
     """작업 목록 조회"""
     try:
         context = get_context()
         storage = context.get_storage()
-        jobs = await storage.list_jobs(page, size)
-        total = await storage.count_jobs()
+        jobs = await storage.list_jobs(page, size, request_id)
+        total = await storage.count_jobs(request_id)
         
         return JobListResponse(
             jobs=jobs,

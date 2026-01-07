@@ -45,35 +45,67 @@ class EmbedStage:
             raise
     
     async def _embed_inputs(self, embedder, example_inputs: List[ExampleInput]) -> List[Dict[str, Any]]:
-        """입력 임베딩 생성 - 병렬 처리"""
-        logger.info(f"Embedding {len(example_inputs)} inputs in parallel")
+        """입력 임베딩 생성 - 배치 처리"""
+        logger.info(f"Embedding {len(example_inputs)} inputs using batch processing")
         
-        # 모든 입력을 병렬로 처리
-        embedding_tasks = []
+        # 텍스트와 이미지 입력 분리
+        text_inputs = []
+        image_inputs = []
+        text_indices = []
+        image_indices = []
+        
         for i, example_input in enumerate(example_inputs):
-            task = self._embed_single_input(embedder, i, example_input)
-            embedding_tasks.append(task)
-        
-        # 병렬 실행
-        input_embeddings = await asyncio.gather(*embedding_tasks, return_exceptions=True)
-        
-        # 예외 처리
-        valid_embeddings = []
-        for i, result in enumerate(input_embeddings):
-            if isinstance(result, Exception):
-                logger.error(f"Input {i+1} embedding failed: {str(result)}")
-                # 실패시 기본값
-                valid_embeddings.append({
-                    'index': i,
-                    'content': example_inputs[i].content,
-                    'type': example_inputs[i].input_type,
-                    'titan_embedding': None,
-                    'cohere_embedding': None
-                })
+            if example_input.input_type == "image":
+                image_inputs.append(example_input.content)
+                image_indices.append(i)
             else:
-                valid_embeddings.append(result)
+                text_inputs.append(example_input.content)
+                text_indices.append(i)
         
-        return valid_embeddings
+        # 배치 임베딩 실행
+        results = [None] * len(example_inputs)
+        
+        # 텍스트 배치 처리
+        if text_inputs:
+            logger.info(f"Batch embedding {len(text_inputs)} text inputs")
+            titan_embeddings, cohere_embeddings = await asyncio.gather(
+                embedder.embed_text_batch(text_inputs),
+                embedder.embed_multilingual_batch(text_inputs),
+                return_exceptions=True
+            )
+            
+            # 결과 매핑
+            for i, text_idx in enumerate(text_indices):
+                titan_emb = titan_embeddings[i] if not isinstance(titan_embeddings, Exception) and i < len(titan_embeddings) else None
+                cohere_emb = cohere_embeddings[i] if not isinstance(cohere_embeddings, Exception) and i < len(cohere_embeddings) else None
+                
+                results[text_idx] = {
+                    'index': text_idx,
+                    'content': example_inputs[text_idx].content,
+                    'type': example_inputs[text_idx].input_type,
+                    'titan_embedding': titan_emb if not isinstance(titan_emb, Exception) else None,
+                    'cohere_embedding': cohere_emb if not isinstance(cohere_emb, Exception) else None
+                }
+        
+        # 이미지 개별 처리 (배치 지원 안함)
+        if image_inputs:
+            logger.info(f"Individual embedding {len(image_inputs)} image inputs")
+            for i, img_idx in enumerate(image_indices):
+                example_input = example_inputs[img_idx]
+                nova_task = embedder.embed_multimodal(example_input.content)
+                cohere_task = embedder.embed_cohere_v4(example_input.content)
+                
+                nova_emb, cohere_emb = await asyncio.gather(nova_task, cohere_task, return_exceptions=True)
+                
+                results[img_idx] = {
+                    'index': img_idx,
+                    'content': example_input.content,
+                    'type': example_input.input_type,
+                    'nova_embedding': nova_emb if not isinstance(nova_emb, Exception) else None,
+                    'cohere_embedding': cohere_emb if not isinstance(cohere_emb, Exception) else None
+                }
+        
+        return results
 
     async def _embed_single_input(self, embedder, index: int, example_input: ExampleInput) -> Dict[str, Any]:
         """단일 입력 임베딩 - Cohere와 Nova/Titan 병렬 처리"""
@@ -109,32 +141,88 @@ class EmbedStage:
             }
     
     async def _embed_outputs(self, embedder, executions: List[Dict], prompt_type: PromptType) -> List[Dict[str, Any]]:
-        """출력 임베딩 생성 - 병렬 처리"""
-        logger.info(f"Embedding outputs for {len(executions)} inputs in parallel")
+        """출력 임베딩 생성 - 배치 처리"""
+        logger.info(f"Embedding outputs for {len(executions)} inputs using batch processing")
         
-        # 모든 입력의 출력들을 병렬로 처리
-        embedding_tasks = []
-        for exec_data in executions:
-            task = self._embed_single_execution_outputs(embedder, exec_data)
-            embedding_tasks.append(task)
+        # 모든 출력 텍스트 수집
+        all_outputs = []
+        output_mapping = []  # (execution_idx, output_idx) 매핑
         
-        # 병렬 실행
-        output_embeddings = await asyncio.gather(*embedding_tasks, return_exceptions=True)
+        for exec_idx, exec_data in enumerate(executions):
+            outputs = exec_data['outputs']
+            for output_idx, output in enumerate(outputs):
+                if output.strip():  # 빈 출력 제외
+                    all_outputs.append(output)
+                    output_mapping.append((exec_idx, output_idx))
         
-        # 예외 처리
-        valid_embeddings = []
-        for i, result in enumerate(output_embeddings):
-            if isinstance(result, Exception):
-                logger.error(f"Output embedding failed for input {i+1}: {str(result)}")
-                # 실패시 기본값
-                valid_embeddings.append({
-                    'input_index': executions[i]['input_index'],
-                    'embeddings': []
-                })
-            else:
-                valid_embeddings.append(result)
+        if not all_outputs:
+            logger.warning("No valid outputs to embed")
+            return []
         
-        return valid_embeddings
+        logger.info(f"Batch embedding {len(all_outputs)} outputs")
+        
+        # 배치 임베딩 실행
+        titan_embeddings, cohere_embeddings = await asyncio.gather(
+            embedder.embed_text_batch(all_outputs),
+            embedder.embed_multilingual_batch(all_outputs),
+            return_exceptions=True
+        )
+        
+        # 결과를 execution별로 재구성
+        results = []
+        for exec_idx, exec_data in enumerate(executions):
+            input_index = exec_data['input_index']
+            outputs = exec_data['outputs']
+            
+            exec_embeddings = []
+            for output_idx, output in enumerate(outputs):
+                if not output.strip():
+                    # 빈 출력
+                    exec_embeddings.append({
+                        'output_index': output_idx,
+                        'content': output,
+                        'titan_embedding': None,
+                        'cohere_embedding': None
+                    })
+                else:
+                    # 배치 결과에서 찾기
+                    batch_idx = None
+                    for i, (e_idx, o_idx) in enumerate(output_mapping):
+                        if e_idx == exec_idx and o_idx == output_idx:
+                            batch_idx = i
+                            break
+                    
+                    if batch_idx is not None:
+                        titan_emb = None
+                        cohere_emb = None
+                        
+                        if not isinstance(titan_embeddings, Exception) and batch_idx < len(titan_embeddings):
+                            titan_emb = titan_embeddings[batch_idx] if not isinstance(titan_embeddings[batch_idx], Exception) else None
+                        
+                        if not isinstance(cohere_embeddings, Exception) and batch_idx < len(cohere_embeddings):
+                            cohere_emb = cohere_embeddings[batch_idx] if not isinstance(cohere_embeddings[batch_idx], Exception) else None
+                        
+                        exec_embeddings.append({
+                            'output_index': output_idx,
+                            'content': output,
+                            'titan_embedding': titan_emb,
+                            'cohere_embedding': cohere_emb
+                        })
+                    else:
+                        logger.error(f"Failed to find batch result for execution {exec_idx}, output {output_idx}")
+                        exec_embeddings.append({
+                            'output_index': output_idx,
+                            'content': output,
+                            'titan_embedding': None,
+                            'cohere_embedding': None
+                        })
+            
+            results.append({
+                'input_index': input_index,
+                'embeddings': exec_embeddings
+            })
+        
+        return results
 
     async def _embed_single_execution_outputs(self, embedder, exec_data: Dict) -> Dict[str, Any]:
         """단일 입력의 모든 출력 임베딩 - 병렬 처리"""

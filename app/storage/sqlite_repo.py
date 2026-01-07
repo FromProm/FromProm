@@ -134,14 +134,22 @@ class SQLiteRepository(BaseRepository):
             logger.error(f"Job update failed: {str(e)}")
             raise StorageError(f"Failed to update job: {str(e)}")
     
-    async def list_jobs(self, page: int = 1, size: int = 10) -> List[JobResponse]:
+    async def list_jobs(self, page: int = 1, size: int = 10, request_id: Optional[str] = None) -> List[JobResponse]:
         """작업 목록 조회"""
         try:
             offset = (page - 1) * size
-            cursor = await self.db.execute(
-                "SELECT * FROM jobs ORDER BY created_at DESC LIMIT ? OFFSET ?",
-                (size, offset)
-            )
+            
+            if request_id:
+                cursor = await self.db.execute(
+                    "SELECT * FROM jobs WHERE id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                    (request_id, size, offset)
+                )
+            else:
+                cursor = await self.db.execute(
+                    "SELECT * FROM jobs ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                    (size, offset)
+                )
+            
             rows = await cursor.fetchall()
             
             return [self._row_to_job_response(row) for row in rows]
@@ -150,10 +158,14 @@ class SQLiteRepository(BaseRepository):
             logger.error(f"Job listing failed: {str(e)}")
             raise StorageError(f"Failed to list jobs: {str(e)}")
     
-    async def count_jobs(self) -> int:
+    async def count_jobs(self, request_id: Optional[str] = None) -> int:
         """전체 작업 수"""
         try:
-            cursor = await self.db.execute("SELECT COUNT(*) FROM jobs")
+            if request_id:
+                cursor = await self.db.execute("SELECT COUNT(*) FROM jobs WHERE id = ?", (request_id,))
+            else:
+                cursor = await self.db.execute("SELECT COUNT(*) FROM jobs")
+            
             row = await cursor.fetchone()
             return row[0] if row else 0
             

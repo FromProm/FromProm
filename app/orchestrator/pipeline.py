@@ -40,12 +40,13 @@ class Orchestrator:
         logger.info(f"Starting pipeline for prompt type: {job_request.prompt_type}")
         
         try:
-            # [1단계] 프롬프트 실행 - 출력 생성 (선행 필수)
+            # [1단계] 프롬프트 실행 - 출력 생성 + Variance 모델 실행 (선행 필수)
             execution_results = await self.stages['run'].execute(
                 job_request.prompt,
                 job_request.example_inputs,
                 job_request.recommended_model,
-                job_request.repeat_count
+                job_request.repeat_count,
+                job_request.prompt_type
             )
             
             # 실행 결과 보존 (S3 저장용)
@@ -100,13 +101,14 @@ class Orchestrator:
                 )
                 task_names.append('judge')
             
-            # 모델별 편차 (모든 타입)
+            # 모델별 편차 (모든 타입) - 기존 출력 재사용
             parallel_tasks.append(
                 self.stages['variance'].execute(
                     job_request.prompt,
                     job_request.example_inputs,
                     job_request.prompt_type,
-                    job_request.recommended_model
+                    job_request.recommended_model,
+                    execution_results  # 기존 출력 전달
                 )
             )
             task_names.append('variance')

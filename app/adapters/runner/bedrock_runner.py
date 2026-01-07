@@ -1,6 +1,8 @@
 import json
 import logging
 import boto3
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Any
 from app.adapters.runner.base import BaseRunner
 from app.core.config import settings
@@ -9,15 +11,25 @@ from app.core.errors import ModelInvocationError
 logger = logging.getLogger(__name__)
 
 class BedrockRunner(BaseRunner):
-    """AWS Bedrock 모델 실행기"""
+    """AWS Bedrock 모델 실행기 (병렬 처리 지원)"""
     
     def __init__(self):
+        # boto3 설정 (연결 풀 크기 증가)
+        from botocore.config import Config
+        config = Config(
+            max_pool_connections=25,  # 연결 풀 크기 증가
+            retries={'max_attempts': 3}
+        )
+        
         self.client = boto3.client(
             'bedrock-runtime',
             region_name=settings.aws_region,
             aws_access_key_id=settings.aws_access_key_id or None,
-            aws_secret_access_key=settings.aws_secret_access_key or None
+            aws_secret_access_key=settings.aws_secret_access_key or None,
+            config=config
         )
+        # 스레드풀 생성 (병렬 처리용)
+        self.executor = ThreadPoolExecutor(max_workers=20)
     
     async def invoke(
         self, 
@@ -26,10 +38,26 @@ class BedrockRunner(BaseRunner):
         input_type: str = "text",
         **kwargs
     ) -> Dict[str, Any]:
-        """Bedrock 모델 호출"""
+        """Bedrock 모델 호출 (비동기 병렬 처리)"""
         try:
             logger.info(f"Invoking model: {model}")
             
+            # 동기 함수를 비동기로 실행
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(
+                self.executor,
+                self._sync_invoke,
+                model, prompt, input_type, kwargs
+            )
+            return result
+            
+        except Exception as e:
+            logger.error(f"Model invocation failed for {model}: {str(e)}")
+            raise ModelInvocationError(f"Failed to invoke {model}: {str(e)}")
+    
+    def _sync_invoke(self, model: str, prompt: str, input_type: str, kwargs: dict) -> Dict[str, Any]:
+        """동기 Bedrock 호출 (스레드에서 실행)"""
+        try:
             # 모델별 요청 형식 구성
             if "anthropic.claude" in model:
                 body = self._build_claude_request(prompt, **kwargs)
@@ -157,7 +185,7 @@ class BedrockRunner(BaseRunner):
             output_text = "Unknown Nova model response"
         
         # 토큰 사용량 (Nova는 직접 제공하지 않으므로 근사치)
-        input_tokens = len(prompt.split()) * 0.75 if 'prompt' in locals() else 50
+        input_tokens = 50  # 기본값
         output_tokens = len(output_text.split()) * 0.75
         
         token_usage = {

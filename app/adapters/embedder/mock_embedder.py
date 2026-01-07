@@ -20,6 +20,10 @@ class MockEmbedder(BaseEmbedder):
         
         return vector.tolist()
     
+    async def embed_text_batch(self, texts: List[str]) -> List[List[float]]:
+        """가짜 텍스트 배치 임베딩"""
+        return [await self.embed_text(text) for text in texts]
+    
     async def embed_multilingual(self, text: str) -> List[float]:
         """가짜 다국어 임베딩 (약간 다른 시드 사용)"""
         seed = (hash(text) + 1) % 2**32
@@ -29,6 +33,10 @@ class MockEmbedder(BaseEmbedder):
         vector = vector / np.linalg.norm(vector)
         
         return vector.tolist()
+    
+    async def embed_multilingual_batch(self, texts: List[str]) -> List[List[float]]:
+        """가짜 다국어 배치 임베딩"""
+        return [await self.embed_multilingual(text) for text in texts]
     
     async def embed_multimodal(self, content: str) -> List[float]:
         """가짜 멀티모달 임베딩"""

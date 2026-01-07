@@ -26,6 +26,16 @@ class BedrockEmbedder(BaseEmbedder):
             {"inputText": text}
         )
     
+    async def embed_text_batch(self, texts: List[str]) -> List[List[float]]:
+        """Titan Text 배치 임베딩"""
+        if not texts:
+            return []
+        
+        # Titan은 배치를 지원하지 않으므로 개별 호출을 병렬로 처리
+        import asyncio
+        tasks = [self.embed_text(text) for text in texts]
+        return await asyncio.gather(*tasks, return_exceptions=True)
+    
     async def embed_multilingual(self, text: str) -> List[float]:
         """Cohere Multilingual 임베딩"""
         return await self._invoke_embedding(
@@ -35,6 +45,28 @@ class BedrockEmbedder(BaseEmbedder):
                 "input_type": "search_document"
             }
         )
+    
+    async def embed_multilingual_batch(self, texts: List[str]) -> List[List[float]]:
+        """Cohere Multilingual 배치 임베딩"""
+        if not texts:
+            return []
+        
+        # Cohere는 배치를 지원하므로 한 번에 처리
+        try:
+            response_body = await self._invoke_embedding_raw(
+                settings.embedding_models['cohere_multilingual'],
+                {
+                    "texts": texts,
+                    "input_type": "search_document"
+                }
+            )
+            return response_body.get('embeddings', [])
+        except Exception as e:
+            logger.error(f"Batch embedding failed: {str(e)}")
+            # 실패 시 개별 처리로 fallback
+            import asyncio
+            tasks = [self.embed_multilingual(text) for text in texts]
+            return await asyncio.gather(*tasks, return_exceptions=True)
     
     async def embed_multimodal(self, content: str) -> List[float]:
         """Nova Multimodal 임베딩"""
@@ -55,6 +87,19 @@ class BedrockEmbedder(BaseEmbedder):
     
     async def _invoke_embedding(self, model_id: str, body: dict) -> List[float]:
         """임베딩 모델 호출"""
+        response_body = await self._invoke_embedding_raw(model_id, body)
+        
+        # 모델별 응답 파싱
+        if "titan" in model_id:
+            return response_body.get('embedding', [])
+        elif "cohere" in model_id:
+            embeddings = response_body.get('embeddings', [])
+            return embeddings[0] if embeddings else []
+        else:
+            raise EmbeddingError(f"Unknown embedding model: {model_id}")
+    
+    async def _invoke_embedding_raw(self, model_id: str, body: dict) -> dict:
+        """임베딩 모델 원시 호출 (응답 파싱 없음)"""
         try:
             logger.debug(f"Invoking embedding model: {model_id}")
             
@@ -64,16 +109,7 @@ class BedrockEmbedder(BaseEmbedder):
                 contentType='application/json'
             )
             
-            response_body = json.loads(response['body'].read())
-            
-            # 모델별 응답 파싱
-            if "titan" in model_id:
-                return response_body.get('embedding', [])
-            elif "cohere" in model_id:
-                embeddings = response_body.get('embeddings', [])
-                return embeddings[0] if embeddings else []
-            else:
-                raise EmbeddingError(f"Unknown embedding model: {model_id}")
+            return json.loads(response['body'].read())
                 
         except Exception as e:
             logger.error(f"Embedding generation failed for {model_id}: {str(e)}")

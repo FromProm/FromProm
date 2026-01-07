@@ -18,23 +18,21 @@ class RunStage:
         prompt: str, 
         example_inputs: List[ExampleInput], 
         recommended_model: str = None,
-        repeat_count: int = 5
+        repeat_count: int = 5,
+        prompt_type: str = None
     ) -> Dict[str, Any]:
         """
         예시 입력들에 대해 프롬프트를 병렬 실행하고 결과 수집
+        Variance 계산을 위한 추가 모델들도 함께 실행
         
         Returns:
             {
-                'executions': [
-                    {
-                        'input_index': 0,
-                        'input_content': '...',
-                        'outputs': ['output1', 'output2', ...],
-                        'model': 'model_name',
-                        'token_usage': {...}
-                    },
+                'executions': [...],  # 기존 실행 결과
+                'variance_outputs': {  # Variance용 추가 출력
+                    'model1': ['output1', 'output2', 'output3'],
+                    'model2': ['output1', 'output2', 'output3'],
                     ...
-                ]
+                }
             }
         """
         logger.info(f"Executing prompt with {len(example_inputs)} inputs, {repeat_count} repeats each (parallel)")
@@ -44,12 +42,15 @@ class RunStage:
         # 모델 선택
         model = recommended_model or self._get_default_model(example_inputs)
         
-        # 모든 실행 태스크 생성 (입력별 × 반복별)
-        all_tasks = []
-        task_info = []  # 태스크 정보 저장
+        # Variance 계산용 추가 모델들 가져오기
+        variance_models = self._get_variance_models(prompt_type, model)
         
+        # 모든 실행 태스크 생성
+        all_tasks = []
+        task_info = []
+        
+        # 1. 기본 실행 태스크 (기존 로직)
         for i, example_input in enumerate(example_inputs):
-            # 프롬프트에 입력 삽입
             filled_prompt = self._fill_prompt(prompt, example_input.content)
             
             # 각 입력에 대해 repeat_count만큼 태스크 생성
@@ -61,32 +62,55 @@ class RunStage:
                 )
                 all_tasks.append(task)
                 task_info.append({
+                    'type': 'main',
                     'input_index': i,
                     'repeat_index': repeat,
+                    'model': model,
                     'input_content': example_input.content
                 })
         
-        logger.info(f"Running {len(all_tasks)} LLM calls in parallel")
+        # 2. Variance 계산용 추가 태스크
+        for i, example_input in enumerate(example_inputs):
+            filled_prompt = self._fill_prompt(prompt, example_input.content)
+            
+            for variance_model in variance_models:
+                if variance_model != model:  # 기본 모델과 다른 경우만
+                    task = runner.invoke(
+                        model=variance_model,
+                        prompt=filled_prompt,
+                        input_type=example_input.input_type
+                    )
+                    all_tasks.append(task)
+                    task_info.append({
+                        'type': 'variance',
+                        'input_index': i,
+                        'model': variance_model,
+                        'input_content': example_input.content
+                    })
+        
+        logger.info(f"Running {len(all_tasks)} LLM calls in parallel (including variance models)")
         
         # 모든 태스크 병렬 실행
         results = await asyncio.gather(*all_tasks, return_exceptions=True)
         
-        # 결과를 입력별로 그룹화
+        # 결과를 분류하여 정리
         executions = []
+        variance_outputs = {}
+        
+        # 기본 실행 결과 처리
         for i in range(len(example_inputs)):
             outputs = []
             total_token_usage = {'input_tokens': 0, 'output_tokens': 0, 'total_tokens': 0}
             
-            # 해당 입력의 결과들 수집
+            # 해당 입력의 기본 실행 결과들 수집
             for j, (result, info) in enumerate(zip(results, task_info)):
-                if info['input_index'] == i:
+                if info['type'] == 'main' and info['input_index'] == i:
                     if isinstance(result, Exception):
                         logger.error(f"Failed execution for input {i+1}, repeat {info['repeat_index']+1}: {str(result)}")
-                        outputs.append("")  # 실패시 빈 출력
+                        outputs.append("")
                     else:
                         outputs.append(result['output'])
                         
-                        # 토큰 사용량 누적
                         if 'token_usage' in result:
                             for key in total_token_usage:
                                 total_token_usage[key] += result['token_usage'].get(key, 0)
@@ -100,8 +124,66 @@ class RunStage:
                 'token_usage': total_token_usage
             })
         
-        logger.info(f"Parallel execution completed: {len(executions)} inputs processed")
-        return {'executions': executions}
+        # Variance 결과 처리
+        for variance_model in variance_models:
+            variance_outputs[variance_model] = []
+            
+            for i in range(len(example_inputs)):
+                # 해당 입력의 variance 결과 찾기
+                variance_output = ""
+                for j, (result, info) in enumerate(zip(results, task_info)):
+                    if (info['type'] == 'variance' and 
+                        info['input_index'] == i and 
+                        info['model'] == variance_model):
+                        if isinstance(result, Exception):
+                            logger.error(f"Failed variance execution for {variance_model}, input {i+1}: {str(result)}")
+                            variance_output = ""
+                        else:
+                            variance_output = result['output']
+                        break
+                    elif (info['type'] == 'main' and 
+                          info['input_index'] == i and 
+                          info['repeat_index'] == 0 and  # 첫 번째 반복만
+                          info['model'] == variance_model):
+                        # 기본 모델과 variance 모델이 같은 경우
+                        if isinstance(result, Exception):
+                            variance_output = ""
+                        else:
+                            variance_output = result['output']
+                        break
+                
+                variance_outputs[variance_model].append(variance_output)
+        
+        logger.info(f"Parallel execution completed: {len(executions)} inputs processed with variance models")
+        return {
+            'executions': executions,
+            'variance_outputs': variance_outputs
+        }
+    
+    def _get_variance_models(self, prompt_type: str, main_model: str) -> List[str]:
+        """Variance 계산용 모델들 반환"""
+        from app.core.schemas import PromptType
+        
+        # Variance Stage와 동일한 모델 설정
+        comparison_models = {
+            PromptType.TYPE_A: [
+                "anthropic.claude-3-5-sonnet-20240620-v1:0",
+                "anthropic.claude-3-sonnet-20240229-v1:0",
+                "anthropic.claude-3-haiku-20240307-v1:0"
+            ],
+            PromptType.TYPE_B_TEXT: [
+                "anthropic.claude-3-5-sonnet-20240620-v1:0",
+                "anthropic.claude-3-sonnet-20240229-v1:0",
+                "anthropic.claude-3-haiku-20240307-v1:0"
+            ],
+            PromptType.TYPE_B_IMAGE: [
+                "amazon.nova-canvas-v1:0",
+                "amazon.titan-image-generator-v1",
+                "amazon.titan-image-generator-v2:0"
+            ]
+        }
+        
+        return comparison_models.get(prompt_type, [main_model])
     
     def _get_default_model(self, example_inputs: List[ExampleInput]) -> str:
         """입력 타입에 따른 기본 모델 선택"""

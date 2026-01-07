@@ -8,7 +8,7 @@ from app.core.schemas import MetricScore, ExampleInput, PromptType
 logger = logging.getLogger(__name__)
 
 class VarianceStage:
-    """모델별 성능 편차 계산 단계 - 다중 모델 비교"""
+    """모델별 성능 편차 계산 단계 - Run Stage에서 사전 계산된 결과 사용"""
     
     def __init__(self, context: ExecutionContext):
         self.context = context
@@ -36,15 +36,15 @@ class VarianceStage:
         prompt: str, 
         example_inputs: List[ExampleInput], 
         prompt_type: PromptType,
-        recommended_model: Optional[str] = None
+        recommended_model: Optional[str] = None,
+        existing_outputs: Optional[Dict[str, Any]] = None
     ) -> MetricScore:
         """
-        모델별 성능 편차 계산
-        - 3개 모델로 동일 입력 실행
-        - 각 입력별로 3개 출력 생성 (총 9개)
-        - 임베딩 기반 유사도 계산
+        모델별 성능 편차 계산 (Run Stage에서 이미 실행된 결과 사용)
+        - Run Stage에서 받은 variance_outputs 사용
+        - LLM 호출 없이 임베딩 + 계산만 수행
         """
-        logger.info(f"Calculating model variance score for {prompt_type}")
+        logger.info(f"Calculating model variance score for {prompt_type} (using pre-computed outputs)")
         
         try:
             models = self.comparison_models.get(prompt_type, [])
@@ -52,92 +52,96 @@ class VarianceStage:
                 logger.warning(f"Not enough models for {prompt_type} comparison")
                 return MetricScore(score=50.0, details={'error': 'insufficient_models'})
             
-            runner = self.context.get_runner()
             embedder = self.context.get_embedder()
             
-            all_variance_scores = []
-            details = {'per_input_scores': [], 'models_used': models}
+            # existing_outputs에서 variance_outputs 추출
+            if not existing_outputs or 'variance_outputs' not in existing_outputs:
+                logger.warning("No variance outputs found from Run Stage")
+                return MetricScore(score=50.0, details={'error': 'no_variance_outputs'})
             
-            # 각 예시 입력별로 처리
+            variance_outputs = existing_outputs['variance_outputs']
+            details = {'per_input_scores': [], 'models_used': models, 'used_precomputed': True}
+            
+            # 결과를 입력별로 처리
+            input_results = []
             for i, example_input in enumerate(example_inputs):
-                logger.info(f"Processing input {i+1}/{len(example_inputs)} with {len(models)} models")
+                logger.info(f"Processing results for input {i+1}/{len(example_inputs)}")
                 
-                # 프롬프트에 입력 삽입
-                filled_prompt = self._fill_prompt(prompt, example_input.content)
-                
-                # 각 모델로 병렬 실행
-                model_tasks = []
-                for model in models:
-                    task = self._run_single_model(runner, model, filled_prompt, example_input.input_type)
-                    model_tasks.append(task)
-                
-                # 병렬 실행
-                model_results = await asyncio.gather(*model_tasks, return_exceptions=True)
-                
-                # 결과 매핑
+                # 모델별 출력 수집 (이미 Run Stage에서 실행됨)
                 model_outputs = {}
-                for model, result in zip(models, model_results):
-                    if isinstance(result, Exception):
-                        logger.error(f"Failed to run {model}: {str(result)}")
-                        model_outputs[model] = ""  # 실패시 빈 출력
+                for model in models:
+                    if model in variance_outputs and i < len(variance_outputs[model]):
+                        model_outputs[model] = variance_outputs[model][i]
                     else:
-                        model_outputs[model] = result
+                        logger.warning(f"Missing output for {model}, input {i+1}")
+                        model_outputs[model] = ""
                 
-                # 출력들을 임베딩으로 병렬 변환
+                # 임베딩 생성 (병렬)
                 embedding_tasks = []
                 valid_models = []
                 for model, output in model_outputs.items():
-                    if output.strip():  # 빈 출력이 아닌 경우만
-                        task = self._embed_single_output(embedder, output, prompt_type)
-                        embedding_tasks.append(task)
+                    if output.strip():
+                        embedding_tasks.append(self._embed_single_output(embedder, output, prompt_type))
                         valid_models.append(model)
                 
-                # 병렬 임베딩
+                embeddings = {}
                 if embedding_tasks:
                     embedding_results = await asyncio.gather(*embedding_tasks, return_exceptions=True)
-                    
-                    # 결과 매핑
-                    embeddings = {}
                     for model, result in zip(valid_models, embedding_results):
                         if isinstance(result, Exception):
                             logger.error(f"Failed to embed output from {model}: {str(result)}")
                             embeddings[model] = None
                         else:
                             embeddings[model] = result
-                else:
-                    embeddings = {}
                 
                 # 유효한 임베딩만 필터링
                 valid_embeddings = {k: v for k, v in embeddings.items() if v is not None}
                 
                 if len(valid_embeddings) < 2:
                     logger.warning(f"Not enough valid embeddings for input {i}")
-                    all_variance_scores.append(0.0)
-                    details['per_input_scores'].append({
+                    input_results.append({
                         'input_index': i,
                         'score': 0.0,
                         'reason': 'insufficient_valid_outputs',
-                        'valid_models': list(valid_embeddings.keys())
+                        'valid_models': list(valid_embeddings.keys()),
+                        'model_outputs': {k: v[:100] + "..." if len(v) > 100 else v for k, v in model_outputs.items()}
                     })
                     continue
                 
-                # 모델 간 유사도 계산
-                variance_score = self._calculate_model_variance(valid_embeddings)
-                all_variance_scores.append(variance_score)
+                # 임베딩 간 유사도 계산
+                similarities = []
+                embedding_list = list(valid_embeddings.values())
+                model_names = list(valid_embeddings.keys())
                 
-                details['per_input_scores'].append({
+                for i_emb in range(len(embedding_list)):
+                    for j_emb in range(i_emb + 1, len(embedding_list)):
+                        similarity = self._cosine_similarity(embedding_list[i_emb], embedding_list[j_emb])
+                        similarities.append(similarity)
+                
+                if similarities:
+                    avg_similarity = sum(similarities) / len(similarities)
+                    # 유사도를 편차 점수로 변환 (높은 유사도 = 낮은 편차 = 높은 점수)
+                    variance_score = avg_similarity * 100
+                else:
+                    variance_score = 0.0
+                
+                input_results.append({
                     'input_index': i,
                     'score': variance_score,
-                    'valid_models': list(valid_embeddings.keys()),
-                    'model_outputs': model_outputs  # 전체 출력 저장 (자르지 않음)
+                    'similarity_scores': similarities,
+                    'average_similarity': avg_similarity if similarities else 0.0,
+                    'valid_models': model_names,
+                    'model_outputs': {k: v[:100] + "..." if len(v) > 100 else v for k, v in model_outputs.items()}
                 })
             
-            # 전체 평균 점수 (100점 만점)
-            final_score = (sum(all_variance_scores) / len(all_variance_scores) * 100) if all_variance_scores else 0.0
+            # 전체 평균 점수 계산
+            valid_scores = [result['score'] for result in input_results if result['score'] > 0]
+            if valid_scores:
+                final_score = sum(valid_scores) / len(valid_scores)
+            else:
+                final_score = 0.0
             
-            details['final_score'] = final_score
-            details['prompt_type'] = prompt_type.value
-            details['note'] = 'Multi-model variance score out of 100. Higher score means more consistent across models.'
+            details['per_input_scores'] = input_results
             
             logger.info(f"Model variance score: {final_score:.3f}")
             return MetricScore(score=final_score, details=details)
@@ -145,77 +149,43 @@ class VarianceStage:
         except Exception as e:
             logger.error(f"Variance calculation failed: {str(e)}")
             return MetricScore(score=0.0, details={'error': str(e)})
-
-    async def _run_single_model(self, runner, model: str, prompt: str, input_type: str) -> str:
-        """단일 모델 실행"""
+    
+    async def _embed_single_output(self, embedder, output: str, prompt_type: PromptType):
+        """단일 출력에 대한 임베딩 생성"""
         try:
-            result = await runner.invoke(
-                model=model,
-                prompt=prompt,
-                input_type=input_type
-            )
-            return result['output']
-        except Exception as e:
-            logger.error(f"Model {model} execution failed: {str(e)}")
-            return ""
-
-    async def _embed_single_output(self, embedder, output: str, prompt_type: PromptType) -> Optional[List[float]]:
-        """단일 출력 임베딩"""
-        try:
-            # 프롬프트 타입에 따라 적절한 임베딩 모델 선택
             if prompt_type == PromptType.TYPE_B_IMAGE:
-                # 이미지 출력: Cohere v4 사용 (TYPE_B_IMAGE 요구사항)
-                embedding = await embedder.embed_cohere_v4(output)
+                # 이미지 타입의 경우 텍스트 임베딩 사용
+                return await embedder.embed_text(output)  # 단일 문자열 전달
             else:
-                # 텍스트 출력: Titan Text 사용
-                embedding = await embedder.embed_text(output)
-            
-            return embedding
+                # 텍스트 타입
+                return await embedder.embed_text(output)  # 단일 문자열 전달
         except Exception as e:
-            logger.error(f"Embedding failed: {str(e)}")
-            return None
+            logger.error(f"Embedding failed for output: {str(e)}")
+            raise e
     
-    def _calculate_model_variance(self, embeddings: Dict[str, List[float]]) -> float:
-        """모델 간 임베딩 유사도 기반 일관성 계산"""
-        
-        if len(embeddings) < 2:
-            return 0.0
-        
-        # 모든 임베딩을 numpy 배열로 변환
-        embedding_arrays = {}
-        for model, embedding in embeddings.items():
-            embedding_arrays[model] = np.array(embedding)
-        
-        # 모든 모델 쌍의 코사인 유사도 계산
-        similarities = []
-        models = list(embedding_arrays.keys())
-        
-        for i in range(len(models)):
-            for j in range(i + 1, len(models)):
-                model1, model2 = models[i], models[j]
-                emb1, emb2 = embedding_arrays[model1], embedding_arrays[model2]
-                
-                # 코사인 유사도 계산
-                similarity = self._cosine_similarity(emb1, emb2)
-                similarities.append(similarity)
-        
-        # 평균 유사도 (높을수록 모델 간 일관성 높음)
-        avg_similarity = sum(similarities) / len(similarities) if similarities else 0.0
-        
-        # 0-1 범위를 0-1로 유지 (이미 코사인 유사도가 0-1 범위)
-        return max(0.0, min(1.0, avg_similarity))
-    
-    def _cosine_similarity(self, vec1: np.ndarray, vec2: np.ndarray) -> float:
+    def _cosine_similarity(self, vec1, vec2):
         """코사인 유사도 계산"""
-        # 정규화
-        vec1_norm = vec1 / np.linalg.norm(vec1)
-        vec2_norm = vec2 / np.linalg.norm(vec2)
-        
-        # 코사인 유사도
-        similarity = np.dot(vec1_norm, vec2_norm)
-        
-        # 0-1 범위로 정규화 (cosine은 -1~1 범위)
-        return (similarity + 1) / 2
+        try:
+            # 벡터가 리스트의 리스트 형태인 경우 첫 번째 요소 사용
+            if isinstance(vec1, list) and len(vec1) > 0 and isinstance(vec1[0], list):
+                vec1 = vec1[0]
+            if isinstance(vec2, list) and len(vec2) > 0 and isinstance(vec2[0], list):
+                vec2 = vec2[0]
+            
+            vec1 = np.array(vec1)
+            vec2 = np.array(vec2)
+            
+            dot_product = np.dot(vec1, vec2)
+            norm1 = np.linalg.norm(vec1)
+            norm2 = np.linalg.norm(vec2)
+            
+            if norm1 == 0 or norm2 == 0:
+                return 0.0
+            
+            return dot_product / (norm1 * norm2)
+        except Exception as e:
+            logger.error(f"Cosine similarity calculation failed: {str(e)}")
+            return 0.0
     
     def _fill_prompt(self, prompt: str, input_content: str) -> str:
         """프롬프트의 {{변수명}} 플레이스홀더를 실제 입력으로 치환"""

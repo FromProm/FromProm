@@ -1,6 +1,12 @@
 from pydantic_settings import BaseSettings
 from typing import List, Dict, Any
 import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+# .env 파일 로드 (현재 파일 기준으로 프로젝트 루트 찾기)
+env_path = Path(__file__).parent.parent.parent / '.env'
+load_dotenv(env_path)
 
 class Settings(BaseSettings):
     # API Settings
@@ -12,6 +18,21 @@ class Settings(BaseSettings):
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
     
+    # Perplexity Settings
+    perplexity_api_key: str = ""
+    perplexity_api_key_2: str = ""
+    perplexity_model: str = "sonar"
+    
+    @property
+    def perplexity_api_keys(self) -> List[str]:
+        """사용 가능한 Perplexity API 키들 반환"""
+        keys = []
+        if self.perplexity_api_key:
+            keys.append(self.perplexity_api_key)
+        if self.perplexity_api_key_2:
+            keys.append(self.perplexity_api_key_2)
+        return keys
+    
     # Model Configuration
     default_models: Dict[str, str] = {
         "type_a": "anthropic.claude-3-5-sonnet-20240620-v1:0",
@@ -21,7 +42,7 @@ class Settings(BaseSettings):
     
     # Embedding Models
     embedding_models: Dict[str, str] = {
-        "titan_text": "amazon.titan-embed-text-v1",
+        "titan_text": "amazon.titan-embed-text-v2:0",
         "cohere_multilingual": "cohere.embed-multilingual-v3",
         "nova_multimodal": "amazon.nova-2-multimodal-embeddings-v1:0",
         "cohere_v4": "cohere.embed-english-v3.0"

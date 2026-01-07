@@ -10,8 +10,18 @@ class BaseEmbedder(ABC):
         pass
     
     @abstractmethod
+    async def embed_text_batch(self, texts: List[str]) -> List[List[float]]:
+        """텍스트 배치 임베딩"""
+        pass
+    
+    @abstractmethod
     async def embed_multilingual(self, text: str) -> List[float]:
         """다국어 텍스트 임베딩"""
+        pass
+    
+    @abstractmethod
+    async def embed_multilingual_batch(self, texts: List[str]) -> List[List[float]]:
+        """다국어 텍스트 배치 임베딩"""
         pass
     
     @abstractmethod

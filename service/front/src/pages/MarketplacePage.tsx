@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { dummyPrompts, categories } from '../services/dummyData';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
+import SplitText from '../components/SplitText';
+import AnimatedContent from '../components/AnimatedContent';
 
 const MarketplacePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -38,9 +39,35 @@ const MarketplacePage = () => {
       {/* 메인 콘텐츠 */}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* 페이지 헤더 */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">프롬프트 마켓플레이스</h1>
-          <p className="text-gray-600">검증된 고품질 AI 프롬프트를 찾아보세요</p>
+        <div className="mb-8 text-center flex flex-col items-center">
+          <SplitText
+            text="프롬프트 마켓플레이스"
+            className="text-3xl font-bold text-gray-900 mb-2"
+            delay={50}
+            duration={0.6}
+            ease="power3.out"
+            splitType="chars"
+            from={{ opacity: 0, y: 30 }}
+            to={{ opacity: 1, y: 0 }}
+            threshold={0.1}
+            rootMargin="-50px"
+            textAlign="center"
+            tag="h1"
+          />
+          <SplitText
+            text="검증된 고품질 AI 프롬프트를 찾아보세요"
+            className="text-gray-600"
+            delay={30}
+            duration={0.5}
+            ease="power3.out"
+            splitType="words"
+            from={{ opacity: 0, y: 20 }}
+            to={{ opacity: 1, y: 0 }}
+            threshold={0.1}
+            rootMargin="-50px"
+            textAlign="center"
+            tag="p"
+          />
         </div>
 
         {/* 검색 및 필터 */}
@@ -79,21 +106,24 @@ const MarketplacePage = () => {
         </div>
 
         {/* 프롬프트 그리드 */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPrompts.map((prompt, index) => (
-            <motion.div
+            <AnimatedContent
               key={prompt.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white border border-gray-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 hover:border-gray-300 transition-all cursor-pointer group"
-              onClick={() => window.location.href = `/prompt/${prompt.id}`}
+              distance={50}
+              direction="vertical"
+              reverse={false}
+              duration={0.6}
+              ease="power3.out"
+              initialOpacity={0}
+              animateOpacity
+              threshold={0.1}
+              delay={index * 0.1}
             >
+              <div
+                className="bg-white border border-gray-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 hover:border-gray-300 transition-all cursor-pointer group h-[320px] flex flex-col"
+                onClick={() => window.location.href = `/prompt/${prompt.id}`}
+              >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
@@ -107,11 +137,11 @@ const MarketplacePage = () => {
                 </div>
               </div>
 
-              <h3 className="text-gray-900 text-lg font-semibold mb-2 group-hover:text-gray-700 transition-colors">
+              <h3 className="text-gray-900 text-lg font-semibold mb-2 group-hover:text-gray-700 transition-colors line-clamp-1">
                 {prompt.title}
               </h3>
 
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+              <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">
                 {prompt.description}
               </p>
 
@@ -173,9 +203,10 @@ const MarketplacePage = () => {
                   </>
                 )}
               </div>
-            </motion.div>
+              </div>
+            </AnimatedContent>
           ))}
-        </motion.div>
+        </div>
 
         {/* 결과 없음 */}
         {filteredPrompts.length === 0 && (

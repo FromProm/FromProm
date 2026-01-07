@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { userApi } from '../../services/api';
 import LightRays from '../../components/LightRays';
+import SplitText from '../../components/SplitText';
+import AnimatedContent from '../../components/AnimatedContent';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -141,17 +143,55 @@ const RegisterPage = () => {
           </div>
           
           <div className="flex justify-center items-center space-x-3 mb-3">
-            <span className="text-3xl font-bold text-white">회원가입</span>
+            <SplitText
+              text="회원가입"
+              className="text-3xl font-bold text-white"
+              delay={50}
+              duration={0.6}
+              ease="power3.out"
+              splitType="chars"
+              from={{ opacity: 0, y: 30 }}
+              to={{ opacity: 1, y: 0 }}
+              threshold={0.1}
+              rootMargin="-50px"
+              textAlign="center"
+              tag="h1"
+            />
           </div>
-          <p className="text-center text-gray-300">
-            FromProm과 함께 시작하세요
-          </p>
+          <div className="text-center">
+            <SplitText
+              text="FromProm과 함께 시작하세요"
+              className="text-gray-300"
+              delay={30}
+              duration={0.5}
+              ease="power3.out"
+              splitType="words"
+              from={{ opacity: 0, y: 20 }}
+              to={{ opacity: 1, y: 0 }}
+              threshold={0.1}
+              rootMargin="-50px"
+              textAlign="center"
+              tag="p"
+            />
+          </div>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 py-8 px-4 shadow-2xl sm:rounded-xl sm:px-10">
-            {/* 회원가입 완료 후 인증 코드 입력 화면 */}
-            {isSignUpComplete ? (
+          <AnimatedContent
+            distance={100}
+            direction="vertical"
+            reverse={false}
+            duration={0.8}
+            ease="power3.out"
+            initialOpacity={0}
+            animateOpacity
+            scale={0.95}
+            threshold={0.1}
+            delay={0.2}
+          >
+            <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 py-8 px-4 shadow-2xl sm:rounded-xl sm:px-10">
+              {/* 회원가입 완료 후 인증 코드 입력 화면 */}
+              {isSignUpComplete ? (
               <div className="space-y-6">
                 <div className="text-center">
                   <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
@@ -321,6 +361,7 @@ const RegisterPage = () => {
               </div>
             </div>
           </div>
+          </AnimatedContent>
         </div>
       </div>
     </div>

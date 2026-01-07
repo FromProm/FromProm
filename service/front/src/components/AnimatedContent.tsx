@@ -106,8 +106,25 @@ const AnimatedContent = ({
       trigger: el,
       scroller: scrollerTarget,
       start: `top ${startPct}%`,
-      once: true,
-      onEnter: () => tl.play()
+      end: `bottom 20%`,
+      onEnter: () => tl.play(),
+      onLeave: () => {
+        tl.reverse();
+        gsap.set(el, {
+          [axis]: offset,
+          scale,
+          opacity: animateOpacity ? initialOpacity : 1
+        });
+      },
+      onEnterBack: () => tl.play(),
+      onLeaveBack: () => {
+        tl.reverse();
+        gsap.set(el, {
+          [axis]: offset,
+          scale,
+          opacity: animateOpacity ? initialOpacity : 1
+        });
+      }
     });
 
     return () => {

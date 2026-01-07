@@ -22,6 +22,7 @@ import SettingsPage from './pages/dashboard/SettingsPage';
 // Components
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
 
 const queryClient = new QueryClient();
 
@@ -48,8 +49,8 @@ function App() {
                 <Routes>
                     {/* 공개 라우트 - Header 없음 */}
                     <Route path="/" element={<LandingPage />} />
-                    <Route path="/auth/login" element={<LoginPage />} />
-                    <Route path="/auth/register" element={<RegisterPage />} />
+                    <Route path="/auth/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+                    <Route path="/auth/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
                     <Route path="/cart" element={<CartPage />} />
 
                     {/* Header가 있는 라우트 */}

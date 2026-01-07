@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { dummyPrompts } from '../services/dummyData';
@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/authStore';
 
 const PromptDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const prompt = dummyPrompts.find(p => p.id === id);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const { addToCart, isInCart } = useCartStore();
@@ -17,7 +18,15 @@ const PromptDetailPage = () => {
   const isAlreadyInCart = prompt ? isInCart(prompt.id) : false;
   const isAlreadyPurchased = prompt ? isPurchased(prompt.id) : false;
 
+  const isLoggedIn = () => !!localStorage.getItem('accessToken');
+
   const handleAddToCart = () => {
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+    
     if (prompt && !isAlreadyInCart && !isAlreadyPurchased) {
       addToCart({
         id: prompt.id,
@@ -29,6 +38,16 @@ const PromptDetailPage = () => {
         rating: prompt.rating
       });
     }
+  };
+
+  const handlePurchase = () => {
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+    
+    navigate(`/purchase/${prompt?.id}`);
   };
 
   if (!prompt) {
@@ -143,12 +162,12 @@ const PromptDetailPage = () => {
                     >
                       {isAlreadyInCart ? '장바구니에 있음' : '장바구니에 추가'}
                     </button>
-                    <Link
-                      to={`/purchase/${prompt.id}`}
+                    <button
+                      onClick={handlePurchase}
                       className="flex-1 bg-blue-900 text-white font-semibold px-3 py-3 rounded-lg hover:bg-blue-800 transition-colors text-center text-sm whitespace-nowrap"
                     >
                       구매
-                    </Link>
+                    </button>
                   </div>
                   {isAlreadyInCart && (
                     <Link

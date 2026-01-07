@@ -51,14 +51,28 @@ function App() {
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/auth/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
                     <Route path="/auth/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-                    <Route path="/cart" element={<CartPage />} />
+                    <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
 
                     {/* Header가 있는 라우트 */}
                     <Route element={<Layout />}>
                         <Route path="/marketplace" element={<MarketplacePage />} />
-                        <Route path="/prompt/create" element={<PromptCreatePage />} />
-                        <Route path="/credit" element={<CreditPage />} />
                         <Route path="/prompt/:id" element={<PromptDetailPage />} />
+                        <Route
+                            path="/prompt/create"
+                            element={
+                                <ProtectedRoute>
+                                    <PromptCreatePage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/credit"
+                            element={
+                                <ProtectedRoute>
+                                    <CreditPage />
+                                </ProtectedRoute>
+                            }
+                        />
                         <Route
                             path="/purchase/:id"
                             element={

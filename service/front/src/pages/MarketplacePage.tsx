@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { dummyPrompts, categories } from '../services/dummyData';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
@@ -11,9 +11,19 @@ const MarketplacePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { addToCart, isInCart } = useCartStore();
   const { isPurchased } = usePurchaseStore();
+  const navigate = useNavigate();
+
+  const isLoggedIn = () => !!localStorage.getItem('accessToken');
 
   const handleAddToCart = (prompt: any, e: React.MouseEvent) => {
-    e.stopPropagation(); // 카드 클릭 이벤트 방지
+    e.stopPropagation();
+    
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+    
     if (!isInCart(prompt.id) && !isPurchased(prompt.id)) {
       addToCart({
         id: prompt.id,
@@ -25,6 +35,18 @@ const MarketplacePage = () => {
         rating: prompt.rating
       });
     }
+  };
+
+  const handlePurchase = (promptId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+    
+    navigate(`/purchase/${promptId}`);
   };
 
   const filteredPrompts = dummyPrompts.filter(prompt => {
@@ -193,13 +215,12 @@ const MarketplacePage = () => {
                     >
                       {isInCart(prompt.id) ? '장바구니에 있음' : '장바구니'}
                     </button>
-                    <Link
-                      to={`/purchase/${prompt.id}`}
-                      onClick={(e) => e.stopPropagation()}
+                    <button
+                      onClick={(e) => handlePurchase(prompt.id, e)}
                       className="flex-1 bg-blue-900 text-white px-3 py-2 rounded text-xs font-medium hover:bg-blue-800 transition-colors text-center"
                     >
                       구매
-                    </Link>
+                    </button>
                   </>
                 )}
               </div>

@@ -7,7 +7,11 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -35,6 +39,19 @@ public class UserRepository {
         // GSI를 통해 쿼리한 결과의 전체 아이템 개수를 스트림으로 카운트
         return userTable.index("nickname-index")
                 .query(q -> q.queryConditional(QueryConditional.keyEqualTo(k -> k.partitionValue(nickname))))
+                .stream()
+                .flatMap(page -> page.items().stream())
+                .count() > 0;
+    }
+
+    public boolean existsByEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+
+        // nickname-index와 동일하게 email-index를 조회합니다.
+        return userTable.index("email-index")
+                .query(q -> q.queryConditional(QueryConditional.keyEqualTo(k -> k.partitionValue(email))))
                 .stream()
                 .flatMap(page -> page.items().stream())
                 .count() > 0;

@@ -33,13 +33,15 @@ public class User {
     @DynamoDbAttribute("type")
     public String gettype() { return type; }
 
-    // 닉네임 중복 체크를 위한 GSI 설정 (핵심 부분!)
+    // 이메일 중복 체크를 위한 GSI 설정
+    @DynamoDbSecondaryPartitionKey(indexNames = "email-index") // 콘솔의 GSI 이름과 일치시켜야 함
+    @DynamoDbAttribute("email")
+    public String getEmail() { return email; }
+
+    // 닉네임 중복 체크를 위한 GSI 설정
     @DynamoDbSecondaryPartitionKey(indexNames = "nickname-index")
     @DynamoDbAttribute("nickname")
     public String getNickname() { return nickname; }
-
-    @DynamoDbAttribute("email")
-    public String getEmail() { return email; }
 
     @DynamoDbAttribute("credit")
     public int getCredit() { return credit; }

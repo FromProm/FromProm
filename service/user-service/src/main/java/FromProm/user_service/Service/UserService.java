@@ -52,6 +52,13 @@ public class UserService {
 
     }
 
+    //이메일 중복 확인
+    public boolean checkEmailDuplicate(String email) {
+        // 공백 제거 등 기초적인 전처리 후 리포지토리 호출
+        String cleanEmail = email.trim();
+        return userRepository.existsByEmail(cleanEmail);
+    }
+
     // 이메일 인증 확인
     public void confirmSignUp(UserConfirmRequest request) {
         // 1. Cognito 인증 확인 요청

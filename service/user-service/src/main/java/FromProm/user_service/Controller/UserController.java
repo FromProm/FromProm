@@ -29,6 +29,22 @@ public class UserController {
         }
     }
 
+    @GetMapping("/check-email")
+    public ResponseEntity<Map<String, Object>> checkEmail(@RequestParam("email") String email) {
+        boolean isDuplicate = userService.checkEmailDuplicate(email);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("email", email);
+
+        if (isDuplicate) {
+            response.put("message", "해당 이메일이 이미 존재합니다.");
+        } else {
+            response.put("message", "사용 가능한 이메일입니다.");
+        }
+
+        return ResponseEntity.ok(response);
+    }
+
     // 이메일 인증 확인
     @PostMapping("/confirm")
     public ResponseEntity<String> confirm(@RequestBody UserConfirmRequest request) {

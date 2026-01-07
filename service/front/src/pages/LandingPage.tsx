@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
+import LightRays from '../components/LightRays';
 
 const LandingPage = () => {
   const { isAuthenticated } = useAuthStore();
@@ -14,10 +15,26 @@ const LandingPage = () => {
 
   return (
     <div className="relative min-h-screen bg-black">
-      {/* 조금 더 밝은 배경 */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-800/60 via-gray-900 to-black" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-blue-600/15 to-transparent blur-3xl" />
+      {/* 배경 그라데이션 */}
+      <div className="absolute top-0 left-0 right-0 h-screen z-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-900/50 via-gray-900/70 to-black" />
+      </div>
+
+      {/* LightRays 효과 - 상단에 고정, 스크롤해도 따라오지 않음 */}
+      <div className="absolute top-0 left-0 right-0 h-screen z-[1]">
+        <LightRays
+          raysOrigin="top-center"
+          raysColor="#ffffff"
+          raysSpeed={1}
+          lightSpread={1}
+          rayLength={3}
+          followMouse={false}
+          fadeDistance={3}
+          saturation={1}
+          mouseInfluence={0.1}
+          noiseAmount={0.1}
+          distortion={0.05}
+        />
       </div>
 
       {/* 헤더 */}
@@ -160,12 +177,7 @@ const LandingPage = () => {
             </motion.div>
 
             {/* 이 달의 인기 프롬프트 Top 5 */}
-            <motion.div
-              className="max-w-3xl mx-auto"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-            >
+            <div className="max-w-3xl mx-auto">
               <h2 className="text-3xl font-bold text-white mb-10 text-center">이 달의 인기 프롬프트 Top 5</h2>
               <div className="space-y-4">
                 {[
@@ -179,8 +191,9 @@ const LandingPage = () => {
                     key={index}
                     className="bg-gray-900/50 border border-gray-800/50 rounded-lg p-6 backdrop-blur-sm hover:border-gray-700/50 transition-all cursor-pointer group"
                     initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: 0.7 + index * 0.1 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: false, amount: 0.5 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
                     onClick={() => window.location.href = `/prompt/${prompt.id}`}
                   >
                     <div className="flex items-center justify-between">
@@ -213,7 +226,7 @@ const LandingPage = () => {
                   </motion.div>
                 ))}
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
 

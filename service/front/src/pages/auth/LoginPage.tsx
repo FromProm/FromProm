@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { userApi } from '../../services/api';
+import LightRays from '../../components/LightRays';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -31,11 +32,27 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-black">
-      {/* 조금 더 밝은 배경 */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-800/60 via-gray-900 to-black" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-blue-600/15 to-transparent blur-3xl" />
+    <div className="relative min-h-screen bg-black overflow-hidden">
+      {/* 배경 그라데이션 */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-gray-900 to-black" />
+      </div>
+
+      {/* LightRays 효과 */}
+      <div className="absolute inset-0 z-[1]" style={{ width: '100%', height: '100%' }}>
+        <LightRays
+          raysOrigin="top-center"
+          raysColor="#ffffff"
+          raysSpeed={1}
+          lightSpread={1}
+          rayLength={3}
+          followMouse={false}
+          fadeDistance={3}
+          saturation={1}
+          mouseInfluence={0.1}
+          noiseAmount={0.1}
+          distortion={0.05}
+        />
       </div>
 
       <div className="relative z-10 flex flex-col justify-center py-12 sm:px-6 lg:px-8 min-h-screen">
@@ -52,7 +69,8 @@ const LoginPage = () => {
                   onError={(e) => {
                     // 이미지 로드 실패 시 기본 아이콘으로 대체
                     e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling.style.display = 'flex';
+                    const sibling = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (sibling) sibling.style.display = 'flex';
                   }}
                 />
                 <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center shadow-lg" style={{ display: 'none' }}>

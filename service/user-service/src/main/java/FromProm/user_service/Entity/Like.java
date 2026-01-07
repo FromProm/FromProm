@@ -16,7 +16,7 @@ public class Like {
     private String type;         // LIKE
     private String targetPromptId;
     private String title;        // 리스트 조회 시 조인 방지를 위해 저장
-    private String createdAt;
+    private String created_at;
 
     @DynamoDbPartitionKey
     @DynamoDbAttribute("PK")

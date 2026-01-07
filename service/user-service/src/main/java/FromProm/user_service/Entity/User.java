@@ -19,8 +19,8 @@ public class User {
     private int credit;
     private String bio;
     private String profileImage;
-    private String createdAt;
-    private String updatedAt;
+    private String created_at;
+    private String updated_at;
 
     @DynamoDbPartitionKey
     @DynamoDbAttribute("PK")
@@ -52,9 +52,9 @@ public class User {
     @DynamoDbAttribute("profileImage")
     public String getProfileImage() { return profileImage; }
 
-    @DynamoDbAttribute("createdAt")
-    public String getCreatedAt() { return createdAt; }
+    @DynamoDbAttribute("created_at")
+    public String getCreatedAt() { return created_at; }
 
-    @DynamoDbAttribute("updatedAt")
-    public String getUpdatedAt() { return updatedAt; }
+    @DynamoDbAttribute("updated_at")
+    public String getUpdatedAt() { return updated_at; }
 }

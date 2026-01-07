@@ -1,11 +1,14 @@
 package FromProm.user_service.Service;
 
 import FromProm.user_service.DTO.PromptSaveRequest;
+import com.fasterxml.jackson.databind.ObjectMapper; // 추가
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.PublishRequest;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -16,10 +19,11 @@ import java.util.*;
 @RequiredArgsConstructor
 public class PromptService {
 
-    private final DynamoDbClient dynamoDbClient; // 빨간불 해결
-//    private final SnsClient snsClient; // SNS 알림용 추가
-    private final String TABLE_NAME = "FromProm_Table"; // 테이블명 정의
-    private final String SNS_TOPIC_ARN = "arn:aws:sns:ap-northeast-2:YOUR_ACCOUNT_ID:YourTopicName"; // SNS ARN 입력
+    private final DynamoDbClient dynamoDbClient;
+    private final SnsClient snsClient;
+    private final ObjectMapper objectMapper; // JSON 변환을 위해 추가
+    private final String TABLE_NAME = "FromProm_Table";
+    private final String SNS_TOPIC_ARN = "arn:aws:sns:ap-northeast-2:261595668962:fromprom-sns";
 
     public String createInitialPrompt(String userId, PromptSaveRequest dto) {
         String promptUuid = UUID.randomUUID().toString();
@@ -40,7 +44,7 @@ public class PromptService {
         item.put("content", AttributeValue.builder().s(dto.getContent()).build());
         item.put("description", AttributeValue.builder().s(dto.getDescription()).build());
         item.put("prompt_type", AttributeValue.builder().s(dto.getPromptType()).build());
-        item.put("model", AttributeValue.builder().s(dto.getModel()).build()); // 프론트 선택 모델
+        item.put("model", AttributeValue.builder().s(dto.getModel()).build());
 
         // 예시 데이터 구조화
         List<AttributeValue> structuredExamples = new ArrayList<>();
@@ -51,7 +55,7 @@ public class PromptService {
                     "content", AttributeValue.builder().s(dto.getInputs().get(i)).build(),
                     "input_type", AttributeValue.builder().s("text").build()
             )).build());
-            exMap.put("output", AttributeValue.builder().s("").build()); // AI 분석 전이므로 빈값
+            exMap.put("output", AttributeValue.builder().s("").build());
             structuredExamples.add(AttributeValue.builder().m(exMap).build());
         }
         item.put("examples", AttributeValue.builder().l(structuredExamples).build());
@@ -71,21 +75,39 @@ public class PromptService {
                 .item(item)
                 .build());
 
-//        // 2. AI 서버로 SNS 알림 보내기
-//        sendSnsNotification(userId, promptUuid);
+        // 2. AI 서버로 상세 정보를 포함한 SNS 알림 보내기
+        sendSnsNotification(userId, promptUuid, dto);
+
         return promptUuid;
     }
 
-//    private void sendSnsNotification(String userId, String promptUuid) {
-//        // AI 서버가 받을 메시지 포맷 (JSON)
-//        String message = String.format("{\"userPk\": \"USER#%s\", \"promptPk\": \"PROMPT#%s\"}",
-//                userId, promptUuid);
-//
-//        PublishRequest publishRequest = PublishRequest.builder()
-//                .topicArn(SNS_TOPIC_ARN)
-//                .message(message)
-//                .build();
-//
-//        snsClient.publish(publishRequest);
-//    }
+    private void sendSnsNotification(String userId, String promptUuid, PromptSaveRequest dto) {
+        try {
+            // AI 서버가 즉시 분석할 수 있도록 모든 데이터를 Map으로 구성
+            Map<String, Object> messageMap = new HashMap<>();
+            messageMap.put("userPk", "USER#" + userId);
+            messageMap.put("promptPk", "PROMPT#" + promptUuid);
+            messageMap.put("title", dto.getTitle());
+            messageMap.put("content", dto.getContent());
+            messageMap.put("description", dto.getDescription());
+            messageMap.put("promptType", dto.getPromptType());
+            messageMap.put("model", dto.getModel());
+            messageMap.put("inputs", dto.getInputs()); // 사용자 입력 리스트 전체 포함
+
+            // JSON 문자열로 변환
+            String jsonMessage = objectMapper.writeValueAsString(messageMap);
+
+            PublishRequest publishRequest = PublishRequest.builder()
+                    .topicArn(SNS_TOPIC_ARN)
+                    .message(jsonMessage)
+                    .build();
+
+            snsClient.publish(publishRequest);
+            System.out.println("AI 서버로 전체 데이터 전송 성공: PROMPT#" + promptUuid);
+
+        } catch (Exception e) {
+            System.err.println("SNS 발송 실패: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 }

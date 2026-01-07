@@ -95,8 +95,8 @@ public class UserService {
                 .bio("")                                                // 기본값
                 .profileImage("https://default-image-url.com/user.png") // 기본값
                 .credit(0)
-                .createdAt(Instant.now().toString())               // 자동 생성: 현재 시간
-                .updatedAt(Instant.now().toString())               // 자동 생성: 현재 시간
+                .created_at(Instant.now().toString())               // 자동 생성: 현재 시간
+                .updated_at(Instant.now().toString())               // 자동 생성: 현재 시간
                 .build();
 
         userRepository.save(newUser);
@@ -244,7 +244,7 @@ public class UserService {
         }
 
         // 5. 업데이트 날짜 갱신 및 저장
-        user.setUpdatedAt(LocalDateTime.now().toString());
+        user.setUpdated_at(LocalDateTime.now().toString());
         userRepository.update(user);
     }
 
@@ -299,7 +299,7 @@ public class UserService {
 
         // 3. 유저 엔티티 잔액 업데이트
         user.setCredit(newBalance);
-        user.setUpdatedAt(LocalDateTime.now().toString());
+        user.setUpdated_at(LocalDateTime.now().toString());
 
         // 4. 내역(History) 객체 생성
         Credit history = Credit.builder()
@@ -309,7 +309,7 @@ public class UserService {
                 .amount(amount)
                 .balance(newBalance)
                 .description("크레딧 충전")
-                .createdAt(LocalDateTime.now().toString())
+                .created_at(LocalDateTime.now().toString())
                 .build();
 
         // 5. DB 저장
@@ -334,7 +334,7 @@ public class UserService {
 
         // 4. 유저 엔티티 잔액 업데이트
         user.setCredit(newBalance);
-        user.setUpdatedAt(LocalDateTime.now().toString());
+        user.setUpdated_at(LocalDateTime.now().toString());
 
         // 5. 사용 내역(History) 객체 생성
         Credit history = Credit.builder()
@@ -344,7 +344,7 @@ public class UserService {
                 .amount(-request.getAmount()) // 사용은 음수(-)로 기록해서 구분
                 .balance(newBalance)
                 .description(request.getDescription())
-                .createdAt(LocalDateTime.now().toString())
+                .created_at(LocalDateTime.now().toString())
                 .build();
 
         // 6. DB 저장

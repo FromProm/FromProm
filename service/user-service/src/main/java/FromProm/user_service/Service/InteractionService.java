@@ -24,7 +24,7 @@ public class InteractionService {
     private final String TABLE_NAME = "FromProm_Table"; // 실제 테이블명으로 변경
     private final CognitoIdentityProviderClient cognitoClient;
 
-    public void addLike(String userId, String promptId, String promptTitle) {
+    public void addLike(String userId, String promptId) {
         String now = OffsetDateTime.now(ZoneOffset.UTC)
                 .format(DateTimeFormatter.ISO_INSTANT);
 
@@ -36,7 +36,7 @@ public class InteractionService {
         likeItem.put("LIKE_INDEX_SK", AttributeValue.builder().s(now).build());
         likeItem.put("type", AttributeValue.builder().s("LIKE").build());
         likeItem.put("targetPromptId", AttributeValue.builder().s(promptId).build());
-        likeItem.put("title", AttributeValue.builder().s(promptTitle).build());
+        //likeItem.put("title", AttributeValue.builder().s(promptTitle).build());
         likeItem.put("createdAt", AttributeValue.builder().s(now).build());
 
         // 2. 트랜잭션 실행
@@ -109,7 +109,7 @@ public class InteractionService {
     }
 
     // 북마크 등록
-    public void addBookmark(String userId, String promptId, String promptTitle) {
+    public void addBookmark(String userId, String promptId) {
         String now = OffsetDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
 
         Map<String, AttributeValue> bookmarkItem = new HashMap<>();
@@ -119,7 +119,7 @@ public class InteractionService {
         bookmarkItem.put("BOOKMARK_INDEX_SK", AttributeValue.builder().s(now).build());
         bookmarkItem.put("type", AttributeValue.builder().s("BOOKMARK").build());
         bookmarkItem.put("targetPromptId", AttributeValue.builder().s(promptId).build());
-        bookmarkItem.put("title", AttributeValue.builder().s(promptTitle).build());
+        //bookmarkItem.put("title", AttributeValue.builder().s(promptTitle).build());
         bookmarkItem.put("createdAt", AttributeValue.builder().s(now).build());
 
         dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
@@ -128,7 +128,7 @@ public class InteractionService {
                                 .put(Put.builder()
                                         .tableName(TABLE_NAME)
                                         .item(bookmarkItem)
-                                        .conditionExpression("attribute_not_exists(PK)")
+                                        .conditionExpression("attribute_not_exists(PK)") // 중복 북마크 방지
                                         .build())
                                 .build(),
                         TransactWriteItem.builder()
@@ -229,26 +229,55 @@ public class InteractionService {
     }
 
     // 3. 댓글 삭제
-    public void deleteComment(String promptId, String commentSk, String userId) {
-        dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
-                .transactItems(
-                        TransactWriteItem.builder().delete(Delete.builder()
-                                .tableName(TABLE_NAME)
-                                .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
-                                        "SK", AttributeValue.builder().s(commentSk).build()))
-                                .conditionExpression("authorId = :userId")
-                                .expressionAttributeValues(Map.of(":userId", AttributeValue.builder().s(userId).build()))
-                                .build()).build(),
-                        TransactWriteItem.builder().update(Update.builder()
-                                .tableName(TABLE_NAME)
-                                .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
-                                        "SK", AttributeValue.builder().s("METADATA").build()))
-                                .updateExpression("SET comment_count = comment_count - :dec")
-                                .expressionAttributeValues(Map.of(":dec", AttributeValue.builder().n("1").build()))
-                                .build()).build()
-                ).build());
+    public void deleteComment(String promptId, String commentSk, String userId) throws IllegalAccessException {
+        // 1. 먼저 해당 댓글 아이템을 가져와봅니다.
+        GetItemResponse getResponse = dynamoDbClient.getItem(GetItemRequest.builder()
+                .tableName(TABLE_NAME)
+                .key(Map.of(
+                        "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                        "SK", AttributeValue.builder().s(commentSk).build()
+                ))
+                .build());
+
+        // [체크 1] 아이템이 아예 없는 경우 (유효하지 않은 값)
+        if (!getResponse.hasItem()) {
+            throw new IllegalArgumentException("존재하지 않거나 이미 삭제된 댓글입니다. (유효한 SK값이 아님)");
+        }
+
+        String authorId = getResponse.item().get("authorId").s();
+
+        // [체크 2] 작성자가 일치하지 않는 경우 (권한 부족)
+        if (!authorId.equals(userId)) {
+            throw new IllegalAccessException("본인이 작성한 댓글만 삭제할 수 있습니다.");
+        }
+
+        // 2. 체크 통과 후 실제 삭제 트랜잭션 실행
+        try {
+            dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
+                    .transactItems(
+                            TransactWriteItem.builder().delete(Delete.builder()
+                                    .tableName(TABLE_NAME)
+                                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                                            "SK", AttributeValue.builder().s(commentSk).build()))
+                                    .build()).build(),
+                            TransactWriteItem.builder().update(Update.builder()
+                                    .tableName(TABLE_NAME)
+                                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                                            "SK", AttributeValue.builder().s("METADATA").build()))
+                                    .updateExpression("SET comment_count = comment_count - :dec")
+                                    .conditionExpression("comment_count > :zero")
+                                    .expressionAttributeValues(Map.of(
+                                            ":dec", AttributeValue.builder().n("1").build(),
+                                            ":zero", AttributeValue.builder().n("0").build()
+                                    ))
+                                    .build()).build()
+                    ).build());
+        } catch (Exception e) {
+            throw new RuntimeException("댓글 삭제 중 오류가 발생했습니다.");
+        }
     }
 
+    // 좋아요, 북마크 사용
     public String getUserIdFromToken(String accessToken) {
         // Bearer 문자열 제거 (만약 포함되어 있다면)
         String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
@@ -265,6 +294,35 @@ public class InteractionService {
             return userResponse.username();
         } catch (Exception e) {
             throw new RuntimeException("유효하지 않은 토큰입니다: " + e.getMessage());
+        }
+    }
+
+    // 댓글 수정 시 사용
+    public Map<String, String> getUserInfoFromToken(String accessToken) {
+        String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
+
+        try {
+            GetUserRequest userRequest = GetUserRequest.builder()
+                    .accessToken(token)
+                    .build();
+
+            GetUserResponse userResponse = cognitoClient.getUser(userRequest);
+
+            Map<String, String> userInfo = new HashMap<>();
+            userInfo.put("userId", userResponse.username()); // sub (ID)
+
+            // Cognito 속성 중 'nickname' 찾기
+            String nickname = userResponse.userAttributes().stream()
+                    .filter(attr -> attr.name().equals("nickname"))
+                    .findFirst()
+                    .map(attr -> attr.value())
+                    .orElse("UnknownUser"); // 닉네임이 없을 경우 대비
+
+            userInfo.put("nickname", nickname);
+
+            return userInfo;
+        } catch (Exception e) {
+            throw new RuntimeException("Cognito 인증 실패: " + e.getMessage());
         }
     }
 }

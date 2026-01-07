@@ -223,16 +223,19 @@ public class UserController {
     @DeleteMapping("/withdraw")
     public ResponseEntity<String> withdraw(@RequestHeader("Authorization") String bearerToken) {
         try {
-            // 1. Bearer 토큰에서 accessToken 추출
-            String accessToken = bearerToken.substring(7).trim();
-            // 2. accessToken으로 Cognito에서 사용자 정보 조회
-            UserResponse userInfo = userService.getMyInfo(accessToken);
-            // 3. PK는 이미 USER#uuid 형식이므로 그대로 사용
-            String userSub = userInfo.getPK();
-            // 4. 회원 탈퇴 수행 (DynamoDB + Cognito 삭제)
-            userService.withdraw(userSub);
-            return ResponseEntity.ok("회원 탈퇴가 완료되었습니다. 그동안 이용해주셔서 감사합니다.");
+            // 1. "Bearer " 제거 및 공백 제거
+            String cleanToken = bearerToken.replace("Bearer ", "").trim();
+
+            // 2. [중요] 정규식 패턴(A-Z, a-z, 0-9, -, _, ., =)에 맞지 않는 모든 유령 문자 제거
+            cleanToken = cleanToken.replaceAll("[^A-Za-z0-9\\-_\\.=]", "");
+
+            // 3. 로그로 깨끗해진 토큰 길이 확인
+            System.out.println("DEBUG: Cleaned Token Length -> " + cleanToken.length());
+
+            userService.withdrawWithToken(cleanToken);
+            return ResponseEntity.ok("회원 탈퇴가 완료되었습니다.");
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("회원 탈퇴 실패: " + e.getMessage());
         }
     }

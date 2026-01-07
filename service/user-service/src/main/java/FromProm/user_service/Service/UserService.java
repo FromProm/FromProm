@@ -50,27 +50,6 @@ public class UserService {
 
         cognitoClient.signUp(signUpRequest);
 
-//        SignUpResponse response = cognitoClient.signUp(signUpRequest);
-//        String userSub = response.userSub(); // Cognito가 생성한 고유 ID
-//
-//        // 3. 가입 성공 후 Cognito에서 준 고유 ID(sub) 가져오기
-//        String now = Instant.now().toString(); // 현재 시간 생성
-//
-//        // 4. DynamoDB에 프로필 정보 저장
-//        User newUser = User.builder()
-//                .PK("USER#" + userSub)        // 자동 생성: PK 형식 지정
-//                .SK("PROFILE")                // 자동 생성: 고정값
-//                .type("USER")
-//                .email(request.getEmail())    // 입력값
-//                .nickname(request.getNickname()) // 입력값
-//                .credit(0)                 // 기본값 0
-//                .bio("") // 기본값
-//                .profileImage("https://default-image-url.com/user.png") // 기본값
-//                .createdAt(now)               // 자동 생성: 현재 시간
-//                .updatedAt(now)               // 자동 생성: 현재 시간
-//                .build();
-//
-//        userRepository.save(newUser);
     }
 
     // 이메일 인증 확인
@@ -262,6 +241,7 @@ public class UserService {
         userRepository.update(user);
     }
 
+    //회원 탈퇴
     @Transactional
     public void withdraw(String userSub) {
         // 1. DynamoDB 데이터 삭제 (PK: USER#uuid, SK: PROFILE)
@@ -276,11 +256,28 @@ public class UserService {
                     .build();
 
             cognitoClient.adminDeleteUser(deleteUserRequest);
-            System.out.println("DEBUG: 회원탈퇴 완료 (DB + Cognito) -> " + userSub);
         } catch (Exception e) {
             // Cognito 삭제 실패 시 예외 처리 (이미 삭제되었거나 권한 문제 등)
             throw new RuntimeException("Cognito 사용자 삭제 중 오류가 발생했습니다: " + e.getMessage());
         }
+    }
+
+    public void withdrawWithToken(String accessToken) {
+        // 1. AccessToken으로 Cognito에서 'sub' 조회 (유저 본인 확인)
+        GetUserRequest getUserRequest = GetUserRequest.builder()
+                .accessToken(accessToken)
+                .build();
+
+        GetUserResponse response = cognitoClient.getUser(getUserRequest);
+
+        String userSub = response.userAttributes().stream()
+                .filter(attr -> attr.name().equals("sub"))
+                .findFirst()
+                .map(AttributeType::value)
+                .orElseThrow(() -> new RuntimeException("사용자 ID를 찾을 수 없습니다."));
+
+        // 2. 기존 withdraw 로직 호출 (PK 형식에 맞게 "USER#" 추가)
+        withdraw("USER#" + userSub);
     }
 
     @Transactional

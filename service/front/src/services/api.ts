@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { categoryToPromptType } from './dummyData';
 
 // 백엔드 서버 URL을 한 곳에서 관리
 const API_BASE_URL = 'http://localhost:8080';
@@ -91,6 +92,60 @@ export const userApi = {
   // 크레딧 사용
   useCredit: (data: { amount: number; description: string }) =>
     api.post('/api/users/credit/use', data),
+};
+
+// Prompt API
+export const promptApi = {
+  // 프롬프트 등록
+  create: (data: {
+    title: string;
+    description: string;
+    category: string;
+    price: number;
+    content: string;
+    preview: string;
+    model: string;
+    exampleInputs: string[];
+  }) => api.post('/api/prompts/registration', {
+    title: data.title,
+    promptType: categoryToPromptType(data.category),
+    price: data.price,
+    model: data.model,
+    description: data.description,
+    content: data.content,
+    inputs: data.exampleInputs,
+  }),
+};
+
+// Interaction API (좋아요, 북마크, 댓글)
+export const interactionApi = {
+  // 좋아요 추가
+  addLike: (promptId: string) =>
+    api.post(`/api/prompts/${promptId}/like`),
+
+  // 좋아요 취소
+  deleteLike: (promptId: string) =>
+    api.delete(`/api/prompts/${promptId}/like`),
+
+  // 북마크 추가
+  addBookmark: (promptId: string) =>
+    api.post(`/api/prompts/${promptId}/bookmark`),
+
+  // 북마크 취소
+  deleteBookmark: (promptId: string) =>
+    api.delete(`/api/prompts/${promptId}/bookmark`),
+
+  // 댓글 추가
+  addComment: (promptId: string, content: string) =>
+    api.post(`/api/prompts/${promptId}/comments`, { content }),
+
+  // 댓글 수정
+  updateComment: (promptId: string, commentSK: string, content: string) =>
+    api.patch(`/api/prompts/${promptId}/comments`, { commentSK, content }),
+
+  // 댓글 삭제
+  deleteComment: (promptId: string, commentSK: string) =>
+    api.delete(`/api/prompts/${promptId}/comments/${commentSK}`),
 };
 
 export default api;

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import LightRays from '../components/LightRays';
+import SplitText from '../components/SplitText';
 
 const LandingPage = () => {
   const { isAuthenticated } = useAuthStore();
@@ -136,23 +137,49 @@ const LandingPage = () => {
               </div>
 
               <h1 className="text-6xl md:text-8xl lg:text-[5.5rem] font-bold mb-8 tracking-tight">
-                <span className="block text-white mb-4 drop-shadow-2xl">프롬프트의 가치를</span>
-                <span className="block bg-gradient-to-r from-red-500 via-purple-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-lg">
-                  수치로 증명합니다
+                <span className="block text-white mb-4 drop-shadow-2xl">
+                  <SplitText
+                    text="프롬프트의 가치를"
+                    className="text-6xl md:text-8xl lg:text-[5.5rem] font-bold text-white drop-shadow-2xl"
+                    delay={50}
+                    duration={0.8}
+                    ease="power3.out"
+                    splitType="chars"
+                    from={{ opacity: 0, y: 40 }}
+                    to={{ opacity: 1, y: 0 }}
+                    threshold={0.1}
+                    rootMargin="-50px"
+                    textAlign="center"
+                    tag="h1"
+                  />
                 </span>
+                <motion.span 
+                  className="block bg-gradient-to-r from-red-500 via-purple-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-lg"
+                  initial={{ opacity: 0, y: 40 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.5 }}
+                >
+                  수치로 증명합니다
+                </motion.span>
               </h1>
             </motion.div>
 
-            <motion.p
-              className="text-xl md:text-1xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed font-medium"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
-              데이터 기반 성능 검증을 통해 검증된 프롬프트를 제공합니다.
-              <br className="hidden md:block" />
-              토큰 효율성과 정확도를 동시에 확보하세요.
-            </motion.p>
+            <div className="text-xl md:text-1xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed font-medium">
+              <SplitText
+                text="데이터 기반 성능 검증을 통해 검증된 프롬프트를 제공합니다. 토큰 효율성과 정확도를 동시에 확보하세요."
+                className="text-xl md:text-1xl text-gray-300 leading-relaxed font-medium"
+                delay={30}
+                duration={0.6}
+                ease="power3.out"
+                splitType="words"
+                from={{ opacity: 0, y: 20 }}
+                to={{ opacity: 1, y: 0 }}
+                threshold={0.1}
+                rootMargin="-50px"
+                textAlign="center"
+                tag="p"
+              />
+            </div>
 
             {/* CTA 버튼 */}
             <motion.div

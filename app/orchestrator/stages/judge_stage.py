@@ -5,18 +5,17 @@ from typing import Dict, Any, List, Optional
 from app.orchestrator.context import ExecutionContext
 from app.core.schemas import MetricScore, ExampleInput, ClaimType, Verdict
 from app.adapters.fact_checker import PerplexityClient
+from app.cache.sqlite_cache import SQLiteCache
 
 logger = logging.getLogger(__name__)
 
 class JudgeStage:
-    """환각 탐지 단계 - Perplexity 기반 사실 검증"""
+    """환각 탐지 단계 - Perplexity 기반 사실 검증 (SQLite 캐싱)"""
     
     def __init__(self, context: ExecutionContext):
         self.context = context
         self.perplexity_client = PerplexityClient()
-        
-        # 캐싱 시스템
-        self.claim_cache = {}  # claim -> score 캐시
+        self.cache = SQLiteCache("fact_check_cache.db")
     
     async def execute(
         self, 
@@ -102,13 +101,14 @@ class JudgeStage:
                     }
                 )
             
-            # [3단계] 캐시 확인 및 새 claim 필터링
+            # [3단계] SQLite 캐시 확인 및 새 claim 필터링
             new_claims = []
             cached_scores = {}
             
             for claim in unique_claims:
-                if claim in self.claim_cache:
-                    cached_scores[claim] = self.claim_cache[claim]
+                cached_result = await self.cache.get_fact_check(claim)
+                if cached_result:
+                    cached_scores[claim] = cached_result['score']
                     logger.debug(f"Using cached score for claim: {claim[:50]}...")
                 else:
                     new_claims.append(claim)
@@ -125,7 +125,8 @@ class JudgeStage:
                     
                     for claim, score in zip(new_claims, scores):
                         new_scores[claim] = score
-                        self.claim_cache[claim] = score  # 캐시에 저장
+                        # SQLite 캐시에 저장 (7일 TTL)
+                        await self.cache.set_fact_check(claim, {'score': score}, ttl=7*24*3600)
                         
                 except Exception as e:
                     logger.error(f"Perplexity batch verification failed: {str(e)}")

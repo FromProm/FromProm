@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { categories } from '../services/dummyData';
@@ -6,6 +6,7 @@ import { categories } from '../services/dummyData';
 const PromptCreatePage = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const alertShownRef = useRef(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -28,19 +29,16 @@ const PromptCreatePage = () => {
 
   // 로그인 상태 확인
   useEffect(() => {
-    let isMounted = true;
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      if (isMounted) {
+      if (!alertShownRef.current) {
+        alertShownRef.current = true;
         alert('로그인이 필요한 서비스입니다.');
         navigate('/auth/login');
       }
     } else {
       setIsAuthenticated(true);
     }
-    return () => {
-      isMounted = false;
-    };
   }, [navigate]);
 
   const llmModels = [

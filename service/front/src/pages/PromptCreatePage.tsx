@@ -34,7 +34,7 @@ const PromptCreatePage = () => {
       if (!alertShownRef.current) {
         alertShownRef.current = true;
         alert('로그인이 필요한 서비스입니다.');
-        navigate('/auth/login');
+        navigate('/auth/login', { replace: true });
       }
     } else {
       setIsAuthenticated(true);

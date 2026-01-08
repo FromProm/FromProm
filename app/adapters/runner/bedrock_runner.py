@@ -67,8 +67,15 @@ class BedrockRunner(BaseRunner):
                 body = self._build_claude_request(prompt, **kwargs)
             elif "openai.gpt" in model:
                 body = self._build_openai_request(prompt, **kwargs)
+            elif "google.gemma" in model:
+                return self._invoke_with_converse(model, prompt, **kwargs)
             elif "amazon.titan" in model:
-                body = self._build_titan_request(prompt, **kwargs)
+                if "image" in model:
+                    # Titan Image Generator
+                    body = self._build_titan_image_request(prompt, **kwargs)
+                else:
+                    # Titan Text
+                    body = self._build_titan_request(prompt, **kwargs)
             elif "amazon.nova" in model:
                 body = self._build_nova_request(model, prompt, input_type, **kwargs)
             else:
@@ -90,7 +97,10 @@ class BedrockRunner(BaseRunner):
             elif "openai.gpt" in model:
                 return self._parse_openai_response(response_body)
             elif "amazon.titan" in model:
-                return self._parse_titan_response(response_body)
+                if "image" in model:
+                    return self._parse_titan_image_response(response_body)
+                else:
+                    return self._parse_titan_response(response_body)
             elif "amazon.nova" in model:
                 return self._parse_nova_response(response_body, model)
             
@@ -244,8 +254,7 @@ class BedrockRunner(BaseRunner):
                 "taskType": "TEXT_IMAGE",
                 "textToImageParams": {
                     "text": prompt,
-                    "negativeText": kwargs.get('negative_prompt', ''),
-                    "images": []
+                    "negativeText": kwargs.get('negative_prompt', 'blurry, low quality, distorted')
                 },
                 "imageGenerationConfig": {
                     "numberOfImages": kwargs.get('number_of_images', 1),
@@ -259,16 +268,115 @@ class BedrockRunner(BaseRunner):
         else:
             raise ModelInvocationError(f"Unsupported Nova model: {model}")
     
+    def _build_titan_image_request(self, prompt: str, **kwargs) -> Dict[str, Any]:
+        """Titan Image Generator 요청 구성"""
+        return {
+            "taskType": "TEXT_IMAGE",
+            "textToImageParams": {
+                "text": prompt,
+                "negativeText": kwargs.get('negative_prompt', 'blurry, low quality, distorted')
+            },
+            "imageGenerationConfig": {
+                "numberOfImages": kwargs.get('number_of_images', 1),
+                "quality": kwargs.get('quality', 'standard'),
+                "cfgScale": kwargs.get('cfg_scale', 8.0),
+                "height": kwargs.get('height', 1024),
+                "width": kwargs.get('width', 1024),
+                "seed": kwargs.get('seed', 0)
+            }
+        }
+    
     def _parse_nova_response(self, response: Dict[str, Any], model: str) -> Dict[str, Any]:
         """Nova 응답 파싱"""
         if "canvas" in model:
             # Nova Canvas 이미지 응답
             images = response.get('images', [])
-            output_text = f"Generated {len(images)} image(s)" if images else "No images generated"
+            
+            if images:
+                # 이미지를 파일로 저장
+                import base64
+                import os
+                from datetime import datetime
+                
+                # outputs 디렉토리 생성
+                output_dir = "outputs/images"
+                os.makedirs(output_dir, exist_ok=True)
+                
+                image_paths = []
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                
+                for i, image_data in enumerate(images):
+                    # base64 디코딩
+                    image_bytes = base64.b64decode(image_data)
+                    
+                    # 파일명 생성
+                    filename = f"nova_canvas_{timestamp}_{i+1}.png"
+                    filepath = os.path.join(output_dir, filename)
+                    
+                    # 파일 저장
+                    with open(filepath, 'wb') as f:
+                        f.write(image_bytes)
+                    
+                    image_paths.append(filepath)
+                    logger.info(f"Image saved: {filepath}")
+                
+                output_text = f"Generated {len(images)} image(s): {', '.join(image_paths)}"
+            else:
+                output_text = "No images generated"
         else:
             output_text = "Unknown Nova model response"
         
         # 토큰 사용량 (Nova는 직접 제공하지 않으므로 근사치)
+        input_tokens = 50  # 기본값
+        output_tokens = len(output_text.split()) * 0.75
+        
+        token_usage = {
+            'input_tokens': int(input_tokens),
+            'output_tokens': int(output_tokens),
+            'total_tokens': int(input_tokens + output_tokens)
+        }
+        
+        return {
+            'output': output_text,
+            'token_usage': token_usage
+        }
+    def _parse_titan_image_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
+        """Titan Image Generator 응답 파싱"""
+        images = response.get('images', [])
+        
+        if images:
+            # 이미지를 파일로 저장
+            import base64
+            import os
+            from datetime import datetime
+            
+            # outputs 디렉토리 생성
+            output_dir = "outputs/images"
+            os.makedirs(output_dir, exist_ok=True)
+            
+            image_paths = []
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            for i, image_data in enumerate(images):
+                # base64 디코딩
+                image_bytes = base64.b64decode(image_data)
+                
+                # 파일명 생성
+                filename = f"titan_image_{timestamp}_{i+1}.png"
+                filepath = os.path.join(output_dir, filename)
+                
+                # 파일 저장
+                with open(filepath, 'wb') as f:
+                    f.write(image_bytes)
+                
+                image_paths.append(filepath)
+                logger.info(f"Image saved: {filepath}")
+            
+            output_text = f"Generated {len(images)} image(s): {', '.join(image_paths)}"
+        else:
+            output_text = "No images generated"
+        
+        # 토큰 사용량 (Titan Image는 직접 제공하지 않으므로 근사치)
         input_tokens = 50  # 기본값
         output_tokens = len(output_text.split()) * 0.75
         

@@ -75,6 +75,45 @@ class Settings(BaseSettings):
         }
     }
     
+    # 모델 패밀리 매핑 (선택한 모델 -> 비교 모델들)
+    model_families: Dict[str, List[str]] = {
+        # GPT OSS (2개)
+        "openai.gpt-oss-120b-1:0": ["openai.gpt-oss-20b-1:0"],
+        "openai.gpt-oss-20b-1:0": ["openai.gpt-oss-120b-1:0"],
+        
+        # Claude (3개) - ARN은 모델ID로 매핑
+        "arn:aws:bedrock:us-east-1:261595668962:inference-profile/us.anthropic.claude-sonnet-4-5-20250929-v1:0": [
+            "anthropic.claude-3-5-sonnet-20240620-v1:0",
+            "anthropic.claude-3-haiku-20240307-v1:0"
+        ],
+        "anthropic.claude-3-5-sonnet-20240620-v1:0": [
+            "arn:aws:bedrock:us-east-1:261595668962:inference-profile/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "anthropic.claude-3-haiku-20240307-v1:0"
+        ],
+        "anthropic.claude-3-haiku-20240307-v1:0": [
+            "arn:aws:bedrock:us-east-1:261595668962:inference-profile/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "anthropic.claude-3-5-sonnet-20240620-v1:0"
+        ],
+        
+        # Gemma (3개)
+        "google.gemma-3-27b-it-v1:0": [
+            "google.gemma-3-12b-it-v1:0",
+            "google.gemma-3-4b-it-v1:0"
+        ],
+        "google.gemma-3-12b-it-v1:0": [
+            "google.gemma-3-27b-it-v1:0",
+            "google.gemma-3-4b-it-v1:0"
+        ],
+        "google.gemma-3-4b-it-v1:0": [
+            "google.gemma-3-27b-it-v1:0",
+            "google.gemma-3-12b-it-v1:0"
+        ],
+        
+        # 이미지 모델 (2개)
+        "amazon.titan-image-generator-v2:0": ["amazon.nova-canvas-v1:0"],
+        "amazon.nova-canvas-v1:0": ["amazon.titan-image-generator-v2:0"]
+    }
+    
     # Consistency Parameters
     alpha: float = 0.2  # centroid 계산에서 max penalty 가중치
     

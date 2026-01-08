@@ -11,6 +11,14 @@ logger = logging.getLogger(__name__)
 class BedrockEmbedder(BaseEmbedder):
     """AWS Bedrock 임베딩 생성기"""
     
+    # 모델별 최대 텍스트 길이 제한
+    MAX_TEXT_LENGTHS = {
+        'titan_text': 8000,  # Titan Text v2
+        'cohere_multilingual': 2048,  # Cohere Multilingual v3
+        'nova_multimodal': 8000,  # Nova Multimodal
+        'cohere_v4': 2048  # Cohere v4
+    }
+    
     def __init__(self):
         self.client = boto3.client(
             'bedrock-runtime',
@@ -19,8 +27,17 @@ class BedrockEmbedder(BaseEmbedder):
             aws_secret_access_key=settings.aws_secret_access_key or None
         )
     
+    def _truncate_text(self, text: str, model_type: str) -> str:
+        """모델별 최대 길이에 맞게 텍스트 자르기"""
+        max_length = self.MAX_TEXT_LENGTHS.get(model_type, 2048)
+        if len(text) > max_length:
+            logger.warning(f"Text truncated from {len(text)} to {max_length} chars for {model_type}")
+            return text[:max_length]
+        return text
+    
     async def embed_text(self, text: str) -> List[float]:
         """Titan Text 임베딩"""
+        text = self._truncate_text(text, 'titan_text')
         return await self._invoke_embedding(
             settings.embedding_models['titan_text'],
             {"inputText": text}
@@ -31,13 +48,17 @@ class BedrockEmbedder(BaseEmbedder):
         if not texts:
             return []
         
+        # 텍스트 길이 제한 적용
+        truncated_texts = [self._truncate_text(text, 'titan_text') for text in texts]
+        
         # Titan은 배치를 지원하지 않으므로 개별 호출을 병렬로 처리
         import asyncio
-        tasks = [self.embed_text(text) for text in texts]
+        tasks = [self.embed_text(text) for text in truncated_texts]
         return await asyncio.gather(*tasks, return_exceptions=True)
     
     async def embed_multilingual(self, text: str) -> List[float]:
         """Cohere Multilingual 임베딩"""
+        text = self._truncate_text(text, 'cohere_multilingual')
         return await self._invoke_embedding(
             settings.embedding_models['cohere_multilingual'],
             {
@@ -51,12 +72,15 @@ class BedrockEmbedder(BaseEmbedder):
         if not texts:
             return []
         
+        # 텍스트 길이 제한 적용
+        truncated_texts = [self._truncate_text(text, 'cohere_multilingual') for text in texts]
+        
         # Cohere는 배치를 지원하므로 한 번에 처리
         try:
             response_body = await self._invoke_embedding_raw(
                 settings.embedding_models['cohere_multilingual'],
                 {
-                    "texts": texts,
+                    "texts": truncated_texts,
                     "input_type": "search_document"
                 }
             )
@@ -65,11 +89,12 @@ class BedrockEmbedder(BaseEmbedder):
             logger.error(f"Batch embedding failed: {str(e)}")
             # 실패 시 개별 처리로 fallback
             import asyncio
-            tasks = [self.embed_multilingual(text) for text in texts]
+            tasks = [self.embed_multilingual(text) for text in truncated_texts]
             return await asyncio.gather(*tasks, return_exceptions=True)
     
     async def embed_multimodal(self, content: str) -> List[float]:
         """Nova Multimodal 임베딩"""
+        content = self._truncate_text(content, 'nova_multimodal')
         return await self._invoke_embedding(
             settings.embedding_models['nova_multimodal'],
             {"inputText": content}  # Nova Multimodal 요청 형식
@@ -77,6 +102,7 @@ class BedrockEmbedder(BaseEmbedder):
     
     async def embed_cohere_v4(self, content: str) -> List[float]:
         """Cohere v4 임베딩"""
+        content = self._truncate_text(content, 'cohere_v4')
         return await self._invoke_embedding(
             settings.embedding_models['cohere_v4'],
             {
@@ -102,6 +128,20 @@ class BedrockEmbedder(BaseEmbedder):
         """임베딩 모델 원시 호출 (응답 파싱 없음)"""
         try:
             logger.debug(f"Invoking embedding model: {model_id}")
+            
+            # 입력 검증: texts 배열의 각 요소가 문자열인지 확인
+            if "texts" in body:
+                texts = body["texts"]
+                if isinstance(texts, list):
+                    for i, text in enumerate(texts):
+                        if not isinstance(text, str):
+                            logger.warning(f"Converting non-string text at index {i}: {type(text)}")
+                            body["texts"][i] = str(text)
+            
+            # inputText 검증
+            if "inputText" in body and not isinstance(body["inputText"], str):
+                logger.warning(f"Converting non-string inputText: {type(body['inputText'])}")
+                body["inputText"] = str(body["inputText"])
             
             response = self.client.invoke_model(
                 modelId=model_id,

@@ -161,29 +161,15 @@ class RunStage:
         }
     
     def _get_variance_models(self, prompt_type: str, main_model: str) -> List[str]:
-        """Variance 계산용 모델들 반환"""
-        from app.core.schemas import PromptType
+        """Variance 계산용 모델들 반환 - config의 model_families 사용"""
+        # config에서 비교 모델 가져오기
+        comparison_models = settings.model_families.get(main_model, [])
         
-        # Variance Stage와 동일한 모델 설정
-        comparison_models = {
-            PromptType.TYPE_A: [
-                "anthropic.claude-3-5-sonnet-20240620-v1:0",
-                "anthropic.claude-3-sonnet-20240229-v1:0",
-                "anthropic.claude-3-haiku-20240307-v1:0"
-            ],
-            PromptType.TYPE_B_TEXT: [
-                "anthropic.claude-3-5-sonnet-20240620-v1:0",
-                "anthropic.claude-3-sonnet-20240229-v1:0",
-                "anthropic.claude-3-haiku-20240307-v1:0"
-            ],
-            PromptType.TYPE_B_IMAGE: [
-                "amazon.nova-canvas-v1:0",
-                "amazon.titan-image-generator-v1",
-                "amazon.titan-image-generator-v2:0"
-            ]
-        }
+        # 선택된 모델 + 비교 모델들
+        all_models = [main_model] + comparison_models
         
-        return comparison_models.get(prompt_type, [main_model])
+        logger.info(f"Variance models for {main_model}: {all_models}")
+        return all_models
     
     def _get_default_model(self, example_inputs: List[ExampleInput]) -> str:
         """입력 타입에 따른 기본 모델 선택"""

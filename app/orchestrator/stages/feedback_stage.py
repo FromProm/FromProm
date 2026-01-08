@@ -15,24 +15,33 @@ class FeedbackStage:
         # 피드백 생성용 모델 (저렴한 모델 사용)
         self.feedback_model = "anthropic.claude-3-haiku-20240307-v1:0"
     
-    async def execute(self, evaluation_result: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute(
+        self, 
+        evaluation_result: Dict[str, Any],
+        prompt: str = "",
+        prompt_type: PromptType = PromptType.TYPE_A,
+        example_inputs: list = None
+    ) -> Dict[str, Any]:
         """
         평가 결과를 분석하여 프롬프트 개선 피드백 생성
         
         Args:
             evaluation_result: 평가 결과 (각 지표 점수 + details)
+            prompt: 평가된 프롬프트
+            prompt_type: 프롬프트 타입
+            example_inputs: 예시 입력들
             
         Returns:
             피드백 결과 딕셔너리
         """
         logger.info("Generating prompt improvement feedback")
         
+        if example_inputs is None:
+            example_inputs = []
+        
         try:
             # 1. 평가 결과에서 정보 추출
             metrics = self._extract_metrics(evaluation_result)
-            prompt = self.context.prompt
-            prompt_type = self.context.prompt_type
-            example_inputs = self.context.example_inputs
             outputs = self._extract_outputs(evaluation_result)
             
             # 2. LLM에게 피드백 요청
@@ -122,7 +131,7 @@ class FeedbackStage:
         
         # 예시 입력 문자열
         inputs_str = "\n".join([
-            f"- 입력 {i+1}: {inp.get('content', str(inp))[:100]}"
+            f"- 입력 {i+1}: {getattr(inp, 'content', str(inp))[:100]}"
             for i, inp in enumerate(example_inputs[:3])
         ])
         

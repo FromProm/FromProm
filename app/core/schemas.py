@@ -22,22 +22,25 @@ class Verdict(str, Enum):
     INSUFFICIENT = "insufficient"  # 불충분 (근거 없음 또는 불완전)
 
 class RecommendedModel(str, Enum):
-    # Claude 모델들 (글 관련 타입용) - Bedrock 확실 지원
+    # ===== Type A, Type B 글 모델들 =====
+    
+    # GPT OSS 모델들
+    GPT_OSS_120B = "openai.gpt-oss-120b-1:0"
+    GPT_OSS_20B = "openai.gpt-oss-20b-1:0"
+    
+    # Claude 모델들
+    CLAUDE_SONNET_4_5 = "arn:aws:bedrock:us-east-1:261595668962:inference-profile/us.anthropic.claude-sonnet-4-5-20250929-v1:0"
     CLAUDE_3_5_SONNET = "anthropic.claude-3-5-sonnet-20240620-v1:0"
-    CLAUDE_3_SONNET = "anthropic.claude-3-sonnet-20240229-v1:0"
     CLAUDE_3_HAIKU = "anthropic.claude-3-haiku-20240307-v1:0"
     
-    # Claude 4.5 (inference profile ARN 필요)
-    CLAUDE_SONNET_4_5 = "arn:aws:bedrock:us-east-1:261595668962:inference-profile/us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    # Gemma 모델들
+    GEMMA_3_27B = "google.gemma-3-27b-it-v1:0"
+    GEMMA_3_12B = "google.gemma-3-12b-it-v1:0"
+    GEMMA_3_4B = "google.gemma-3-4b-it-v1:0"
     
-    # OpenAI GPT OSS 모델들 - Bedrock 지원
-    GPT_OSS_20B = "openai.gpt-oss-20b-1:0"
-    GPT_OSS_120B = "openai.gpt-oss-120b-1:0"
-    
-    # 이미지 생성 모델들 - Bedrock 확실 지원
-    NOVA_CANVAS = "amazon.nova-canvas-v1:0"
-    TITAN_IMAGE_V1 = "amazon.titan-image-generator-v1"
+    # ===== Type B 이미지 모델들 =====
     TITAN_IMAGE_V2 = "amazon.titan-image-generator-v2:0"
+    NOVA_CANVAS = "amazon.nova-canvas-v1:0"
 
 class JobStatus(str, Enum):
     PENDING = "pending"

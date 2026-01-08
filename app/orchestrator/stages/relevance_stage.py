@@ -245,14 +245,30 @@ class RelevanceStage:
             }
     
     def _calculate_compliance_score(self, evaluation: Dict[str, Any]) -> float:
-        """평가 결과를 100점 만점 점수로 변환"""
+        """평가 결과를 100점 만점 점수로 변환 (동적 가중치)"""
+        
+        # 명시적 조건 점수 계산
+        explicit_conditions = evaluation.get('explicit_conditions_compliance', [])
+        condition_count = len(explicit_conditions)
+        
+        # 동적 가중치 결정
+        if condition_count == 0:
+            # 조건 없음 → 방향성 100%
+            explicit_weight = 0.0
+            direction_weight = 1.0
+        elif condition_count <= 3:
+            # 조건 1-3개 → 70:30
+            explicit_weight = 0.7
+            direction_weight = 0.3
+        else:
+            # 조건 4개+ → 80:20
+            explicit_weight = 0.8
+            direction_weight = 0.2
         
         total_score = 0.0
-        total_weight = 0.0
         
-        # 명시적 조건 점수 (70% 가중치)
-        explicit_conditions = evaluation.get('explicit_conditions_compliance', [])
-        if explicit_conditions:
+        # 명시적 조건 점수
+        if explicit_conditions and explicit_weight > 0:
             condition_scores = []
             for cond_eval in explicit_conditions:
                 status = cond_eval.get('status', '애매함')
@@ -265,10 +281,9 @@ class RelevanceStage:
             
             if condition_scores:
                 avg_condition_score = sum(condition_scores) / len(condition_scores)
-                total_score += avg_condition_score * 0.7
-                total_weight += 0.7
+                total_score += avg_condition_score * explicit_weight
         
-        # 방향성 점수 (30% 가중치)
+        # 방향성 점수
         direction_compliance = evaluation.get('direction_compliance', {})
         direction_status = direction_compliance.get('status', '애매함')
         
@@ -279,11 +294,6 @@ class RelevanceStage:
         else:  # 애매함
             direction_score = 50.0
         
-        total_score += direction_score * 0.3
-        total_weight += 0.3
+        total_score += direction_score * direction_weight
         
-        # 가중 평균 계산
-        if total_weight > 0:
-            return total_score / total_weight
-        else:
-            return 50.0  # 기본값
+        return total_score

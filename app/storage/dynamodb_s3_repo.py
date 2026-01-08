@@ -127,7 +127,7 @@ class DynamoDBS3Repository(BaseRepository):
                 Metadata={
                     'job-id': job_id,
                     'data-type': 'input',
-                    'created-at': now
+                    'created_at': now
                 }
             )
             
@@ -466,7 +466,7 @@ class DynamoDBS3Repository(BaseRepository):
                 Metadata={
                     'prompt-id': prompt_id,
                     'prompt-type': job.prompt_type.value,
-                    'created-at': s3_examples_data.created_at
+                    'created_at': s3_examples_data.created_at
                 }
             )
             

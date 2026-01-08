@@ -104,8 +104,8 @@ class PerplexityClient:
         logger.info(f"Batch verifying {len(claims)} claims with Perplexity")
         
         # Rate limit을 고려한 배치 처리
-        batch_size = 10  # 10개씩 배치 처리
-        delay_between_batches = 2.0  # 배치 간 지연
+        batch_size = 5  # 5개씩 배치 처리 (10->5로 감소)
+        delay_between_batches = 3.0  # 배치 간 지연 (2->3초로 증가)
         
         all_scores = []
         
@@ -138,30 +138,43 @@ class PerplexityClient:
         return all_scores
     
     def _create_fact_check_prompt(self, claim: str) -> str:
-        """팩트체킹용 프롬프트 생성"""
-        return f"""Please fact-check the following claim and provide a verification score from 0 to 100:
+        """팩트체킹용 프롬프트 생성 - 구조화된 JSON 응답 요청"""
+        return f"""Analyze the following claim and extract factual elements to verify against evidence.
 
 Claim: "{claim}"
 
 Instructions:
-1. Search for reliable sources to verify this claim
-2. Consider the accuracy, recency, and credibility of information
-3. Provide a score where:
-   - 0-20: Completely false or no evidence found
-   - 21-40: Mostly false with some misleading elements
-   - 41-60: Mixed or partially accurate
-   - 61-80: Mostly accurate with minor issues
-   - 81-100: Completely accurate and well-supported
+1. Extract key factual elements from the claim (subject, time, event, numbers, location, etc.)
+2. Search for reliable sources to find evidence for each element
+3. Compare each claim element with the evidence found
+4. Return the result in JSON format ONLY (no other text)
 
-Please respond with:
-1. Your verification score (0-100)
-2. Brief explanation of your reasoning
-3. Key sources or evidence found
+JSON Format:
+{{
+  "verdict": "supported" | "partially_supported" | "refuted" | "no_evidence",
+  "elements": [
+    {{
+      "type": "subject|time|event|number|location|other",
+      "claim_value": "what the claim states",
+      "evidence_value": "what the evidence shows (or null if not found)",
+      "match": true | false | null
+    }}
+  ],
+  "source_count": number,
+  "sources": ["source1 title/url", "source2 title/url"]
+}}
 
-Format your response as:
-SCORE: [number]
-REASONING: [explanation]
-SOURCES: [sources found]"""
+Rules:
+- Extract at least 2-5 key elements from the claim
+- "match": true if claim and evidence semantically agree
+- "match": false if claim and evidence contradict
+- "match": null if no evidence found for this element
+- "verdict": "supported" if all elements match
+- "verdict": "partially_supported" if some elements match
+- "verdict": "refuted" if key elements contradict
+- "verdict": "no_evidence" if no reliable sources found
+
+IMPORTANT: Respond with ONLY the JSON object, no additional text."""
     
     async def _call_api(self, prompt: str) -> Dict[str, Any]:
         """Perplexity API 호출 (현재 키 사용)"""
@@ -199,8 +212,11 @@ SOURCES: [sources found]"""
             return response.json()
     
     def _parse_verification_score(self, response: Dict[str, Any], claim: str) -> float:
-        """API 응답에서 검증 점수 추출"""
+        """API 응답에서 JSON 파싱 후 점수 계산"""
         try:
+            import json
+            import re
+            
             # 응답에서 텍스트 추출
             content = response.get("choices", [{}])[0].get("message", {}).get("content", "")
             
@@ -208,39 +224,116 @@ SOURCES: [sources found]"""
                 logger.warning(f"Empty response from Perplexity for claim: {claim[:50]}...")
                 return 0.0
             
-            # SCORE: 패턴으로 점수 추출
-            import re
-            score_match = re.search(r'SCORE:\s*(\d+(?:\.\d+)?)', content, re.IGNORECASE)
+            # JSON 추출 (```json ... ``` 또는 순수 JSON)
+            json_match = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(1)
+            else:
+                # 순수 JSON 찾기
+                json_match = re.search(r'\{.*\}', content, re.DOTALL)
+                if json_match:
+                    json_str = json_match.group(0)
+                else:
+                    logger.warning(f"No JSON found in response for claim: {claim[:50]}...")
+                    return self._fallback_score(content)
             
-            if score_match:
-                score = float(score_match.group(1))
-                # 0-100 범위로 제한
-                return max(0.0, min(100.0, score))
+            # JSON 파싱
+            try:
+                data = json.loads(json_str)
+            except json.JSONDecodeError as e:
+                logger.warning(f"JSON parse error: {e}, falling back to text analysis")
+                return self._fallback_score(content)
             
-            # SCORE 패턴이 없으면 다른 패턴 시도
-            number_matches = re.findall(r'\b(\d+(?:\.\d+)?)\b', content)
-            if number_matches:
-                # 첫 번째 숫자를 점수로 사용 (보통 0-100 범위)
-                potential_score = float(number_matches[0])
-                if 0 <= potential_score <= 100:
-                    return potential_score
-            
-            # 키워드 기반 점수 추정
-            content_lower = content.lower()
-            if any(word in content_lower for word in ['false', 'incorrect', 'wrong', 'inaccurate']):
-                return 20.0
-            elif any(word in content_lower for word in ['partially', 'mixed', 'some truth']):
-                return 50.0
-            elif any(word in content_lower for word in ['accurate', 'correct', 'true', 'verified']):
-                return 80.0
-            
-            # 기본값
-            logger.warning(f"Could not parse score from Perplexity response for claim: {claim[:50]}...")
-            return 50.0
+            # 점수 계산
+            score = self._calculate_score_from_json(data, claim)
+            return score
             
         except Exception as e:
             logger.error(f"Error parsing Perplexity response: {str(e)}")
             return 0.0
+    
+    def _calculate_score_from_json(self, data: Dict[str, Any], claim: str) -> float:
+        """JSON 데이터에서 점수 계산 (공식 기반)"""
+        try:
+            elements = data.get("elements", [])
+            verdict = data.get("verdict", "no_evidence")
+            source_count = data.get("source_count", 0)
+            
+            if not elements:
+                # 요소가 없으면 verdict 기반 점수
+                verdict_scores = {
+                    "supported": 90.0,
+                    "partially_supported": 60.0,
+                    "refuted": 20.0,
+                    "no_evidence": 30.0
+                }
+                return verdict_scores.get(verdict, 50.0)
+            
+            # 요소별 점수 계산
+            total_elements = len(elements)
+            matched = 0
+            contradicted = 0
+            no_evidence = 0
+            
+            for elem in elements:
+                match_status = elem.get("match")
+                if match_status is True:
+                    matched += 1
+                elif match_status is False:
+                    contradicted += 1
+                else:  # None
+                    no_evidence += 1
+            
+            # 기본 점수: 일치 비율 × 100
+            if total_elements > 0:
+                base_score = (matched / total_elements) * 100
+            else:
+                base_score = 50.0
+            
+            # 페널티: 모순된 요소가 있으면 감점
+            contradiction_penalty = (contradicted / total_elements) * 30 if total_elements > 0 else 0
+            
+            # 보너스: 출처가 많으면 신뢰도 가산 (최대 10점)
+            source_bonus = min(source_count * 2, 10)
+            
+            # 최종 점수
+            final_score = base_score - contradiction_penalty + source_bonus
+            
+            # 0-100 범위로 제한
+            final_score = max(0.0, min(100.0, final_score))
+            
+            logger.debug(f"Score calculation: matched={matched}/{total_elements}, "
+                        f"contradicted={contradicted}, sources={source_count}, "
+                        f"final={final_score:.1f}")
+            
+            return final_score
+            
+        except Exception as e:
+            logger.error(f"Score calculation error: {str(e)}")
+            return 50.0
+    
+    def _fallback_score(self, content: str) -> float:
+        """JSON 파싱 실패 시 텍스트 기반 점수 추정"""
+        import re
+        
+        content_lower = content.lower()
+        
+        # 숫자 점수 찾기
+        score_match = re.search(r'score[:\s]*(\d+)', content_lower)
+        if score_match:
+            score = float(score_match.group(1))
+            if 0 <= score <= 100:
+                return score
+        
+        # 키워드 기반
+        if any(word in content_lower for word in ['false', 'incorrect', 'wrong', 'refuted']):
+            return 20.0
+        elif any(word in content_lower for word in ['partially', 'mixed', 'some']):
+            return 50.0
+        elif any(word in content_lower for word in ['accurate', 'correct', 'true', 'supported']):
+            return 80.0
+        
+        return 50.0
     
     async def health_check(self) -> bool:
         """Perplexity API 연결 상태 확인"""

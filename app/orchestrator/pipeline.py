@@ -174,7 +174,12 @@ class Orchestrator:
                     'execution_results': execution_results
                 }
                 
-                feedback = await self.stages['feedback'].execute(evaluation_data)
+                feedback = await self.stages['feedback'].execute(
+                    evaluation_data,
+                    prompt=job_request.prompt,
+                    prompt_type=job_request.prompt_type,
+                    example_inputs=job_request.example_inputs
+                )
                 final_result.feedback = feedback
                 logger.info("Feedback generation completed")
             except Exception as e:

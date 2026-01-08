@@ -4,6 +4,7 @@ import numpy as np
 from typing import Dict, Any, Optional, List
 from app.orchestrator.context import ExecutionContext
 from app.core.schemas import MetricScore, ExampleInput, PromptType
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -12,24 +13,32 @@ class VarianceStage:
     
     def __init__(self, context: ExecutionContext):
         self.context = context
-        # 비교할 모델들 정의 (각 계열의 확실한 Bedrock 지원 모델)
-        self.comparison_models = {
-            PromptType.TYPE_A: [
-                "anthropic.claude-3-5-sonnet-20240620-v1:0",  # Claude 3.5 Sonnet
-                "anthropic.claude-3-sonnet-20240229-v1:0",    # Claude 3 Sonnet
-                "anthropic.claude-3-haiku-20240307-v1:0"      # Claude 3 Haiku
-            ],
-            PromptType.TYPE_B_TEXT: [
-                "anthropic.claude-3-5-sonnet-20240620-v1:0",  # Claude 3.5 Sonnet
-                "anthropic.claude-3-sonnet-20240229-v1:0",    # Claude 3 Sonnet
-                "anthropic.claude-3-haiku-20240307-v1:0"      # Claude 3 Haiku
-            ],
-            PromptType.TYPE_B_IMAGE: [
-                "amazon.nova-canvas-v1:0",                    # Nova Canvas
-                "amazon.titan-image-generator-v1",            # Titan Image Generator v1
-                "amazon.titan-image-generator-v2:0"           # Titan Image Generator v2
-            ]
+    
+    def _get_comparison_models(self, selected_model: str) -> List[str]:
+        """선택된 모델에 대한 비교 모델 목록 반환"""
+        # config에서 모델 패밀리 매핑 가져오기
+        comparison_models = settings.model_families.get(selected_model, [])
+        
+        if not comparison_models:
+            logger.warning(f"No comparison models found for {selected_model}")
+        
+        return comparison_models
+    
+    def _get_model_short_name(self, model_id: str) -> str:
+        """모델 ID를 짧은 이름으로 변환"""
+        short_names = {
+            "arn:aws:bedrock:us-east-1:261595668962:inference-profile/us.anthropic.claude-sonnet-4-5-20250929-v1:0": "Claude 4.5",
+            "anthropic.claude-3-5-sonnet-20240620-v1:0": "Claude 3.5",
+            "anthropic.claude-3-haiku-20240307-v1:0": "Claude Haiku",
+            "openai.gpt-oss-120b-1:0": "GPT OSS 120B",
+            "openai.gpt-oss-20b-1:0": "GPT OSS 20B",
+            "google.gemma-3-27b-it-v1:0": "Gemma 27B",
+            "google.gemma-3-12b-it-v1:0": "Gemma 12B",
+            "google.gemma-3-4b-it-v1:0": "Gemma 4B",
+            "amazon.titan-image-generator-v2:0": "Titan Image v2",
+            "amazon.nova-canvas-v1:0": "Nova Canvas"
         }
+        return short_names.get(model_id, model_id.split("/")[-1].split(":")[0])
     
     async def execute(
         self, 
@@ -47,10 +56,20 @@ class VarianceStage:
         logger.info(f"Calculating model variance score for {prompt_type} (using pre-computed outputs)")
         
         try:
-            models = self.comparison_models.get(prompt_type, [])
-            if len(models) < 2:
-                logger.warning(f"Not enough models for {prompt_type} comparison")
+            # 선택된 모델에 대한 비교 모델 가져오기
+            if not recommended_model:
+                logger.warning("No recommended model specified")
+                return MetricScore(score=50.0, details={'error': 'no_model_specified'})
+            
+            comparison_models = self._get_comparison_models(recommended_model)
+            # 선택된 모델 + 비교 모델들
+            all_models = [recommended_model] + comparison_models
+            
+            if len(all_models) < 2:
+                logger.warning(f"Not enough models for comparison: {all_models}")
                 return MetricScore(score=50.0, details={'error': 'insufficient_models'})
+            
+            logger.info(f"Comparing models: {all_models}")
             
             embedder = self.context.get_embedder()
             
@@ -60,7 +79,7 @@ class VarianceStage:
                 return MetricScore(score=50.0, details={'error': 'no_variance_outputs'})
             
             variance_outputs = existing_outputs['variance_outputs']
-            details = {'per_input_scores': [], 'models_used': models, 'used_precomputed': True}
+            details = {'per_input_scores': [], 'models_used': all_models, 'used_precomputed': True}
             
             # 결과를 입력별로 처리
             input_results = []
@@ -69,7 +88,7 @@ class VarianceStage:
                 
                 # 모델별 출력 수집 (이미 Run Stage에서 실행됨)
                 model_outputs = {}
-                for model in models:
+                for model in all_models:
                     if model in variance_outputs and i < len(variance_outputs[model]):
                         model_outputs[model] = variance_outputs[model][i]
                     else:
@@ -108,19 +127,37 @@ class VarianceStage:
                     })
                     continue
                 
-                # 임베딩 간 유사도 계산
-                similarities = []
-                embedding_list = list(valid_embeddings.values())
+                # 선택된 모델과 각 비교 모델 간 쌍별 유사도 계산
+                pairwise_scores = []
                 model_names = list(valid_embeddings.keys())
+                
+                # 선택된 모델의 임베딩
+                if recommended_model in valid_embeddings:
+                    main_embedding = valid_embeddings[recommended_model]
+                    
+                    for comp_model in comparison_models:
+                        if comp_model in valid_embeddings:
+                            comp_embedding = valid_embeddings[comp_model]
+                            similarity = self._cosine_similarity(main_embedding, comp_embedding)
+                            pairwise_scores.append({
+                                'model_pair': f"{self._get_model_short_name(recommended_model)} vs {self._get_model_short_name(comp_model)}",
+                                'main_model': recommended_model,
+                                'comparison_model': comp_model,
+                                'similarity': similarity,
+                                'score': similarity * 100
+                            })
+                
+                # 전체 유사도도 계산 (기존 로직)
+                all_similarities = []
+                embedding_list = list(valid_embeddings.values())
                 
                 for i_emb in range(len(embedding_list)):
                     for j_emb in range(i_emb + 1, len(embedding_list)):
                         similarity = self._cosine_similarity(embedding_list[i_emb], embedding_list[j_emb])
-                        similarities.append(similarity)
+                        all_similarities.append(similarity)
                 
-                if similarities:
-                    avg_similarity = sum(similarities) / len(similarities)
-                    # 유사도를 편차 점수로 변환 (높은 유사도 = 낮은 편차 = 높은 점수)
+                if all_similarities:
+                    avg_similarity = sum(all_similarities) / len(all_similarities)
                     variance_score = avg_similarity * 100
                 else:
                     variance_score = 0.0
@@ -128,8 +165,8 @@ class VarianceStage:
                 input_results.append({
                     'input_index': i,
                     'score': variance_score,
-                    'similarity_scores': similarities,
-                    'average_similarity': avg_similarity if similarities else 0.0,
+                    'pairwise_scores': pairwise_scores,
+                    'average_similarity': avg_similarity if all_similarities else 0.0,
                     'valid_models': model_names,
                     'model_outputs': {k: v[:100] + "..." if len(v) > 100 else v for k, v in model_outputs.items()}
                 })
@@ -141,9 +178,30 @@ class VarianceStage:
             else:
                 final_score = 0.0
             
+            # 쌍별 점수 집계
+            pairwise_summary = {}
+            for result in input_results:
+                for pair_score in result.get('pairwise_scores', []):
+                    pair_name = pair_score['model_pair']
+                    if pair_name not in pairwise_summary:
+                        pairwise_summary[pair_name] = []
+                    pairwise_summary[pair_name].append(pair_score['score'])
+            
+            # 쌍별 평균 점수
+            pairwise_averages = []
+            for pair_name, scores in pairwise_summary.items():
+                avg = sum(scores) / len(scores) if scores else 0.0
+                pairwise_averages.append({
+                    'model_pair': pair_name,
+                    'average_score': round(avg, 1),
+                    'sample_count': len(scores)
+                })
+            
             details['per_input_scores'] = input_results
+            details['pairwise_comparison'] = pairwise_averages
             
             logger.info(f"Model variance score: {final_score:.3f}")
+            logger.info(f"Pairwise scores: {pairwise_averages}")
             return MetricScore(score=final_score, details=details)
             
         except Exception as e:

@@ -17,8 +17,8 @@ class TokenStage:
     async def execute(self, prompt: str, execution_results: Dict[str, Any]) -> TokenMetricScore:
         """
         토큰 사용량 계산
-        - 고정 프롬프트 부분의 토큰 수 계산 ({{}} 제외)
-        - 토큰 수 자체를 점수로 반환
+        - 고정 프롬프트 부분의 토큰 수만 계산 (플레이스홀더 제외)
+        - 입력 내용은 변수이므로 제외
         """
         logger.info("Calculating token usage")
         
@@ -40,7 +40,14 @@ class TokenStage:
             return TokenMetricScore(score=0.0, details={'error': str(e)})
     
     def _remove_placeholders(self, prompt: str) -> str:
-        """플레이스홀더 제거"""
-        # {{}} 형태의 플레이스홀더 제거
+        """플레이스홀더 제거 - run_stage의 _fill_prompt와 동일한 패턴 사용"""
         import re
-        return re.sub(r'\{\{[^}]*\}\}', '', prompt).strip()
+        
+        # 1. {{key}} 형태의 플레이스홀더 제거
+        result = re.sub(r'\{\{[^}]*\}\}', '', prompt)
+        
+        # 2. 연속된 공백과 줄바꿈 정리
+        result = re.sub(r'\n\s*\n', '\n', result)  # 빈 줄 제거
+        result = re.sub(r'\s+', ' ', result)  # 연속 공백을 하나로
+        
+        return result.strip()

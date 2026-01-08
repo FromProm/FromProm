@@ -104,8 +104,8 @@ class PerplexityClient:
         logger.info(f"Batch verifying {len(claims)} claims with Perplexity")
         
         # Rate limit을 고려한 배치 처리
-        batch_size = 1  # 완전 순차 처리
-        delay_between_batches = 1.5  # 각 요청 간 지연
+        batch_size = 10  # 10개씩 배치 처리
+        delay_between_batches = 2.0  # 배치 간 지연
         
         all_scores = []
         
@@ -113,15 +113,21 @@ class PerplexityClient:
             batch_claims = claims[i:i + batch_size]
             logger.debug(f"Processing batch {i//batch_size + 1}/{(len(claims) + batch_size - 1)//batch_size}")
             
-            # 순차 처리
+            # 배치 내 병렬 처리
             batch_scores = []
-            for j, claim in enumerate(batch_claims):
-                try:
-                    score = await self.verify_claim(claim)
-                    batch_scores.append(score)
-                except Exception as e:
-                    logger.error(f"Claim {i+j+1} verification failed: {str(e)}")
-                    batch_scores.append(0.0)
+            batch_tasks = [self.verify_claim(claim) for claim in batch_claims]
+            
+            try:
+                batch_results = await asyncio.gather(*batch_tasks, return_exceptions=True)
+                for j, result in enumerate(batch_results):
+                    if isinstance(result, Exception):
+                        logger.error(f"Claim {i+j+1} verification failed: {str(result)}")
+                        batch_scores.append(0.0)
+                    else:
+                        batch_scores.append(result)
+            except Exception as e:
+                logger.error(f"Batch processing failed: {str(e)}")
+                batch_scores = [0.0] * len(batch_claims)
             
             all_scores.extend(batch_scores)
             

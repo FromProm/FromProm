@@ -59,13 +59,23 @@ class ConsistencyStage:
                     elif 'titan_embedding' in emb and emb['titan_embedding'] is not None:
                         first_embeddings.append(emb['titan_embedding'])
                 
-                first_score = self._calculate_centroid_consistency(first_embeddings)
-                cohere_score = self._calculate_centroid_consistency(
-                    [emb['cohere_embedding'] for emb in valid_embeddings]
-                )
+                # Cohere 임베딩 필터링 (None 제외)
+                cohere_embeddings = [emb['cohere_embedding'] for emb in valid_embeddings 
+                                     if emb.get('cohere_embedding') is not None]
                 
-                # 앙상블 평균
-                ensemble_score = (first_score + cohere_score) / 2
+                # 첫 번째 모델 점수 계산
+                first_score = 0.0
+                if len(first_embeddings) >= 2:
+                    first_score = self._calculate_centroid_consistency(first_embeddings)
+                
+                # Cohere 점수 계산
+                cohere_score = 0.0
+                if len(cohere_embeddings) >= 2:
+                    cohere_score = self._calculate_centroid_consistency(cohere_embeddings)
+                
+                # 앙상블 평균 (유효한 점수만)
+                valid_scores = [s for s in [first_score, cohere_score] if s > 0]
+                ensemble_score = sum(valid_scores) / len(valid_scores) if valid_scores else 0.0
                 all_consistency_scores.append(ensemble_score)
                 
                 details['per_input_scores'].append({

@@ -14,6 +14,7 @@ from app.orchestrator.stages.relevance_stage import RelevanceStage
 from app.orchestrator.stages.variance_stage import VarianceStage
 from app.orchestrator.stages.judge_stage import JudgeStage
 from app.orchestrator.stages.aggregate_stage import AggregateStage
+from app.orchestrator.stages.feedback_stage import FeedbackStage
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -32,7 +33,8 @@ class Orchestrator:
             'relevance': RelevanceStage(context),
             'variance': VarianceStage(context),
             'judge': JudgeStage(context),
-            'aggregate': AggregateStage(context)
+            'aggregate': AggregateStage(context),
+            'feedback': FeedbackStage(context)
         }
     
     async def run(self, job_request: JobCreateRequest) -> EvaluationResult:
@@ -159,6 +161,25 @@ class Orchestrator:
             
             # 실제 AI 출력 결과 포함
             final_result.execution_results = execution_results
+            
+            # [5단계] 프롬프트 개선 피드백 생성
+            try:
+                evaluation_data = {
+                    'token_usage': {'score': token_score.score if token_score else 0} if token_score else None,
+                    'information_density': {'score': density_score.score if density_score else 0} if density_score else None,
+                    'consistency': {'score': consistency_score.score if consistency_score else 0} if consistency_score else None,
+                    'relevance': {'score': relevance_score.score if relevance_score else 0} if relevance_score else None,
+                    'hallucination': {'score': hallucination_score.score if hallucination_score else 0} if hallucination_score else None,
+                    'model_variance': {'score': variance_score.score if variance_score else 0} if variance_score else None,
+                    'execution_results': execution_results
+                }
+                
+                feedback = await self.stages['feedback'].execute(evaluation_data)
+                final_result.feedback = feedback
+                logger.info("Feedback generation completed")
+            except Exception as e:
+                logger.warning(f"Feedback generation failed: {str(e)}")
+                final_result.feedback = {'error': str(e)}
             
             logger.info("Pipeline completed successfully (parallel execution)")
             return final_result

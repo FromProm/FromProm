@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # Perplexity Settings
     perplexity_api_key: str = ""
     perplexity_api_key_2: str = ""
-    perplexity_model: str = "sonar"
+    perplexity_model: str = "sonar-pro"
     
     @property
     def perplexity_api_keys(self) -> List[str]:
@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     
     # Model Configuration
     default_models: Dict[str, str] = {
-        "type_a": "anthropic.claude-3-5-sonnet-20240620-v1:0",
+        "type_a": "arn:aws:bedrock:us-east-1:261595668962:inference-profile/us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         "type_b_text": "anthropic.claude-3-haiku-20240307-v1:0",
         "type_b_image": "amazon.nova-canvas-v1:0"
     }

@@ -27,6 +27,13 @@ class RecommendedModel(str, Enum):
     CLAUDE_3_SONNET = "anthropic.claude-3-sonnet-20240229-v1:0"
     CLAUDE_3_HAIKU = "anthropic.claude-3-haiku-20240307-v1:0"
     
+    # Claude 4.5 (inference profile ARN 필요)
+    CLAUDE_SONNET_4_5 = "arn:aws:bedrock:us-east-1:261595668962:inference-profile/us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    
+    # OpenAI GPT OSS 모델들 - Bedrock 지원
+    GPT_OSS_20B = "openai.gpt-oss-20b-1:0"
+    GPT_OSS_120B = "openai.gpt-oss-120b-1:0"
+    
     # 이미지 생성 모델들 - Bedrock 확실 지원
     NOVA_CANVAS = "amazon.nova-canvas-v1:0"
     TITAN_IMAGE_V1 = "amazon.titan-image-generator-v1"
@@ -88,6 +95,7 @@ class EvaluationResult(BaseModel):
     hallucination: Optional[MetricScore] = None
     relevance: Optional[MetricScore] = None
     execution_results: Optional[Dict[str, Any]] = Field(None, description="실제 AI 출력 결과들")
+    feedback: Optional[Dict[str, Any]] = Field(None, description="프롬프트 개선 피드백")
 
 class JobResponse(BaseModel):
     request_id: str = Field(..., description="요청 고유 ID (UUID)")

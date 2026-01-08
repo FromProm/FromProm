@@ -425,3 +425,61 @@ async def get_job_s3_examples_format(job_id: str):
             error_type=type(e).__name__
         )
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/jobs/{job_id}/feedback")
+async def get_job_feedback(job_id: str, format: str = Query("text", description="출력 형식: text 또는 json")):
+    """작업의 프롬프트 개선 피드백 조회"""
+    from app.orchestrator.stages.feedback_stage import FeedbackStage
+    
+    try:
+        context = get_context()
+        storage = context.get_storage()
+        job = await storage.get_job(job_id)
+        
+        if not job:
+            raise HTTPException(status_code=404, detail="Job not found")
+        
+        if job.status != JobStatus.COMPLETED:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Job is not completed yet. Current status: {job.status.value}"
+            )
+        
+        # 피드백 데이터 확인
+        feedback = None
+        if job.result and hasattr(job.result, 'feedback') and job.result.feedback:
+            feedback = job.result.feedback
+        
+        if not feedback:
+            raise HTTPException(
+                status_code=404,
+                detail="Feedback not available for this job"
+            )
+        
+        structured_logger.info(
+            "Feedback retrieved",
+            request_id=job_id,
+            stage="feedback_retrieval"
+        )
+        
+        # 형식에 따라 반환
+        if format == "text":
+            # 사람이 읽기 좋은 텍스트 형식
+            feedback_stage = FeedbackStage(context)
+            formatted = feedback_stage.format_feedback(feedback)
+            return {"feedback_text": formatted, "feedback_data": feedback}
+        else:
+            # JSON 형식
+            return feedback
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        structured_logger.error(
+            f"Feedback retrieval failed: {str(e)}",
+            request_id=job_id,
+            stage="feedback_retrieval",
+            error_type=type(e).__name__
+        )
+        raise HTTPException(status_code=500, detail=str(e))

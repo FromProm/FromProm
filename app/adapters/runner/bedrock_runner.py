@@ -58,9 +58,15 @@ class BedrockRunner(BaseRunner):
     def _sync_invoke(self, model: str, prompt: str, input_type: str, kwargs: dict) -> Dict[str, Any]:
         """동기 Bedrock 호출 (스레드에서 실행)"""
         try:
+            # inference profile ARN인 경우 converse API 사용
+            if model.startswith("arn:aws:bedrock"):
+                return self._invoke_with_converse(model, prompt, **kwargs)
+            
             # 모델별 요청 형식 구성
             if "anthropic.claude" in model:
                 body = self._build_claude_request(prompt, **kwargs)
+            elif "openai.gpt" in model:
+                body = self._build_openai_request(prompt, **kwargs)
             elif "amazon.titan" in model:
                 body = self._build_titan_request(prompt, **kwargs)
             elif "amazon.nova" in model:
@@ -81,6 +87,8 @@ class BedrockRunner(BaseRunner):
             # 모델별 응답 파싱
             if "anthropic.claude" in model:
                 return self._parse_claude_response(response_body)
+            elif "openai.gpt" in model:
+                return self._parse_openai_response(response_body)
             elif "amazon.titan" in model:
                 return self._parse_titan_response(response_body)
             elif "amazon.nova" in model:
@@ -89,6 +97,44 @@ class BedrockRunner(BaseRunner):
         except Exception as e:
             logger.error(f"Model invocation failed: {str(e)}")
             raise ModelInvocationError(f"Failed to invoke {model}: {str(e)}")
+    
+    def _invoke_with_converse(self, model_arn: str, prompt: str, **kwargs) -> Dict[str, Any]:
+        """Converse API를 사용한 inference profile 호출"""
+        try:
+            response = self.client.converse(
+                modelId=model_arn,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [{"text": prompt}]
+                    }
+                ],
+                inferenceConfig={
+                    "maxTokens": kwargs.get('max_tokens', 1000),
+                    "temperature": kwargs.get('temperature', 0.7)
+                }
+            )
+            
+            # 응답 파싱
+            output_message = response.get('output', {}).get('message', {})
+            content = output_message.get('content', [])
+            output_text = content[0].get('text', '') if content else ''
+            
+            usage = response.get('usage', {})
+            token_usage = {
+                'input_tokens': usage.get('inputTokens', 0),
+                'output_tokens': usage.get('outputTokens', 0),
+                'total_tokens': usage.get('inputTokens', 0) + usage.get('outputTokens', 0)
+            }
+            
+            return {
+                'output': output_text,
+                'token_usage': token_usage
+            }
+            
+        except Exception as e:
+            logger.error(f"Converse API failed: {str(e)}")
+            raise ModelInvocationError(f"Failed to invoke with converse: {str(e)}")
     
     def _build_claude_request(self, prompt: str, **kwargs) -> Dict[str, Any]:
         """Claude 요청 구성"""
@@ -102,6 +148,24 @@ class BedrockRunner(BaseRunner):
                     "content": prompt
                 }
             ]
+        }
+    
+    def _build_openai_request(self, prompt: str, **kwargs) -> Dict[str, Any]:
+        """OpenAI GPT OSS 요청 구성"""
+        return {
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "max_completion_tokens": kwargs.get('max_tokens', 1000),
+            "temperature": kwargs.get('temperature', 0.7),
+            "top_p": kwargs.get('top_p', 0.9)
         }
     
     def _build_titan_request(self, prompt: str, **kwargs) -> Dict[str, Any]:
@@ -125,6 +189,26 @@ class BedrockRunner(BaseRunner):
             'input_tokens': usage.get('input_tokens', 0),
             'output_tokens': usage.get('output_tokens', 0),
             'total_tokens': usage.get('input_tokens', 0) + usage.get('output_tokens', 0)
+        }
+        
+        return {
+            'output': output_text,
+            'token_usage': token_usage
+        }
+    
+    def _parse_openai_response(self, response: Dict[str, Any]) -> Dict[str, Any]:
+        """OpenAI GPT OSS 응답 파싱"""
+        choices = response.get('choices', [])
+        output_text = ''
+        if choices:
+            message = choices[0].get('message', {})
+            output_text = message.get('content', '')
+        
+        usage = response.get('usage', {})
+        token_usage = {
+            'input_tokens': usage.get('prompt_tokens', 0),
+            'output_tokens': usage.get('completion_tokens', 0),
+            'total_tokens': usage.get('total_tokens', 0)
         }
         
         return {

@@ -1,12 +1,10 @@
 package FromProm.user_service.Service;
 
 import FromProm.user_service.DTO.PromptSaveRequest;
-import com.fasterxml.jackson.databind.ObjectMapper; // 추가
+import FromProm.user_service.DTO.PromptType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
-import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 
@@ -19,94 +17,101 @@ import java.util.*;
 @RequiredArgsConstructor
 public class PromptService {
 
-    private final DynamoDbClient dynamoDbClient;
     private final SnsClient snsClient;
-    private final ObjectMapper objectMapper; // JSON 변환을 위해 추가
-    private final String TABLE_NAME = "FromProm_Table";
+    private final ObjectMapper objectMapper;
     private final String SNS_TOPIC_ARN = "arn:aws:sns:ap-northeast-2:261595668962:fromprom-sns";
 
     public String createInitialPrompt(String userId, PromptSaveRequest dto) {
         String promptUuid = UUID.randomUUID().toString();
         String now = OffsetDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
 
-        Map<String, AttributeValue> item = new HashMap<>();
+        Map<String, Object> fullPayload = new LinkedHashMap<>();
 
-        // 기본 키 및 인덱스 키
-        item.put("PK", AttributeValue.builder().s("PROMPT#" + promptUuid).build());
-        item.put("SK", AttributeValue.builder().s("METADATA").build());
-        item.put("PROMPT_INDEX_PK", AttributeValue.builder().s("USER_PROMPT_LIST").build());
-        item.put("PROMPT_INDEX_SK", AttributeValue.builder().s("USER#" + userId + "#" + now).build());
+        // 1. 기본 정보 및 인덱스 설정
+        fullPayload.put("PK", "PROMPT#" + promptUuid);
+        fullPayload.put("SK", "METADATA");
+        fullPayload.put("PROMPT_INDEX_PK", "USER_PROMPT_LIST");
+        fullPayload.put("PROMPT_INDEX_SK", "USER#" + userId + "#" + now);
+        fullPayload.put("type", "PROMPT");
+        fullPayload.put("create_user", "USER#" + userId);
+        fullPayload.put("title", dto.getTitle());
+        fullPayload.put("content", dto.getContent());
+        fullPayload.put("description", dto.getDescription());
+        fullPayload.put("price", dto.getPrice());
+        fullPayload.put("prompt_type", dto.getPromptType().name());
 
-        // 기본 정보
-        item.put("type", AttributeValue.builder().s("PROMPT").build());
-        item.put("create_user", AttributeValue.builder().s("USER#" + userId).build());
-        item.put("title", AttributeValue.builder().s(dto.getTitle()).build());
-        item.put("content", AttributeValue.builder().s(dto.getContent()).build());
-        item.put("description", AttributeValue.builder().s(dto.getDescription()).build());
-        item.put("prompt_type", AttributeValue.builder().s(dto.getPromptType()).build());
-        item.put("model", AttributeValue.builder().s(dto.getModel()).build());
+        // 2. 3가지 예시 시나리오 구조화
+        List<Map<String, Object>> structuredExamples = new ArrayList<>();
+        if (dto.getExamples() != null) {
+            for (int i = 0; i < dto.getExamples().size(); i++) {
+                PromptSaveRequest.ExampleSet exampleSet = dto.getExamples().get(i);
 
-        // 예시 데이터 구조화
-        List<AttributeValue> structuredExamples = new ArrayList<>();
-        for (int i = 0; i < dto.getInputs().size(); i++) {
-            Map<String, AttributeValue> exMap = new HashMap<>();
-            exMap.put("index", AttributeValue.builder().n(String.valueOf(i)).build());
-            exMap.put("input", AttributeValue.builder().m(Map.of(
-                    "content", AttributeValue.builder().s(dto.getInputs().get(i)).build(),
-                    "input_type", AttributeValue.builder().s("text").build()
-            )).build());
-            exMap.put("output", AttributeValue.builder().s("").build());
-            structuredExamples.add(AttributeValue.builder().m(exMap).build());
+                // 헬퍼 메서드를 사용하여 JSON 문자열로 변환
+                String jsonInputStr = serializeInputs(exampleSet.getInputValues());
+
+                Map<String, Object> exMap = new LinkedHashMap<>();
+                exMap.put("index", i);
+                exMap.put("input", Map.of(
+                        "content", jsonInputStr,
+                        "input_type", "text"
+                ));
+                exMap.put("output", ""); // 요구사항: 출력값은 빈칸으로 고정
+                structuredExamples.add(exMap);
+            }
         }
-        item.put("examples", AttributeValue.builder().l(structuredExamples).build());
 
-        // 상태 및 카운트 초기화
-        item.put("status", AttributeValue.builder().s("PROCESSING").build());
-        item.put("created_at", AttributeValue.builder().s(now).build());
-        item.put("updated_at", AttributeValue.builder().s(now).build());
-        item.put("like_count", AttributeValue.builder().n("0").build());
-        item.put("comment_count", AttributeValue.builder().n("0").build());
-        item.put("bookmark_count", AttributeValue.builder().n("0").build());
-        item.put("is_public", AttributeValue.builder().bool(false).build());
+        fullPayload.put("examples", structuredExamples);
+        fullPayload.put("examples_s3_url", "");
+        fullPayload.put("model", dto.getModel());
 
-        // 1. DynamoDB 저장 실행
-        dynamoDbClient.putItem(PutItemRequest.builder()
-                .tableName(TABLE_NAME)
-                .item(item)
-                .build());
+        // 3. 성능 지표 및 상태 초기화
+        fullPayload.put("evaluation_metrics", createEmptyMetrics());
+        fullPayload.put("status", "processing");
+        fullPayload.put("created_at", now);
+        fullPayload.put("updated_at", "");
+        fullPayload.put("like_count", 0); // 숫자형으로 변경 권장
+        fullPayload.put("comment_count", 0);
+        fullPayload.put("bookmark_count", 0);
+        fullPayload.put("is_public", false);
 
-        // 2. AI 서버로 상세 정보를 포함한 SNS 알림 보내기
-        sendSnsNotification(userId, promptUuid, dto);
+        sendSnsNotification(fullPayload);
 
         return promptUuid;
     }
 
-    private void sendSnsNotification(String userId, String promptUuid, PromptSaveRequest dto) {
+    // 인풋 리스트를 JSON 문자열로 변환하는 헬퍼 메서드
+    private String serializeInputs(List<PromptSaveRequest.InputDetail> inputs) {
         try {
-            // AI 서버가 즉시 분석할 수 있도록 모든 데이터를 Map으로 구성
-            Map<String, Object> messageMap = new HashMap<>();
-            messageMap.put("userPk", "USER#" + userId);
-            messageMap.put("promptPk", "PROMPT#" + promptUuid);
-            messageMap.put("title", dto.getTitle());
-            messageMap.put("content", dto.getContent());
-            messageMap.put("description", dto.getDescription());
-            messageMap.put("promptType", dto.getPromptType());
-            messageMap.put("model", dto.getModel());
-            messageMap.put("inputs", dto.getInputs()); // 사용자 입력 리스트 전체 포함
+            Map<String, String> inputMap = new HashMap<>();
+            if (inputs != null) {
+                for (PromptSaveRequest.InputDetail detail : inputs) {
+                    inputMap.put(detail.getKey(), detail.getValue());
+                }
+            }
+            return objectMapper.writeValueAsString(inputMap);
+        } catch (Exception e) {
+            return "{}";
+        }
+    }
 
-            // JSON 문자열로 변환
-            String jsonMessage = objectMapper.writeValueAsString(messageMap);
+    private Map<String, String> createEmptyMetrics() {
+        Map<String, String> metrics = new LinkedHashMap<>();
+        String[] fields = {"token_usage", "information_density", "consistency", "model_variance", "hallucination", "relevance", "final_score", "feedback"};
+        for (String field : fields) {
+            metrics.put(field, "");
+        }
+        return metrics;
+    }
 
-            PublishRequest publishRequest = PublishRequest.builder()
+    private void sendSnsNotification(Map<String, Object> payload) {
+        try {
+            String jsonMessage = objectMapper.writeValueAsString(payload);
+            snsClient.publish(PublishRequest.builder()
                     .topicArn(SNS_TOPIC_ARN)
                     .message(jsonMessage)
-                    .build();
-
-            snsClient.publish(publishRequest);
-            System.out.println("AI 서버로 전체 데이터 전송 성공: PROMPT#" + promptUuid);
-
+                    .build());
+            System.out.println("[SNS 전송 완료] PK: " + payload.get("PK"));
         } catch (Exception e) {
-            System.err.println("SNS 발송 실패: " + e.getMessage());
             e.printStackTrace();
         }
     }

@@ -49,7 +49,7 @@ public class User {
     @DynamoDbAttribute("bio")
     public String getBio() { return bio; }
 
-    @DynamoDbAttribute("profileImage")
+    @DynamoDbAttribute("profile_image")
     public String getProfileImage() { return profileImage; }
 
     @DynamoDbAttribute("created_at")

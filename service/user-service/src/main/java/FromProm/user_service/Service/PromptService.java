@@ -69,9 +69,9 @@ public class PromptService {
         fullPayload.put("status", "processing");
         fullPayload.put("created_at", now);
         fullPayload.put("updated_at", "");
-        fullPayload.put("like_count", 0); // 숫자형으로 변경 권장
-        fullPayload.put("comment_count", 0);
-        fullPayload.put("bookmark_count", 0);
+        fullPayload.put("like_count", "0"); // 숫자형으로 변경 권장
+        fullPayload.put("comment_count", "0");
+        fullPayload.put("bookmark_count", "0");
         fullPayload.put("is_public", false);
 
         sendSnsNotification(fullPayload);

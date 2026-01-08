@@ -35,9 +35,8 @@ public class InteractionService {
         likeItem.put("LIKE_INDEX_PK", AttributeValue.builder().s("USER_LIKES#" + userId).build());
         likeItem.put("LIKE_INDEX_SK", AttributeValue.builder().s(now).build());
         likeItem.put("type", AttributeValue.builder().s("LIKE").build());
-        likeItem.put("targetPromptId", AttributeValue.builder().s(promptId).build());
-        //likeItem.put("title", AttributeValue.builder().s(promptTitle).build());
-        likeItem.put("createdAt", AttributeValue.builder().s(now).build());
+        likeItem.put("target_prompt_id", AttributeValue.builder().s(promptId).build());
+        likeItem.put("created_at", AttributeValue.builder().s(now).build());
 
         // 2. 트랜잭션 실행
         dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
@@ -58,7 +57,7 @@ public class InteractionService {
                                                 "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
                                                 "SK", AttributeValue.builder().s("METADATA").build()
                                         ))
-                                        .updateExpression("SET likeCount = if_not_exists(likeCount, :zero) + :inc")
+                                        .updateExpression("SET like_count = if_not_exists(like_count, :zero) + :inc")
                                         .expressionAttributeValues(Map.of(
                                                 ":inc", AttributeValue.builder().n("1").build(),
                                                 ":zero", AttributeValue.builder().n("0").build()
@@ -70,42 +69,48 @@ public class InteractionService {
     }
 
     public void deleteLike(String userId, String promptId) {
-        // 1. 트랜잭션 실행
-        dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
-                .transactItems(
-                        // [Delete] 유저의 좋아요 기록 삭제
-                        TransactWriteItem.builder()
-                                .delete(Delete.builder()
-                                        .tableName(TABLE_NAME)
-                                        .key(Map.of(
-                                                "PK", AttributeValue.builder().s("USER#" + userId).build(),
-                                                "SK", AttributeValue.builder().s("LIKE#" + promptId).build()
-                                        ))
-                                        // 조건: 기록이 실제로 존재할 때만 삭제 (선택 사항)
-                                        .conditionExpression("attribute_exists(PK)")
-                                        .build())
-                                .build(),
+        try {
+            dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
+                    .transactItems(
+                            // 1. 유저의 좋아요 기록 삭제
+                            TransactWriteItem.builder()
+                                    .delete(Delete.builder()
+                                            .tableName(TABLE_NAME)
+                                            .key(Map.of(
+                                                    "PK", AttributeValue.builder().s("USER#" + userId).build(),
+                                                    "SK", AttributeValue.builder().s("LIKE#" + promptId).build()
+                                            ))
+                                            // 기록이 있어야만 삭제 가능 (이미 취소된 경우 방지)
+                                            .conditionExpression("attribute_exists(PK)")
+                                            .build())
+                                    .build(),
 
-                        // [Update] Prompt의 likeCount 1 감소
-                        TransactWriteItem.builder()
-                                .update(Update.builder()
-                                        .tableName(TABLE_NAME)
-                                        .key(Map.of(
-                                                "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
-                                                "SK", AttributeValue.builder().s("METADATA").build()
-                                        ))
-                                        // 0 미만으로 떨어지지 않게 방어 로직 추가
-                                        .updateExpression("SET likeCount = likeCount - :dec")
-                                        .expressionAttributeValues(Map.of(
-                                                ":dec", AttributeValue.builder().n("1").build(),
-                                                ":zero", AttributeValue.builder().n("0").build()
-                                        ))
-                                        // likeCount가 0보다 클 때만 감소 (데이터 무결성)
-                                        .conditionExpression("likeCount > :zero")
-                                        .build())
-                                .build()
-                )
-                .build());
+                            // 2. Prompt의 like_count 감소 (필드명 like_count로 통일)
+                            TransactWriteItem.builder()
+                                    .update(Update.builder()
+                                            .tableName(TABLE_NAME)
+                                            .key(Map.of(
+                                                    "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                                                    "SK", AttributeValue.builder().s("METADATA").build()
+                                            ))
+                                            // 필드명이 없으면 0으로 간주하고 계산
+                                            .updateExpression("SET like_count = like_count - :dec")
+                                            .conditionExpression("attribute_exists(like_count) AND like_count > :zero")
+                                            .expressionAttributeValues(Map.of(
+                                                    ":dec", AttributeValue.builder().n("1").build(),
+                                                    ":zero", AttributeValue.builder().n("0").build()
+                                            ))
+                                            // 0보다 클 때만 감소 가능
+                                            .conditionExpression("like_count > :zero")
+                                            .build())
+                                    .build()
+                    )
+                    .build());
+        } catch (TransactionCanceledException e) {
+            // 어떤 조건이 실패했는지 로그 확인용
+            System.err.println("트랜잭션 실패 원인: " + e.cancellationReasons());
+            throw new RuntimeException("이미 좋아요를 취소했거나 처리할 수 없는 요청입니다.");
+        }
     }
 
     // 북마크 등록
@@ -118,9 +123,8 @@ public class InteractionService {
         bookmarkItem.put("BOOKMARK_INDEX_PK", AttributeValue.builder().s("USER_BOOKMARKS#" + userId).build());
         bookmarkItem.put("BOOKMARK_INDEX_SK", AttributeValue.builder().s(now).build());
         bookmarkItem.put("type", AttributeValue.builder().s("BOOKMARK").build());
-        bookmarkItem.put("targetPromptId", AttributeValue.builder().s(promptId).build());
-        //bookmarkItem.put("title", AttributeValue.builder().s(promptTitle).build());
-        bookmarkItem.put("createdAt", AttributeValue.builder().s(now).build());
+        bookmarkItem.put("target_prompt_id", AttributeValue.builder().s(promptId).build());
+        bookmarkItem.put("created_at", AttributeValue.builder().s(now).build());
 
         dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
                 .transactItems(
@@ -138,7 +142,7 @@ public class InteractionService {
                                                 "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
                                                 "SK", AttributeValue.builder().s("METADATA").build()
                                         ))
-                                        .updateExpression("SET bookmarkCount = if_not_exists(bookmarkCount, :zero) + :inc")
+                                        .updateExpression("SET bookmark_count = if_not_exists(bookmark_count, :zero) + :inc")
                                         .expressionAttributeValues(Map.of(
                                                 ":inc", AttributeValue.builder().n("1").build(),
                                                 ":zero", AttributeValue.builder().n("0").build()
@@ -169,12 +173,12 @@ public class InteractionService {
                                                 "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
                                                 "SK", AttributeValue.builder().s("METADATA").build()
                                         ))
-                                        .updateExpression("SET bookmarkCount = bookmarkCount - :dec")
+                                        .updateExpression("SET bookmark_count = bookmark_count - :dec")
                                         .expressionAttributeValues(Map.of(
                                                 ":dec", AttributeValue.builder().n("1").build(),
                                                 ":zero", AttributeValue.builder().n("0").build()
                                         ))
-                                        .conditionExpression("bookmarkCount > :zero")
+                                        .conditionExpression("bookmark_count > :zero")
                                         .build())
                                 .build()
                 ).build());
@@ -190,11 +194,12 @@ public class InteractionService {
         Map<String, AttributeValue> commentItem = new HashMap<>();
         commentItem.put("PK", AttributeValue.builder().s("PROMPT#" + promptId).build());
         commentItem.put("SK", AttributeValue.builder().s(sk).build());
-        commentItem.put("Type", AttributeValue.builder().s("COMMENT").build());
+        commentItem.put("type", AttributeValue.builder().s("COMMENT").build());
         commentItem.put("content", AttributeValue.builder().s(content).build());
-        commentItem.put("authorId", AttributeValue.builder().s(userId).build());
-        commentItem.put("authorNickname", AttributeValue.builder().s(nickname).build());
-        commentItem.put("updatedAt", AttributeValue.builder().s(now).build());
+        commentItem.put("comment_user", AttributeValue.builder().s(userId).build());
+        commentItem.put("comment_user_nickname", AttributeValue.builder().s(nickname).build());
+        commentItem.put("created_at", AttributeValue.builder().s(now).build());
+        commentItem.put("updated_at", AttributeValue.builder().s(now).build());
 
         dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
                 .transactItems(
@@ -219,8 +224,8 @@ public class InteractionService {
                 .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
                         "SK", AttributeValue.builder().s(commentSk).build()))
                 // 본인 확인 조건 추가
-                .conditionExpression("authorId = :userId")
-                .updateExpression("SET content = :content, updatedAt = :now")
+                .conditionExpression("comment_user = :userId")
+                .updateExpression("SET content = :content, updated_at = :now")
                 .expressionAttributeValues(Map.of(
                         ":content", AttributeValue.builder().s(newContent).build(),
                         ":now", AttributeValue.builder().s(now).build(),
@@ -244,7 +249,7 @@ public class InteractionService {
             throw new IllegalArgumentException("존재하지 않거나 이미 삭제된 댓글입니다. (유효한 SK값이 아님)");
         }
 
-        String authorId = getResponse.item().get("authorId").s();
+        String authorId = getResponse.item().get("comment_user").s();
 
         // [체크 2] 작성자가 일치하지 않는 경우 (권한 부족)
         if (!authorId.equals(userId)) {
@@ -277,7 +282,7 @@ public class InteractionService {
         }
     }
 
-    // 좋아요, 북마크 사용
+    //좋아요, 북마크 사용
     public String getUserIdFromToken(String accessToken) {
         // Bearer 문자열 제거 (만약 포함되어 있다면)
         String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;

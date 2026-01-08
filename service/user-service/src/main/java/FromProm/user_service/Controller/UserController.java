@@ -166,6 +166,7 @@ public class UserController {
         }
     }
 
+    //닉네임 증복 확인
     @PostMapping("/check-nickname")
     public ResponseEntity<Boolean> checkNickname(@RequestBody NicknameCheckRequest request) {
         // request.getNickname()으로 값을 꺼냅니다.

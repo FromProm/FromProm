@@ -13,6 +13,9 @@ import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityPr
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.time.LocalDateTime;
 
@@ -28,6 +31,9 @@ public class UserService {
 
     @Value("${aws.cognito.userPoolId}")
     private String userPoolId;
+
+    String now = OffsetDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+
 
     // 회원가입
     public void signUp(UserSignUpRequest request) {
@@ -244,7 +250,7 @@ public class UserService {
         }
 
         // 5. 업데이트 날짜 갱신 및 저장
-        user.setUpdated_at(LocalDateTime.now().toString());
+        user.setUpdated_at(now);
         userRepository.update(user);
     }
 
@@ -299,17 +305,17 @@ public class UserService {
 
         // 3. 유저 엔티티 잔액 업데이트
         user.setCredit(newBalance);
-        user.setUpdated_at(LocalDateTime.now().toString());
+        user.setUpdated_at(now);
 
         // 4. 내역(History) 객체 생성
         Credit history = Credit.builder()
                 .PK(userSub)
-                .SK("CREDIT#" + System.currentTimeMillis()) // 고유 타임스탬프
+                .SK("CREDIT#" + now) // 고유 타임스탬프
                 .type("CREDIT")
                 .amount(amount)
                 .balance(newBalance)
-                .description("크레딧 충전")
-                .created_at(LocalDateTime.now().toString())
+                .user_description("크레딧 충전")
+                .created_at(now)
                 .build();
 
         // 5. DB 저장
@@ -334,17 +340,17 @@ public class UserService {
 
         // 4. 유저 엔티티 잔액 업데이트
         user.setCredit(newBalance);
-        user.setUpdated_at(LocalDateTime.now().toString());
+        user.setUpdated_at(now);
 
         // 5. 사용 내역(History) 객체 생성
         Credit history = Credit.builder()
                 .PK(userSub)
-                .SK("CREDIT#" + System.currentTimeMillis())
+                .SK("CREDIT#" + now)
                 .type("CREDIT")
                 .amount(-request.getAmount()) // 사용은 음수(-)로 기록해서 구분
                 .balance(newBalance)
-                .description(request.getDescription())
-                .created_at(LocalDateTime.now().toString())
+                .user_description(request.getUser_description())
+                .created_at(now)
                 .build();
 
         // 6. DB 저장

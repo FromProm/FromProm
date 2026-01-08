@@ -28,6 +28,7 @@ public class InteractionController {
         return ResponseEntity.ok("좋아요 성공! (User: " + userId + ")");
     }
 
+    //좋아요 취소
     @DeleteMapping("/{promptId}/like")
     public ResponseEntity<String> deleteLike(
             @PathVariable String promptId,
@@ -64,6 +65,7 @@ public class InteractionController {
         return ResponseEntity.ok("북마크 취소 완료");
     }
 
+    // 댓글 등록
     @PostMapping("/{promptId}/comments")
     public ResponseEntity<String> addComment(
             @PathVariable String promptId,
@@ -81,6 +83,7 @@ public class InteractionController {
         return ResponseEntity.ok("댓글 등록 완료 (작성자: " + nickname + ")");
     }
 
+    //댓글 수정
     @PatchMapping("/{promptId}/comments")
     public ResponseEntity<String> updateComment(
             @PathVariable String promptId,
@@ -92,7 +95,7 @@ public class InteractionController {
         return ResponseEntity.ok("댓글 수정 완료");
     }
 
-    // 삭제 (Delete)
+    // 댓글 삭제
     @DeleteMapping("/{promptId}/comments/{commentSk}") // URL 경로에 commentSk 추가
     public ResponseEntity<String> deleteComment(
             @PathVariable String promptId,

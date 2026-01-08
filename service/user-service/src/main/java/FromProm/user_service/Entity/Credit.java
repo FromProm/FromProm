@@ -14,7 +14,7 @@ public class Credit {
     private String type;        // CREDIT_HISTORY
     private int amount;         // 변동 금액 (+5000, -3000 등)
     private int balance;        // 변동 후 잔액
-    private String description; // 내역 (예: "포인트 충전", "아이템 구매")
+    private String user_description; // 내역 (예: "포인트 충전", "아이템 구매")
     private String created_at;   // 생성 일시
 
     @DynamoDbPartitionKey

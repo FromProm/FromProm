@@ -78,7 +78,7 @@ public class InteractionController {
         String nickname = userInfo.get("nickname");
 
         // 2. DB에 저장 (이미 있는 닉네임 사용)
-        likeService.addComment(userId, nickname, promptId, req.getContent());
+        likeService.addComment(userId, nickname, promptId, req.getComment_content());
 
         return ResponseEntity.ok("댓글 등록 완료 (작성자: " + nickname + ")");
     }
@@ -91,7 +91,7 @@ public class InteractionController {
             @RequestHeader("Authorization") String authHeader) { // 변수명 변경
 
         String userId = likeService.getUserIdFromToken(authHeader); // ID 추출 로직 추가
-        likeService.updateComment(promptId, req.getCommentSK(), userId, req.getContent());
+        likeService.updateComment(promptId, req.getCommentSK(), userId, req.getComment_content());
         return ResponseEntity.ok("댓글 수정 완료");
     }
 

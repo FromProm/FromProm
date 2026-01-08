@@ -195,7 +195,7 @@ public class InteractionService {
         commentItem.put("PK", AttributeValue.builder().s("PROMPT#" + promptId).build());
         commentItem.put("SK", AttributeValue.builder().s(sk).build());
         commentItem.put("type", AttributeValue.builder().s("COMMENT").build());
-        commentItem.put("content", AttributeValue.builder().s(content).build());
+        commentItem.put("comment_content", AttributeValue.builder().s(content).build());
         commentItem.put("comment_user", AttributeValue.builder().s(userId).build());
         commentItem.put("comment_user_nickname", AttributeValue.builder().s(nickname).build());
         commentItem.put("created_at", AttributeValue.builder().s(now).build());
@@ -225,7 +225,7 @@ public class InteractionService {
                         "SK", AttributeValue.builder().s(commentSk).build()))
                 // 본인 확인 조건 추가
                 .conditionExpression("comment_user = :userId")
-                .updateExpression("SET content = :content, updated_at = :now")
+                .updateExpression("SET comment_content = :content, updated_at = :now")
                 .expressionAttributeValues(Map.of(
                         ":content", AttributeValue.builder().s(newContent).build(),
                         ":now", AttributeValue.builder().s(now).build(),

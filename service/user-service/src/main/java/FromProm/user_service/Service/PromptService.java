@@ -36,7 +36,7 @@ public class PromptService {
         fullPayload.put("create_user", "USER#" + userId);
         fullPayload.put("title", dto.getTitle());
         fullPayload.put("content", dto.getContent());
-        fullPayload.put("description", dto.getDescription());
+        fullPayload.put("prompt_description", dto.getDescription());
         fullPayload.put("price", dto.getPrice());
         fullPayload.put("prompt_type", dto.getPromptType().name());
 
@@ -69,7 +69,7 @@ public class PromptService {
         fullPayload.put("status", "processing");
         fullPayload.put("created_at", now);
         fullPayload.put("updated_at", "");
-        fullPayload.put("like_count", "0"); // 숫자형으로 변경 권장
+        fullPayload.put("like_count", "0");
         fullPayload.put("comment_count", "0");
         fullPayload.put("bookmark_count", "0");
         fullPayload.put("is_public", false);

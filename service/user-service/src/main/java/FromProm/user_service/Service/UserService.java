@@ -9,6 +9,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 
@@ -16,8 +20,10 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,15 +31,13 @@ public class UserService {
     private final CognitoIdentityProviderClient cognitoClient;
     private final UserRepository userRepository;
     private final CreditRepository creditRepository;
+    private final DynamoDbEnhancedClient enhancedClient; // [추가 필요!] 빨간불 방지
 
     @Value("${aws.cognito.clientId}")
     private String clientId;
 
     @Value("${aws.cognito.userPoolId}")
     private String userPoolId;
-
-    String now = OffsetDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
-
 
     // 회원가입
     public void signUp(UserSignUpRequest request) {
@@ -226,6 +230,8 @@ public class UserService {
 
     @Transactional
     public void updateProfile(String userSub, UserProfileUpdateRequest request) {
+        String now = LocalDateTime.now().toString();
+
         // 1. 기존 유저 정보 조회
         User user = userRepository.findUser(userSub)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
@@ -295,6 +301,7 @@ public class UserService {
 
     @Transactional
     public void chargeCredit(String userSub, int amount) {
+        String now = LocalDateTime.now().toString();
         // 1. 유저 정보 조회
         User user = userRepository.findUser(userSub)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
@@ -325,6 +332,8 @@ public class UserService {
 
     @Transactional
     public void useCredit(String userSub, CreditUseRequest request) {
+        String now = LocalDateTime.now().toString();
+
         // 1. 유저 정보 조회
         User user = userRepository.findUser(userSub)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
@@ -356,5 +365,22 @@ public class UserService {
         // 6. DB 저장
         userRepository.update(user);
         creditRepository.save(history);
+    }
+
+    public List<Credit> getCreditHistory(String userSub) {
+        // 1. Enhanced Client를 사용하여 테이블 객체 선언
+        // TableName은 실제 사용하시는 DynamoDB 테이블 이름을 넣으세요.
+        DynamoDbTable<Credit> creditTable = enhancedClient.table("FromProm_Table", TableSchema.fromBean(Credit.class));
+
+        // 2. 쿼리 조건: PK가 유저 ID이고, SK가 "CREDIT#"으로 시작하는 것들
+        QueryConditional queryConditional = QueryConditional
+                .sortBeginsWith(s -> s.partitionValue(userSub).sortValue("CREDIT#"));
+
+        // 3. 최신순(scanIndexForward(false))으로 조회하여 리스트 반환
+        return creditTable.query(r -> r.queryConditional(queryConditional)
+                        .scanIndexForward(false))
+                .items()
+                .stream()
+                .collect(Collectors.toList());
     }
 }

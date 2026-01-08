@@ -1,6 +1,7 @@
 package FromProm.user_service.Controller;
 
 import FromProm.user_service.DTO.*;
+import FromProm.user_service.Entity.Credit;
 import FromProm.user_service.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -254,6 +256,27 @@ public class UserController {
             return ResponseEntity.ok(request.getAmount() + "원이 사용되었습니다.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("크레딧 사용 실패: " + e.getMessage());
+        }
+    }
+
+    //크레딧 사용내역
+    @GetMapping("/credit/history")
+    public ResponseEntity<?> getMyCreditHistory(@RequestHeader("Authorization") String bearerToken) {
+        try {
+            // 1. Bearer 토큰에서 accessToken 추출
+            String accessToken = bearerToken.substring(7).trim();
+
+            // 2. accessToken으로 유저 정보 조회 (PK 추출용)
+            // 기존 컨트롤러 로직들과 동일하게 userService를 사용합니다.
+            UserResponse userInfo = userService.getMyInfo(accessToken);
+            String userSub = userInfo.getPK(); // PK는 이미 "USER#uuid" 형식
+
+            // 3. 서비스에서 내역 리스트 가져오기
+            List<Credit> history = userService.getCreditHistory(userSub);
+
+            return ResponseEntity.ok(history);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("내역 조회 실패: " + e.getMessage());
         }
     }
 }

@@ -265,11 +265,11 @@ public class UserService {
         userRepository.update(user);
     }
 
-    //회원 탈퇴
+    //회원 탈퇴 (Hard Delete - 모든 관련 데이터 삭제)
     @Transactional
     public void withdraw(String userSub) {
-        // 1. DynamoDB 데이터 삭제 (PK: USER#uuid, SK: PROFILE)
-        userRepository.deleteUser(userSub);
+        // 1. DynamoDB 데이터 Hard Delete (프로필, 좋아요, 북마크, 크레딧, 댓글, 프롬프트 모두 삭제)
+        userRepository.hardDeleteUser(userSub);
 
         // 2. Cognito 유저 삭제
         String pureUuid = userSub.replace("USER#", "");

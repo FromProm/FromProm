@@ -392,4 +392,24 @@ public class TestController {
             ));
         }
     }
+
+    // 테스트용 Hard Delete (Cognito 제외, DB만 삭제)
+    @DeleteMapping("/hard-delete/{userSub}")
+    public ResponseEntity<Map<String, Object>> testHardDelete(@PathVariable String userSub) {
+        try {
+            // Hard Delete 실행 (DB만, Cognito는 제외)
+            userRepository.hardDeleteUser(userSub);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "사용자와 관련된 모든 데이터가 삭제되었습니다.",
+                "deletedUser", userSub
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
 }

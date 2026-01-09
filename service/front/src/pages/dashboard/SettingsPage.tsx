@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../../services/api';
+import AnimatedContent from '../../components/AnimatedContent';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -97,18 +98,20 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">개인정보 설정</h1>
+    <div className="min-h-screen bg-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">개인정보 설정</h1>
 
-        {message.text && (
-          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-            {message.text}
-          </div>
-        )}
+          {message.text && (
+            <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              {message.text}
+            </div>
+          )}
 
-        {/* 닉네임 변경 */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
+          {/* 닉네임 변경 */}
+          <AnimatedContent once distance={50} duration={0.6} delay={0}>
+          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">닉네임 변경</h2>
           <form onSubmit={handleNicknameChange}>
             <div className="mb-4">
@@ -133,9 +136,11 @@ const SettingsPage = () => {
             </button>
           </form>
         </div>
+        </AnimatedContent>
 
         {/* 비밀번호 변경 */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
+        <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">비밀번호 변경</h2>
           <form onSubmit={handlePasswordChange}>
             <div className="mb-4">
@@ -186,9 +191,11 @@ const SettingsPage = () => {
             </button>
           </form>
         </div>
+        </AnimatedContent>
 
         {/* 회원 탈퇴 */}
-        <div className="bg-white border border-red-200 rounded-lg p-6 shadow-sm">
+        <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-red-200 rounded-lg p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-red-600 mb-4">회원 탈퇴</h2>
           <p className="text-gray-600 mb-4">
             회원 탈퇴 시 모든 데이터가 삭제되며, 이 작업은 되돌릴 수 없습니다.
@@ -200,6 +207,8 @@ const SettingsPage = () => {
           >
             {isLoading ? '처리 중...' : '회원 탈퇴'}
           </button>
+        </div>
+        </AnimatedContent>
         </div>
       </div>
     </div>

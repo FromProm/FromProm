@@ -1,29 +1,55 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
-import { useAuthStore } from '../store/authStore';
+import { userApi } from '../services/api';
 import Header from '../components/Header';
+import AnimatedContent from '../components/AnimatedContent';
 
 const CartPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
   const { items, removeFromCart, clearCart, getTotalPrice } = useCartStore();
   const { addPurchasedPrompt } = usePurchaseStore();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [credit, setCredit] = useState<number>(0);
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      userApi.getMe()
+        .then((response) => {
+          setCredit(response.data.credit || 0);
+        })
+        .catch((error) => {
+          console.error('Failed to fetch user info:', error);
+        });
+    }
+  }, []);
 
   const handlePurchase = async () => {
-    if (!user) {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      alert('로그인이 필요한 서비스입니다.');
       navigate('/auth/login');
+      return;
+    }
+
+    const totalPrice = getTotalPrice();
+    
+    if (credit < totalPrice) {
+      alert('크레딧이 부족합니다. 충전 후 다시 시도해주세요.');
+      navigate('/credit');
       return;
     }
 
     setIsProcessing(true);
     
     try {
-      // 시뮬레이션: 구매 처리
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 크레딧 사용 API 호출
+      await userApi.useCredit({
+        amount: totalPrice,
+        description: `프롬프트 ${items.length}개 구매`
+      });
       
       // 구매한 프롬프트로 이동
       items.forEach(item => {
@@ -34,9 +60,11 @@ const CartPage = () => {
       });
       
       clearCart();
+      alert('구매가 완료되었습니다!');
       navigate('/dashboard/purchased');
-    } catch (error) {
-      console.error('구매 처리 중 오류:', error);
+    } catch (error: any) {
+      const message = error.response?.data || '구매 처리 중 오류가 발생했습니다.';
+      alert(message);
     } finally {
       setIsProcessing(false);
     }
@@ -44,7 +72,7 @@ const CartPage = () => {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+      <div className="min-h-screen bg-white">
         <Header />
         <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center py-16">
@@ -68,7 +96,7 @@ const CartPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+    <div className="min-h-screen bg-white">
       <Header />
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -80,13 +108,8 @@ const CartPage = () => {
           {/* 장바구니 아이템 목록 */}
           <div className="lg:col-span-2 space-y-4">
             {items.map((item, index) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-                className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm"
-              >
+              <AnimatedContent key={item.id} once distance={50} duration={0.6} delay={index * 0.1}>
+              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
@@ -122,13 +145,16 @@ const CartPage = () => {
                     </svg>
                   </button>
                 </div>
-              </motion.div>
+              </div>
+              </AnimatedContent>
             ))}
           </div>
 
           {/* 주문 요약 */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm sticky top-8">
+            <div className="sticky top-8">
+            <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
+            <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">주문 요약</h3>
               
               <div className="space-y-3 mb-6">
@@ -139,6 +165,12 @@ const CartPage = () => {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">총 금액</span>
                   <span className="text-gray-900">{getTotalPrice()}P</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">보유 크레딧</span>
+                  <span className={`font-medium ${credit >= getTotalPrice() ? 'text-green-600' : 'text-red-600'}`}>
+                    {credit}P
+                  </span>
                 </div>
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between font-semibold">
@@ -181,6 +213,8 @@ const CartPage = () => {
                   계속 쇼핑하기
                 </Link>
               </div>
+            </div>
+            </AnimatedContent>
             </div>
           </div>
         </div>

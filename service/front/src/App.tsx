@@ -22,6 +22,7 @@ import SettingsPage from './pages/dashboard/SettingsPage';
 // Components
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
 
 const queryClient = new QueryClient();
 
@@ -48,16 +49,30 @@ function App() {
                 <Routes>
                     {/* 공개 라우트 - Header 없음 */}
                     <Route path="/" element={<LandingPage />} />
-                    <Route path="/auth/login" element={<LoginPage />} />
-                    <Route path="/auth/register" element={<RegisterPage />} />
-                    <Route path="/cart" element={<CartPage />} />
+                    <Route path="/auth/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+                    <Route path="/auth/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+                    <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
 
                     {/* Header가 있는 라우트 */}
                     <Route element={<Layout />}>
                         <Route path="/marketplace" element={<MarketplacePage />} />
-                        <Route path="/prompt/create" element={<PromptCreatePage />} />
-                        <Route path="/credit" element={<CreditPage />} />
                         <Route path="/prompt/:id" element={<PromptDetailPage />} />
+                        <Route
+                            path="/prompt/create"
+                            element={
+                                <ProtectedRoute>
+                                    <PromptCreatePage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/credit"
+                            element={
+                                <ProtectedRoute>
+                                    <CreditPage />
+                                </ProtectedRoute>
+                            }
+                        />
                         <Route
                             path="/purchase/:id"
                             element={

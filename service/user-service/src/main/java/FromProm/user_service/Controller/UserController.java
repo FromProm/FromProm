@@ -176,6 +176,14 @@ public class UserController {
         return ResponseEntity.ok(isExisted);
     }
 
+    // 이메일 중복 확인
+    @PostMapping("/check-email")
+    public ResponseEntity<Boolean> checkEmail(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        boolean isExisted = userService.isEmailDuplicated(email);
+        return ResponseEntity.ok(isExisted);
+    }
+
     // 프로필 수정 (닉네임, 소개글, 프로필 이미지)
     @PatchMapping("/profile")
     public ResponseEntity<?> updateProfile(

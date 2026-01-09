@@ -3,16 +3,17 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { dummyPrompts } from '../services/dummyData';
 import { usePurchaseStore } from '../store/purchaseStore';
-import { useAuthStore } from '../store/authStore';
+import { userApi } from '../services/api';
+import AnimatedContent from '../components/AnimatedContent';
 
 const PurchasePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
   const { addPurchasedPrompt, isPurchased } = usePurchaseStore();
   const [prompt, setPrompt] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [purchaseComplete, setPurchaseComplete] = useState(false);
+  const [credit, setCredit] = useState<number>(0);
 
   useEffect(() => {
     if (id) {
@@ -24,21 +25,34 @@ const PurchasePage = () => {
         setPurchaseComplete(true);
       }
     }
+
+    // 크레딧 정보 가져오기
+    userApi.getMe()
+      .then((response) => {
+        setCredit(response.data.credit || 0);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch user info:', error);
+      });
   }, [id, isPurchased]);
 
   const handlePurchase = async () => {
-    if (!user) {
-      navigate('/auth/login');
+    if (!prompt) return;
+
+    if (credit < prompt.price) {
+      alert('크레딧이 부족합니다. 충전 후 다시 시도해주세요.');
+      navigate('/credit');
       return;
     }
-
-    if (!prompt) return;
 
     setIsProcessing(true);
 
     try {
-      // 시뮬레이션: 구매 처리
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 크레딧 사용 API 호출
+      await userApi.useCredit({
+        amount: prompt.price,
+        description: `프롬프트 구매: ${prompt.title}`
+      });
 
       // 구매한 프롬프트로 추가
       addPurchasedPrompt({
@@ -47,8 +61,9 @@ const PurchasePage = () => {
       });
 
       setPurchaseComplete(true);
-    } catch (error) {
-      console.error('구매 처리 중 오류:', error);
+    } catch (error: any) {
+      const message = error.response?.data || '구매 처리 중 오류가 발생했습니다.';
+      alert(message);
     } finally {
       setIsProcessing(false);
     }
@@ -56,7 +71,7 @@ const PurchasePage = () => {
 
   if (!prompt) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">프롬프트를 찾을 수 없습니다</h2>
           <Link
@@ -72,12 +87,12 @@ const PurchasePage = () => {
 
   if (purchaseComplete) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+      <div className="min-h-screen bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-lg border border-gray-200 p-8 text-center shadow-sm"
+            className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-8 text-center shadow-sm"
           >
             <div className="w-16 h-16 mx-auto mb-6 bg-green-100 rounded-full flex items-center justify-center">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,7 +124,7 @@ const PurchasePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+    <div className="min-h-screen bg-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <Link
@@ -127,7 +142,8 @@ const PurchasePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 프롬프트 정보 */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+            <AnimatedContent once distance={50} duration={0.6} delay={0}>
+            <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
@@ -184,11 +200,13 @@ const PurchasePage = () => {
                 </ul>
               </div>
             </div>
+            </AnimatedContent>
           </div>
 
           {/* 결제 정보 */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm sticky top-8">
+            <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
+            <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm sticky top-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">결제 정보</h3>
 
               <div className="space-y-3 mb-6">
@@ -208,17 +226,13 @@ const PurchasePage = () => {
                 </div>
               </div>
 
-              {!user ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-600 text-center">구매하려면 로그인이 필요합니다</p>
-                  <Link
-                    to="/auth/login"
-                    className="w-full bg-blue-900 text-white font-medium py-3 rounded-lg hover:bg-blue-800 transition-colors flex items-center justify-center"
-                  >
-                    로그인하기
-                  </Link>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">보유 크레딧</span>
+                  <span className={`font-medium ${credit >= (prompt?.price || 0) ? 'text-green-600' : 'text-red-600'}`}>
+                    {credit}P
+                  </span>
                 </div>
-              ) : (
                 <button
                   onClick={handlePurchase}
                   disabled={isProcessing}
@@ -233,10 +247,10 @@ const PurchasePage = () => {
                       구매 처리 중...
                     </>
                   ) : (
-                    '지금 구매하기'
+                    '구매하기'
                   )}
                 </button>
-              )}
+              </div>
 
               <div className="mt-4 text-center">
                 <p className="text-xs text-gray-500">
@@ -245,6 +259,7 @@ const PurchasePage = () => {
                 </p>
               </div>
             </div>
+            </AnimatedContent>
           </div>
         </div>
       </div>

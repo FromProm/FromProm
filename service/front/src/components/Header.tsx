@@ -135,7 +135,7 @@ const Header = () => {
                       to="/dashboard"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      대시보드
+                      내 프로필
                     </Link>
                     <Link
                       to="/dashboard/purchased"

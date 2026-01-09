@@ -5,7 +5,7 @@ import { useCartStore } from '../../store/cartStore';
 import { userApi } from '../../services/api';
 import AnimatedContent from '../../components/AnimatedContent';
 
-const DashboardPage = () => {
+const MyprofilePage = () => {
   const [nickname, setNickname] = useState<string>('');
   const [bio, setBio] = useState<string>('');
   const [credit, setCredit] = useState<number>(0);
@@ -84,7 +84,7 @@ const DashboardPage = () => {
       <div className="relative w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">대시보드</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">내 프로필</h1>
           <p className="text-gray-600">안녕하세요, {nickname}님! 프롬프트 활동을 한눈에 확인해보세요.</p>
         </div>
 
@@ -411,4 +411,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage;
+export default MyprofilePage;

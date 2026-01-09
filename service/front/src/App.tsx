@@ -13,7 +13,7 @@ import PurchasePage from './pages/PurchasePage';
 import CartPage from './pages/CartPage';
 import PromptCreatePage from './pages/PromptCreatePage';
 import CreditPage from './pages/CreditPage';
-import DashboardPage from './pages/dashboard/DashboardPage';
+import MyprofilePage from './pages/dashboard/MyprofilePage';
 import PurchasedPromptsPage from './pages/dashboard/PurchasedPromptsPage';
 import SellingPromptsPage from './pages/dashboard/SellingPromptsPage';
 import AnalyticsPage from './pages/dashboard/AnalyticsPage';
@@ -85,7 +85,7 @@ function App() {
                             path="/dashboard"
                             element={
                                 <ProtectedRoute>
-                                    <DashboardPage />
+                                    <MyprofilePage />
                                 </ProtectedRoute>
                             }
                         />

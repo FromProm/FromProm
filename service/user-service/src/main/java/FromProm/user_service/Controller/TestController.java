@@ -534,7 +534,7 @@ public class TestController {
     @GetMapping("/prompts/all")
     public ResponseEntity<Map<String, Object>> testGetAllPrompts() {
         try {
-            var prompts = promptService.getAllPrompts(10);
+            var prompts = promptService.getAllPrompts(20);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -612,6 +612,36 @@ public class TestController {
                 "userSub", userSub,
                 "promptId", promptId,
                 "content", content
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    // 테스트용 프롬프트 등록 (토큰 없이, SNS 발송 테스트)
+    @PostMapping("/prompts/register")
+    public ResponseEntity<Map<String, Object>> testRegisterPrompt(@RequestBody Map<String, Object> request) {
+        try {
+            String userSub = (String) request.get("userSub");
+            String title = (String) request.get("title");
+            String content = (String) request.getOrDefault("content", "테스트 프롬프트 내용");
+            String description = (String) request.getOrDefault("description", "테스트 설명");
+            Integer price = (Integer) request.getOrDefault("price", 1000);
+            String model = (String) request.getOrDefault("model", "anthropic.claude-3-5-sonnet-20240620-v1:0");
+            
+            // PromptSaveRequest를 JSON으로 직접 생성해서 PromptService 호출
+            // PromptService.createInitialPrompt 내부 로직을 직접 호출
+            String promptId = promptService.createTestPrompt(userSub, title, content, description, price, model);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "프롬프트 등록 및 SNS 발송 완료",
+                "promptId", promptId,
+                "userSub", userSub,
+                "title", title
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(

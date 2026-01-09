@@ -24,7 +24,7 @@ public class CreditService {
     private final UserRepository userRepository;
     private final String TABLE_NAME = "FromProm_Table"; // 실제 테이블명으로 수정
 
-    // 1. 크레딧 충전
+    // 크레딧 충전
     public void chargeCredit(String userSub, int amount) {
         User user = userRepository.findUser(userSub)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
@@ -50,7 +50,7 @@ public class CreditService {
         saveCreditHistory(history);
     }
 
-    // 2. 크레딧 사용
+    // 크레딧 사용
     public void useCredit(String userSub, CreditUseRequest request) {
         User user = userRepository.findUser(userSub)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
@@ -64,7 +64,7 @@ public class CreditService {
         user.setUpdated_at(LocalDateTime.now().toString());
 
         String now = LocalDateTime.now().toString();
-        String uniqueSK = "CREDIT#" + now + "#" + UUID.randomUUID().toString().substring(0, 8);
+        String uniqueSK = "CREDIT#" + now;
 
         Credit history = Credit.builder()
                 .PK(userSub)
@@ -72,7 +72,7 @@ public class CreditService {
                 .type("CREDIT")
                 .amount(-request.getAmount())
                 .balance(newBalance)
-                .user_description(request.getUser_description())
+                .user_description("프롬프트 구매: " + request.getUser_description())
                 .created_at(now)
                 .build();
 

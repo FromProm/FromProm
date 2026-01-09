@@ -67,4 +67,19 @@ public class CreditController {
         UserResponse userInfo = userService.getMyInfo(accessToken);
         return userInfo.getPK();
     }
+
+    @GetMapping("/balance")
+    public ResponseEntity<?> getMyBalance(@RequestHeader("Authorization") String bearerToken) {
+        try {
+            // 공통 메서드를 사용하여 userSub 추출
+            String userSub = getUserSubFromToken(bearerToken);
+
+            // 잔액 조회
+            int balance = creditService.getUserCredit(userSub);
+
+            return ResponseEntity.ok(java.util.Map.of("balance", balance));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("잔액 조회 실패: " + e.getMessage());
+        }
+    }
 }

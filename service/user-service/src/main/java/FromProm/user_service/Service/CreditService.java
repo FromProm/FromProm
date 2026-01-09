@@ -96,4 +96,11 @@ public class CreditService {
         DynamoDbTable<Credit> creditTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Credit.class));
         creditTable.putItem(history);
     }
+
+    //크레딧 잔액 조회
+    public int getUserCredit(String userSub) {
+        User user = userRepository.findUser(userSub)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        return user.getCredit();
+    }
 }

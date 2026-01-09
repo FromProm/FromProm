@@ -76,7 +76,7 @@ const DashboardPage = () => {
     : '없음';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+    <div className="min-h-screen bg-white">
       {/* 배경 그라데이션 효과 */}
       <div className="absolute inset-0 bg-gradient-to-r from-blue-900/5 via-transparent to-blue-900/5 pointer-events-none"></div>
       
@@ -97,7 +97,7 @@ const DashboardPage = () => {
         {/* 프로필 및 크레딧 카드 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* 자기소개 카드 */}
-          <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-6">
+          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">자기소개</h3>
               {!isEditingBio && (
@@ -164,7 +164,7 @@ const DashboardPage = () => {
         {/* 통계 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* 구매한 프롬프트 수 */}
-          <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-blue-900/10 to-transparent rounded-full -translate-y-10 translate-x-10"></div>
             <div className="relative">
               <div className="flex items-center justify-between mb-2">
@@ -181,7 +181,7 @@ const DashboardPage = () => {
           </div>
 
           {/* 총 지출 금액 */}
-          <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
             <div className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-blue-900/8 to-transparent rounded-full translate-y-8 -translate-x-8"></div>
             <div className="relative">
               <div className="flex items-center justify-between mb-2">
@@ -198,7 +198,7 @@ const DashboardPage = () => {
           </div>
 
           {/* 장바구니 아이템 */}
-          <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-18 h-18 bg-gradient-to-br from-blue-900/6 to-transparent rounded-full -translate-y-9 -translate-x-9"></div>
             <div className="relative">
               <div className="flex items-center justify-between mb-2">
@@ -215,7 +215,7 @@ const DashboardPage = () => {
           </div>
 
           {/* 선호 카테고리 */}
-          <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
             <div className="absolute bottom-0 right-0 w-22 h-22 bg-gradient-to-tl from-blue-900/7 to-transparent rounded-full translate-y-11 translate-x-11"></div>
             <div className="relative">
               <div className="flex items-center justify-between mb-2">
@@ -235,7 +235,7 @@ const DashboardPage = () => {
         {/* 빠른 액션 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* 최근 구매한 프롬프트 */}
-          <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-900/8 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
             <div className="relative">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">최근 구매한 프롬프트</h3>
@@ -277,7 +277,7 @@ const DashboardPage = () => {
           </div>
 
           {/* 빠른 액션 메뉴 */}
-          <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
             <div className="absolute bottom-0 left-0 w-28 h-28 bg-gradient-to-tr from-blue-900/6 to-transparent rounded-full translate-y-14 -translate-x-14"></div>
             <div className="relative">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">빠른 액션</h3>
@@ -335,7 +335,7 @@ const DashboardPage = () => {
         </div>
 
         {/* 추가 메뉴 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-6 relative overflow-hidden">
           <div className="absolute top-0 left-1/2 w-40 h-40 bg-gradient-to-b from-blue-900/5 to-transparent rounded-full -translate-y-20 -translate-x-1/2"></div>
           <div className="relative">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">더 많은 기능</h3>

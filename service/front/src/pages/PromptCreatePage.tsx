@@ -91,14 +91,14 @@ const PromptCreatePage = () => {
   // 인증 확인 중이면 로딩 표시
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-gray-600">로딩 중...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+    <div className="min-h-screen bg-white">
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -111,7 +111,7 @@ const PromptCreatePage = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
+            <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">기본 정보</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -205,7 +205,7 @@ const PromptCreatePage = () => {
             </div>
 
             {/* 프롬프트 내용 */}
-            <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
+            <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">프롬프트 내용</h2>
               {formData.category === '이미지 창작 및 생성' && (
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
@@ -236,7 +236,7 @@ const PromptCreatePage = () => {
             </div>
 
             {/* 예시 입력 */}
-            <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
+            <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">예시 입력</h2>
               <p className="text-sm text-gray-600 mb-6">프롬프트 성능 검증을 위해 3개의 예시 입력을 제공해주세요.</p>
 

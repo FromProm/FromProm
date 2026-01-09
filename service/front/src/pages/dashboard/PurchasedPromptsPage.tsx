@@ -44,10 +44,11 @@ const PurchasedPromptsPage = () => {
 
   if (purchasedPrompts.length === 0) {
     return (
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center py-16">
-          <div className="w-24 h-24 mx-auto mb-6 bg-gray-200 rounded-full flex items-center justify-center">
-            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-white">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center py-16">
+            <div className="w-24 h-24 mx-auto mb-6 bg-gray-200 rounded-full flex items-center justify-center">
+              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
@@ -65,11 +66,12 @@ const PurchasedPromptsPage = () => {
   }
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">구매한 프롬프트</h1>
-        <p className="text-gray-600">{purchasedPrompts.length}개의 프롬프트를 구매했습니다</p>
-      </div>
+    <div className="min-h-screen bg-white">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">구매한 프롬프트</h1>
+          <p className="text-gray-600">{purchasedPrompts.length}개의 프롬프트를 구매했습니다</p>
+        </div>
 
       {/* 검색 및 필터 */}
       <div className="mb-8 space-y-4">
@@ -112,7 +114,7 @@ const PurchasedPromptsPage = () => {
         {filteredPrompts.map((prompt, index) => (
           <div
             key={prompt.id}
-            className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300 opacity-0 animate-fade-in"
+            className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300 opacity-0 animate-fade-in"
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <div className="flex items-start justify-between mb-4">
@@ -197,6 +199,7 @@ const PurchasedPromptsPage = () => {
           <p className="text-gray-500 text-sm">다른 키워드나 카테고리를 시도해보세요</p>
         </div>
       )}
+      </div>
     </div>
   );
 };

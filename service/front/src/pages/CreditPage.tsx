@@ -69,14 +69,14 @@ const CreditPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-gray-600">로딩 중...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+    <div className="min-h-screen bg-white">
 
       {/* 메인 콘텐츠 */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -107,7 +107,7 @@ const CreditPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* 충전 금액 선택 */}
             <div className="lg:col-span-2">
-              <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
+              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">충전 금액 선택</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -186,7 +186,7 @@ const CreditPage = () => {
 
             {/* 결제 정보 */}
             <div className="lg:col-span-1">
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 sticky top-24">
+              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 sticky top-24">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">결제 정보</h3>
                 
                 {/* 주문 요약 */}

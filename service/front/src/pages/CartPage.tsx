@@ -72,7 +72,7 @@ const CartPage = () => {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+      <div className="min-h-screen bg-white">
         <Header />
         <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center py-16">
@@ -96,7 +96,7 @@ const CartPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+    <div className="min-h-screen bg-white">
       <Header />
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
@@ -113,7 +113,7 @@ const CartPage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.1 }}
-                className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm"
+                className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -156,7 +156,7 @@ const CartPage = () => {
 
           {/* 주문 요약 */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm sticky top-8">
+            <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm sticky top-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">주문 요약</h3>
               
               <div className="space-y-3 mb-6">

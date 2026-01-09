@@ -144,6 +144,24 @@ export const promptApi = {
     inputs: data.inputs,
     examples: data.examples,
   }),
+
+  // 내가 등록한 프롬프트 목록 조회
+  getMyPrompts: () => api.get('/api/prompts/my'),
+
+  // 프롬프트 상세 정보 조회
+  getPromptDetail: (promptId: string) => api.get(`/api/prompts/${promptId}`),
+
+  // 프롬프트 상세 + 댓글 목록 통합 조회
+  getPromptDetailWithComments: (promptId: string) => api.get(`/api/prompts/${promptId}/detail`),
+
+  // 프롬프트 통계 조회 (좋아요/북마크/댓글 개수)
+  getPromptStats: (promptId: string) => api.get(`/api/prompts/${promptId}/stats`),
+
+  // 프롬프트 댓글 목록 조회
+  getPromptComments: (promptId: string) => api.get(`/api/prompts/${promptId}/comments`),
+
+  // 프롬프트 삭제
+  deletePrompt: (promptId: string) => api.delete(`/api/prompts/${promptId}`),
 };
 
 // Interaction API (좋아요, 북마크, 댓글)

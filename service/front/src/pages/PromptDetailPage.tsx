@@ -65,7 +65,7 @@ const PromptDetailPage = () => {
 
   if (!prompt) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">프롬프트를 찾을 수 없습니다</h1>
           <Link to="/marketplace" className="text-blue-600 hover:text-blue-500">
@@ -103,7 +103,8 @@ const PromptDetailPage = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -123,7 +124,7 @@ const PromptDetailPage = () => {
           </Link>
         </div>
         {/* 프롬프트 기본 정보 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-8">
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-4">
@@ -197,7 +198,7 @@ const PromptDetailPage = () => {
         </div>
 
         {/* 모델 정보 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-8">
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">모델 정보</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -212,7 +213,7 @@ const PromptDetailPage = () => {
         </div>
 
         {/* 성능 지표 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-8">
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">성능 지표</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="bg-gray-50 rounded-lg p-4">
@@ -296,7 +297,7 @@ const PromptDetailPage = () => {
         </div>
 
         {/* 프롬프트 미리보기 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-8">
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">프롬프트 미리보기</h2>
           <div className="bg-gray-50 rounded-lg p-6">
             <pre className="text-gray-700 whitespace-pre-wrap font-mono text-sm">
@@ -309,7 +310,7 @@ const PromptDetailPage = () => {
         </div>
 
         {/* 예시 입력/출력 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-8">
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">예시 입력/출력</h2>
           <div className="space-y-8">
             {examples.map((example, index) => (
@@ -339,7 +340,7 @@ const PromptDetailPage = () => {
         </div>
 
         {/* 태그 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-8">
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">태그</h2>
           <div className="flex flex-wrap gap-2">
             {prompt.tags.map((tag, index) => (
@@ -477,6 +478,7 @@ const PromptDetailPage = () => {
           </motion.div>
         </div>
       )}
+      </div>
     </div>
   );
 };

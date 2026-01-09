@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { usePurchaseStore } from '../../store/purchaseStore';
 import { useCartStore } from '../../store/cartStore';
 import { userApi, promptApi } from '../../services/api';
@@ -22,6 +22,7 @@ interface MyPrompt {
 }
 
 const MyprofilePage = () => {
+  const navigate = useNavigate();
   const [nickname, setNickname] = useState<string>('');
   const [bio, setBio] = useState<string>('');
   const [credit, setCredit] = useState<number>(0);
@@ -34,6 +35,15 @@ const MyprofilePage = () => {
   
   const { getPurchasedPrompts } = usePurchaseStore();
   const { getItemCount } = useCartStore();
+
+  // 로그인 체크
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+    }
+  }, [navigate]);
 
   // 사용자 정보 가져오기
   useEffect(() => {
@@ -330,36 +340,6 @@ const MyprofilePage = () => {
           <div className="relative">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">더 많은 기능</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Link
-                to="/dashboard/purchased"
-                className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors group"
-              >
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4 group-hover:bg-blue-200 transition-colors">
-                  <svg className="w-5 h-5 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">구매한 프롬프트</h4>
-                  <p className="text-sm text-gray-500">내가 구매한 모든 프롬프트 관리</p>
-                </div>
-              </Link>
-
-              <Link
-                to="/dashboard/selling"
-                className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors group"
-              >
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4 group-hover:bg-green-200 transition-colors">
-                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">판매 중인 프롬프트</h4>
-                  <p className="text-sm text-gray-500">내가 등록한 프롬프트 관리</p>
-                </div>
-              </Link>
-
               <Link
                 to="/dashboard/analytics"
                 className="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors group"

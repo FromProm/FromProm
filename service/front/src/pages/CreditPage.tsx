@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { userApi } from '../services/api';
 import AnimatedContent from '../components/AnimatedContent';
+import SplitText from '../components/SplitText';
 
 const CreditPage = () => {
   const [selectedAmount, setSelectedAmount] = useState(1000);
@@ -88,8 +89,38 @@ const CreditPage = () => {
         >
           {/* 페이지 헤더 */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">크레딧 충전</h1>
-            <p className="text-gray-600">FromProm 크레딧을 충전하여 프롬프트를 구매하세요</p>
+            <div>
+              <SplitText
+                text="크레딧 충전"
+                className="text-3xl font-bold text-gray-900 mb-2"
+                delay={50}
+                duration={0.6}
+                ease="power3.out"
+                splitType="chars"
+                from={{ opacity: 0, y: 30 }}
+                to={{ opacity: 1, y: 0 }}
+                threshold={0.1}
+                rootMargin="-50px"
+                textAlign="left"
+                tag="h1"
+              />
+            </div>
+            <div>
+              <SplitText
+                text="FromProm 크레딧을 충전하여 프롬프트를 구매하세요"
+                className="text-gray-600"
+                delay={30}
+                duration={0.5}
+                ease="power3.out"
+                splitType="words"
+                from={{ opacity: 0, y: 20 }}
+                to={{ opacity: 1, y: 0 }}
+                threshold={0.1}
+                rootMargin="-50px"
+                textAlign="left"
+                tag="p"
+              />
+            </div>
           </div>
 
           {/* 현재 크레딧 표시 */}

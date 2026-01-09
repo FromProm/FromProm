@@ -5,6 +5,7 @@ import { usePurchaseStore } from '../store/purchaseStore';
 import { userApi } from '../services/api';
 import Header from '../components/Header';
 import AnimatedContent from '../components/AnimatedContent';
+import SplitText from '../components/SplitText';
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -100,8 +101,38 @@ const CartPage = () => {
       <Header />
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">장바구니</h1>
-          <p className="text-gray-600">{items.length}개의 프롬프트가 담겨있습니다</p>
+          <div>
+            <SplitText
+              text="장바구니"
+              className="text-3xl font-bold text-gray-900 mb-2"
+              delay={50}
+              duration={0.6}
+              ease="power3.out"
+              splitType="chars"
+              from={{ opacity: 0, y: 30 }}
+              to={{ opacity: 1, y: 0 }}
+              threshold={0.1}
+              rootMargin="-50px"
+              textAlign="left"
+              tag="h1"
+            />
+          </div>
+          <div>
+            <SplitText
+              text={`${items.length}개의 프롬프트가 담겨있습니다`}
+              className="text-gray-600"
+              delay={30}
+              duration={0.5}
+              ease="power3.out"
+              splitType="words"
+              from={{ opacity: 0, y: 20 }}
+              to={{ opacity: 1, y: 0 }}
+              threshold={0.1}
+              rootMargin="-50px"
+              textAlign="left"
+              tag="p"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../../services/api';
 import AnimatedContent from '../../components/AnimatedContent';
+import SplitText from '../../components/SplitText';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -101,7 +102,20 @@ const SettingsPage = () => {
     <div className="min-h-screen bg-white">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">개인정보 설정</h1>
+          <SplitText
+            text="개인정보 설정"
+            className="text-3xl font-bold text-gray-900 mb-8"
+            delay={50}
+            duration={0.6}
+            ease="power3.out"
+            splitType="chars"
+            from={{ opacity: 0, y: 30 }}
+            to={{ opacity: 1, y: 0 }}
+            threshold={0.1}
+            rootMargin="-50px"
+            textAlign="left"
+            tag="h1"
+          />
 
           {message.text && (
             <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>

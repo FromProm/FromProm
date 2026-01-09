@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
-import { userApi } from '../services/api';
+import { creditApi } from '../services/api';
 import Header from '../components/Header';
 import AnimatedContent from '../components/AnimatedContent';
 import SplitText from '../components/SplitText';
@@ -17,12 +17,12 @@ const CartPage = () => {
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     if (token) {
-      userApi.getMe()
+      creditApi.getBalance()
         .then((response) => {
-          setCredit(response.data.credit || 0);
+          setCredit(response.data.balance || 0);
         })
         .catch((error) => {
-          console.error('Failed to fetch user info:', error);
+          console.error('Failed to fetch credit balance:', error);
         });
     }
   }, []);
@@ -46,11 +46,17 @@ const CartPage = () => {
     setIsProcessing(true);
     
     try {
-      // 크레딧 사용 API 호출
-      await userApi.useCredit({
-        amount: totalPrice,
-        description: `프롬프트 ${items.length}개 구매`
-      });
+      // 장바구니 일괄 구매 API 호출
+      await creditApi.purchaseCart(items.map(item => ({
+        id: item.id,
+        title: item.title,
+        price: item.price,
+        category: item.category,
+        sellerName: item.sellerName,
+        description: item.description,
+        rating: item.rating,
+        sellerSub: item.sellerSub,
+      })));
       
       // 구매한 프롬프트로 이동
       items.forEach(item => {
@@ -64,7 +70,7 @@ const CartPage = () => {
       alert('구매가 완료되었습니다!');
       navigate('/dashboard/purchased');
     } catch (error: any) {
-      const message = error.response?.data || '구매 처리 중 오류가 발생했습니다.';
+      const message = error.response?.data?.message || '구매 처리 중 오류가 발생했습니다.';
       alert(message);
     } finally {
       setIsProcessing(false);

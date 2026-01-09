@@ -85,13 +85,41 @@ export const userApi = {
   // 회원 탈퇴
   withdraw: () => api.delete('/api/users/withdraw'),
 
-  // 크레딧 충전
-  chargeCredit: (amount: number) =>
-    api.post('/api/users/credit/charge', { amount }),
+};
 
-  // 크레딧 사용
-  useCredit: (data: { amount: number; description: string }) =>
-    api.post('/api/users/credit/use', data),
+// Credit API
+export const creditApi = {
+  // 크레딧 잔액 조회
+  getBalance: () => api.get('/api/credit/balance'),
+
+  // 크레딧 충전
+  charge: (data: { amount: number; paymentMethod?: string; paymentId?: string }) =>
+    api.post('/api/credit/charge', data),
+
+  // 단일 프롬프트 구매
+  purchasePrompt: (data: { sellerSub: string; promptPrice: number; promptTitle: string; promptId?: string }) =>
+    api.post('/api/credit/purchase', data),
+
+  // 장바구니 일괄 구매
+  purchaseCart: (items: Array<{
+    id: string;
+    title: string;
+    price: number;
+    category: string;
+    sellerName: string;
+    description: string;
+    rating: number;
+    sellerSub: string;
+  }>) => api.post('/api/credit/purchase/cart', { items }),
+
+  // 구매 내역 조회
+  getPurchaseHistory: () => api.get('/api/credit/purchases'),
+
+  // 최근 구매 내역 조회 (페이징)
+  getRecentPurchases: (limit: number = 10) => api.get(`/api/credit/purchases/recent?limit=${limit}`),
+
+  // 전체 크레딧 히스토리 조회
+  getCreditHistory: () => api.get('/api/credit/history'),
 };
 
 // Prompt API
@@ -103,9 +131,9 @@ export const promptApi = {
     category: string;
     price: number;
     content: string;
-    preview: string;
     model: string;
-    exampleInputs: string[];
+    inputs: Array<{ key: string; value: string }>;
+    examples: Array<{ inputValues: Array<{ key: string; value: string }> }>;
   }) => api.post('/api/prompts/registration', {
     title: data.title,
     promptType: categoryToPromptType(data.category),
@@ -113,7 +141,8 @@ export const promptApi = {
     model: data.model,
     description: data.description,
     content: data.content,
-    inputs: data.exampleInputs,
+    inputs: data.inputs,
+    examples: data.examples,
   }),
 };
 

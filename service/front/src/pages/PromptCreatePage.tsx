@@ -70,15 +70,22 @@ const PromptCreatePage = () => {
     setIsSubmitting(true);
 
     try {
+      // 예시 입력을 새로운 구조로 변환
+      const examples = exampleInputs
+        .filter(input => input.trim() !== '')
+        .map(input => ({
+          inputValues: [{ key: 'input', value: input }]
+        }));
+
       await promptApi.create({
         title: formData.title,
         description: formData.description,
         category: formData.category,
         price: parseInt(formData.price),
         content: formData.content,
-        preview: formData.preview,
         model: formData.model,
-        exampleInputs: exampleInputs,
+        inputs: [],  // 입력 필드 정의 (필요시 추가)
+        examples: examples,
       });
       alert('프롬프트가 성공적으로 등록되었습니다!');
       navigate('/marketplace');

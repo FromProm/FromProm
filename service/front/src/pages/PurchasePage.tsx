@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { dummyPrompts } from '../services/dummyData';
 import { usePurchaseStore } from '../store/purchaseStore';
-import { userApi } from '../services/api';
+import { creditApi } from '../services/api';
 import AnimatedContent from '../components/AnimatedContent';
 
 const PurchasePage = () => {
@@ -27,12 +27,12 @@ const PurchasePage = () => {
     }
 
     // 크레딧 정보 가져오기
-    userApi.getMe()
+    creditApi.getBalance()
       .then((response) => {
-        setCredit(response.data.credit || 0);
+        setCredit(response.data.balance || 0);
       })
       .catch((error) => {
-        console.error('Failed to fetch user info:', error);
+        console.error('Failed to fetch credit balance:', error);
       });
   }, [id, isPurchased]);
 
@@ -48,10 +48,12 @@ const PurchasePage = () => {
     setIsProcessing(true);
 
     try {
-      // 크레딧 사용 API 호출
-      await userApi.useCredit({
-        amount: prompt.price,
-        description: `프롬프트 구매: ${prompt.title}`
+      // 단일 프롬프트 구매 API 호출
+      await creditApi.purchasePrompt({
+        sellerSub: prompt.sellerSub || prompt.sellerId || '',  // 판매자 ID
+        promptPrice: prompt.price,
+        promptTitle: prompt.title,
+        promptId: prompt.id,
       });
 
       // 구매한 프롬프트로 추가
@@ -62,7 +64,7 @@ const PurchasePage = () => {
 
       setPurchaseComplete(true);
     } catch (error: any) {
-      const message = error.response?.data || '구매 처리 중 오류가 발생했습니다.';
+      const message = error.response?.data?.message || '구매 처리 중 오류가 발생했습니다.';
       alert(message);
     } finally {
       setIsProcessing(false);

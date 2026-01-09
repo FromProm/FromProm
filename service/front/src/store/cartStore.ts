@@ -7,6 +7,7 @@ export interface CartItem {
   price: number;
   category: string;
   sellerName: string;
+  sellerSub: string;  // 판매자 USER ID (백엔드 구매 API용)
   description: string;
   rating: number;
   addedAt: string;

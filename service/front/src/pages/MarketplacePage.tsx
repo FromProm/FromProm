@@ -33,6 +33,7 @@ const MarketplacePage = () => {
         price: prompt.price,
         category: prompt.category,
         sellerName: prompt.sellerName,
+        sellerSub: prompt.sellerSub || prompt.sellerId || '',
         description: prompt.description,
         rating: prompt.rating
       });

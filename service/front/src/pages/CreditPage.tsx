@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { userApi } from '../services/api';
+import { creditApi } from '../services/api';
 import AnimatedContent from '../components/AnimatedContent';
 import SplitText from '../components/SplitText';
 
@@ -16,17 +16,17 @@ const CreditPage = () => {
 
   // 사용자 크레딧 정보 가져오기
   useEffect(() => {
-    const fetchUserInfo = async () => {
+    const fetchCreditBalance = async () => {
       try {
-        const response = await userApi.getMe();
-        setCurrentCredits(response.data.credit || 0);
+        const response = await creditApi.getBalance();
+        setCurrentCredits(response.data.balance || 0);
       } catch (error) {
-        console.error('Failed to fetch user info:', error);
+        console.error('Failed to fetch credit balance:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchUserInfo();
+    fetchCreditBalance();
   }, []);
 
   // 미리 정의된 충전 금액 옵션
@@ -46,8 +46,11 @@ const CreditPage = () => {
       const bonus = creditPackages.find(pkg => pkg.credits === finalAmount)?.bonus || 0;
       const totalAmount = finalAmount + bonus;
       
-      // 실제 API 호출
-      await userApi.chargeCredit(totalAmount);
+      // 크레딧 충전 API 호출
+      await creditApi.charge({
+        amount: totalAmount,
+        paymentMethod: paymentMethod,
+      });
       
       // 성공 시 크레딧 업데이트
       setCurrentCredits(prev => prev + totalAmount);

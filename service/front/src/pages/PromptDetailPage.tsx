@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { dummyPrompts } from '../services/dummyData';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
-import { userApi } from '../services/api';
+import { creditApi } from '../services/api';
 import AnimatedContent from '../components/AnimatedContent';
 
 const PromptDetailPage = () => {
@@ -24,12 +24,12 @@ const PromptDetailPage = () => {
 
   useEffect(() => {
     if (isLoggedIn()) {
-      userApi.getMe()
+      creditApi.getBalance()
         .then((response) => {
-          setCredit(response.data.credit || 0);
+          setCredit(response.data.balance || 0);
         })
         .catch((error) => {
-          console.error('Failed to fetch user info:', error);
+          console.error('Failed to fetch credit balance:', error);
         });
     }
   }, []);
@@ -48,6 +48,7 @@ const PromptDetailPage = () => {
         price: prompt.price,
         category: prompt.category,
         sellerName: prompt.sellerName,
+        sellerSub: prompt.sellerSub || prompt.sellerId || '',
         description: prompt.description,
         rating: prompt.rating
       });
@@ -510,9 +511,11 @@ const PromptDetailPage = () => {
                   
                   setIsPurchasing(true);
                   try {
-                    await userApi.useCredit({
-                      amount: prompt.price,
-                      description: `프롬프트 구매: ${prompt.title}`
+                    await creditApi.purchasePrompt({
+                      sellerSub: prompt.sellerSub || prompt.sellerId || '',
+                      promptPrice: prompt.price,
+                      promptTitle: prompt.title,
+                      promptId: prompt.id,
                     });
                     
                     addPurchasedPrompt({
@@ -530,7 +533,7 @@ const PromptDetailPage = () => {
                     alert('결제가 완료되었습니다! 프롬프트를 확인해보세요.');
                     navigate('/dashboard/purchased');
                   } catch (error: any) {
-                    const message = error.response?.data || '결제 처리 중 오류가 발생했습니다.';
+                    const message = error.response?.data?.message || '결제 처리 중 오류가 발생했습니다.';
                     alert(message);
                   } finally {
                     setIsPurchasing(false);

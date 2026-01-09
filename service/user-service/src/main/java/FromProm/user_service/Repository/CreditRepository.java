@@ -4,40 +4,69 @@ import FromProm.user_service.Entity.Credit;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Repository
 public class CreditRepository {
-    private final DynamoDbTable<Credit> historyTable;
+    private final DynamoDbTable<Credit> creditTable;
     private final DynamoDbEnhancedClient enhancedClient;
+    private final String TABLE_NAME = "FromProm_Table";
 
-    public CreditRepository(DynamoDbEnhancedClient enhancedClient, DynamoDbEnhancedClient enhancedClient1) {
-        // "FromProm_Table"은 동일하게 사용하되, Schema만 CreditHistory로 설정
-        this.historyTable = enhancedClient.table("FromProm_Table",
-                TableSchema.fromBean(Credit.class));
-        this.enhancedClient = enhancedClient1;
+    public CreditRepository(DynamoDbEnhancedClient enhancedClient) {
+        this.enhancedClient = enhancedClient;
+        this.creditTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Credit.class));
     }
 
+    // 크레딧 히스토리 저장
     public void save(Credit history) {
-        historyTable.putItem(history);
+        creditTable.putItem(history);
     }
 
+    // 사용자별 크레딧 히스토리 조회 (최신순)
     public List<Credit> getCreditHistory(String userSub) {
-        // 1. 테이블 스키마 설정
-        DynamoDbTable<Credit> creditTable = enhancedClient.table("YourTableName", TableSchema.fromBean(Credit.class));
-
-        // 2. Query 조건 설정
-        // PK는 유저 ID와 일치하고, SK는 "CREDIT#"으로 시작하는 것들만 조회
         QueryConditional queryConditional = QueryConditional
                 .sortBeginsWith(s -> s.partitionValue(userSub).sortValue("CREDIT#"));
 
-        // 3. 실행 및 결과 반환
         return creditTable.query(r -> r.queryConditional(queryConditional)
-                        .scanIndexForward(false)) // false: 최신순(내림차순) 정렬
+                        .scanIndexForward(false)) // 최신순 정렬
+                .items()
+                .stream()
+                .collect(Collectors.toList());
+    }
+
+    // 사용자별 크레딧 히스토리 조회 (페이징)
+    public List<Credit> getCreditHistoryWithLimit(String userSub, int limit) {
+        QueryConditional queryConditional = QueryConditional
+                .sortBeginsWith(s -> s.partitionValue(userSub).sortValue("CREDIT#"));
+
+        QueryEnhancedRequest queryRequest = QueryEnhancedRequest.builder()
+                .queryConditional(queryConditional)
+                .scanIndexForward(false)
+                .limit(limit)
+                .build();
+
+        return creditTable.query(queryRequest)
+                .items()
+                .stream()
+                .collect(Collectors.toList());
+    }
+
+    // 특정 기간 크레딧 히스토리 조회
+    public List<Credit> getCreditHistoryByDateRange(String userSub, String startDate, String endDate) {
+        QueryConditional queryConditional = QueryConditional
+                .sortBetween(
+                    Key.builder().partitionValue(userSub).sortValue("CREDIT#" + startDate).build(),
+                    Key.builder().partitionValue(userSub).sortValue("CREDIT#" + endDate).build()
+                );
+
+        return creditTable.query(r -> r.queryConditional(queryConditional)
+                        .scanIndexForward(false))
                 .items()
                 .stream()
                 .collect(Collectors.toList());

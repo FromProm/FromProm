@@ -115,7 +115,7 @@ const PromptDetailPage = () => {
         <div className="mb-6">
           <Link
             to="/marketplace"
-            className="inline-flex items-center text-gray-600 hover:text-blue-900 font-medium text-sm transition-colors"
+            className="inline-flex items-center text-gray-700 hover:text-blue-900 font-medium text-sm transition-colors border border-gray-300 rounded-lg px-4 py-2 hover:border-blue-900 hover:bg-blue-50"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -199,13 +199,13 @@ const PromptDetailPage = () => {
 
         {/* 모델 정보 */}
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">모델 정보</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">모델 정보</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">추천 모델</h3>
               <p className="text-gray-600">{prompt.llmModel || 'GPT-4'}</p>
             </div>
-            <div>
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">모델 버전</h3>
               <p className="text-gray-600">{prompt.llmVersion || 'gpt-4-turbo-preview'}</p>
             </div>
@@ -214,11 +214,20 @@ const PromptDetailPage = () => {
 
         {/* 성능 지표 */}
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">성능 지표</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">성능 지표</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">토큰 사용량</h3>
+                <div className="flex items-center space-x-1">
+                  <h3 className="text-sm font-medium text-gray-700">토큰 사용량</h3>
+                  <div className="relative group">
+                    <button className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs flex items-center justify-center hover:bg-gray-300">?</button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                      고정 프롬프트의 토큰 수 (사용자 입력 부분 제외)
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <span className="text-lg font-bold text-gray-900">{performanceMetrics.tokenUsage}/100</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -229,9 +238,18 @@ const PromptDetailPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">출력대비 정보밀도</h3>
+                <div className="flex items-center space-x-1">
+                  <h3 className="text-sm font-medium text-gray-700">출력대비 정보밀도</h3>
+                  <div className="relative group">
+                    <button className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs flex items-center justify-center hover:bg-gray-300">?</button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                      출력 내용의 중복 없이 정보량이 풍부한 정도
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <span className="text-lg font-bold text-gray-900">{performanceMetrics.informationDensity}/100</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -242,9 +260,18 @@ const PromptDetailPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">응답의 일관성</h3>
+                <div className="flex items-center space-x-1">
+                  <h3 className="text-sm font-medium text-gray-700">응답의 일관성</h3>
+                  <div className="relative group">
+                    <button className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs flex items-center justify-center hover:bg-gray-300">?</button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                      여러 번 실행 시 응답 내용이 일관된 방향을 유지하는 정도
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <span className="text-lg font-bold text-gray-900">{performanceMetrics.responseConsistency}/100</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -255,9 +282,18 @@ const PromptDetailPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">모델별 성능편차</h3>
+                <div className="flex items-center space-x-1">
+                  <h3 className="text-sm font-medium text-gray-700">모델별 성능편차</h3>
+                  <div className="relative group">
+                    <button className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs flex items-center justify-center hover:bg-gray-300">?</button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                      모델 버전에 따른 답변 품질의 일정함
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <span className="text-lg font-bold text-gray-900">{performanceMetrics.modelPerformanceVariance}/100</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -268,9 +304,18 @@ const PromptDetailPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">환각 탐지</h3>
+                <div className="flex items-center space-x-1">
+                  <h3 className="text-sm font-medium text-gray-700">환각 탐지</h3>
+                  <div className="relative group">
+                    <button className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs flex items-center justify-center hover:bg-gray-300">?</button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                      LLM이 부정확하거나 잘못된 정보를 생성하지 않는 정도
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <span className="text-lg font-bold text-gray-900">{performanceMetrics.hallucinationDetection}/100</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -281,9 +326,18 @@ const PromptDetailPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">관련성</h3>
+                <div className="flex items-center space-x-1">
+                  <h3 className="text-sm font-medium text-gray-700">관련성</h3>
+                  <div className="relative group">
+                    <button className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs flex items-center justify-center hover:bg-gray-300">?</button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                      입력 대비 출력이 정확한 방향과 정보를 전달하는 정도
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <span className="text-lg font-bold text-gray-900">{performanceMetrics.relevance}/100</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -298,8 +352,8 @@ const PromptDetailPage = () => {
 
         {/* 프롬프트 미리보기 */}
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">프롬프트 미리보기</h2>
-          <div className="bg-gray-50 rounded-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">프롬프트 미리보기</h2>
+          <div className="bg-white rounded-lg p-6 border border-gray-100">
             <pre className="text-gray-700 whitespace-pre-wrap font-mono text-sm">
               {prompt.preview}
             </pre>
@@ -311,15 +365,15 @@ const PromptDetailPage = () => {
 
         {/* 예시 입력/출력 */}
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">예시 입력/출력</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">예시 입력/출력</h2>
           <div className="space-y-8">
             {examples.map((example, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">예시 {index + 1}</h3>
+              <div key={index} className="bg-white border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">예시 {index + 1}</h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">입력</h4>
-                    <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
                       <pre className="text-gray-700 whitespace-pre-wrap text-sm">
                         {example.input}
                       </pre>
@@ -327,7 +381,7 @@ const PromptDetailPage = () => {
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">출력</h4>
-                    <div className="bg-green-50 rounded-lg p-4">
+                    <div className="bg-green-50 rounded-lg p-4 border border-green-100">
                       <pre className="text-gray-700 whitespace-pre-wrap text-sm">
                         {example.output}
                       </pre>
@@ -341,12 +395,12 @@ const PromptDetailPage = () => {
 
         {/* 태그 */}
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">태그</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">태그</h2>
           <div className="flex flex-wrap gap-2">
             {prompt.tags.map((tag, index) => (
               <span
                 key={index}
-                className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm"
+                className="bg-white text-gray-700 px-3 py-1 rounded-full text-sm border border-gray-200"
               >
                 #{tag}
               </span>

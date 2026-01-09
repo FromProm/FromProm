@@ -207,6 +207,13 @@ const PromptCreatePage = () => {
             {/* 프롬프트 내용 */}
             <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">프롬프트 내용</h2>
+              {formData.category === '이미지 창작 및 생성' && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-orange-700 font-medium">
+                    ⚠️ 이미지 생성 모델은 영어 프롬프트만 지원합니다. 프롬프트를 영어로 작성해주세요.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-6">
                 <div>
@@ -220,7 +227,7 @@ const PromptCreatePage = () => {
                     rows={8}
                     value={formData.content}
                     onChange={handleChange}
-                    placeholder="구매 후 제공될 완전한 프롬프트를 작성하세요..."
+                    placeholder={"구매 후 제공될 완전한 프롬프트를 작성하세요..."}
                     className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none"
                   />
                   <p className="text-xs text-gray-500 mt-1">구매 후에만 공개되는 완전한 프롬프트입니다</p>

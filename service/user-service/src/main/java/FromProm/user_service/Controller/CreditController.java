@@ -115,7 +115,7 @@ public class CreditController {
     }
 
     // 프롬프트 구매 내역만 조회 (마이페이지용)
-    @GetMapping("/purchases")
+    @GetMapping("/history/purchases")
     public ResponseEntity<Map<String, Object>> getPurchaseHistory(@RequestHeader("Authorization") String authHeader) {
         try {
             List<PurchaseHistoryResponse> purchases = creditService.getPurchaseHistory(authHeader);
@@ -147,7 +147,7 @@ public class CreditController {
     }
 
     // 프롬프트 구매 내역 조회 (페이징)
-    @GetMapping("/purchases/recent")
+    @GetMapping("/history/purchases/recent")
     public ResponseEntity<Map<String, Object>> getRecentPurchases(
             @RequestHeader("Authorization") String authHeader,
             @RequestParam(defaultValue = "10") int limit) {

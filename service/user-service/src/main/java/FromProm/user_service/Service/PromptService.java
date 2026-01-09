@@ -23,7 +23,7 @@ public class PromptService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
     private final DynamoDbClient dynamoDbClient;
-    private final String SNS_TOPIC_ARN = "arn:aws:sns:ap-northeast-2:261595668962:fromprom-sns";
+    private final String SNS_TOPIC_ARN = "arn:aws:sns:ap-northeast-2:261595668962:testest";
     private final String TABLE_NAME = "FromProm_Table";
 
     public String createInitialPrompt(String userId, PromptSaveRequest dto) {
@@ -316,22 +316,36 @@ public class PromptService {
      * DB에 저장된 모든 프롬프트 조회 (테스트용)
      */
     public List<Map<String, Object>> getAllPrompts(int limit) {
-        ScanRequest scanRequest = ScanRequest.builder()
-                .tableName(TABLE_NAME)
-                .filterExpression("SK = :metadata AND #type = :promptType")
-                .expressionAttributeNames(Map.of("#type", "type"))
-                .expressionAttributeValues(Map.of(
-                        ":metadata", AttributeValue.builder().s("METADATA").build(),
-                        ":promptType", AttributeValue.builder().s("PROMPT").build()
-                ))
-                .limit(limit)
-                .build();
-
-        ScanResponse response = dynamoDbClient.scan(scanRequest);
+        // DynamoDB scan은 limit이 스캔할 아이템 수를 제한하므로,
+        // 필터링 후 원하는 개수를 얻으려면 페이지네이션 필요
+        List<Map<String, Object>> results = new ArrayList<>();
+        Map<String, AttributeValue> lastEvaluatedKey = null;
         
-        return response.items().stream()
-                .map(this::convertToPromptSummary)
-                .collect(Collectors.toList());
+        do {
+            ScanRequest.Builder scanBuilder = ScanRequest.builder()
+                    .tableName(TABLE_NAME)
+                    .filterExpression("SK = :metadata AND #type = :promptType")
+                    .expressionAttributeNames(Map.of("#type", "type"))
+                    .expressionAttributeValues(Map.of(
+                            ":metadata", AttributeValue.builder().s("METADATA").build(),
+                            ":promptType", AttributeValue.builder().s("PROMPT").build()
+                    ));
+            
+            if (lastEvaluatedKey != null) {
+                scanBuilder.exclusiveStartKey(lastEvaluatedKey);
+            }
+            
+            ScanResponse response = dynamoDbClient.scan(scanBuilder.build());
+            
+            for (Map<String, AttributeValue> item : response.items()) {
+                if (results.size() >= limit) break;
+                results.add(convertToPromptSummary(item));
+            }
+            
+            lastEvaluatedKey = response.lastEvaluatedKey();
+        } while (lastEvaluatedKey != null && !lastEvaluatedKey.isEmpty() && results.size() < limit);
+        
+        return results;
     }
 
     private Map<String, Object> convertExample(AttributeValue exampleAttr) {
@@ -462,5 +476,42 @@ public class PromptService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 테스트용 프롬프트 등록 (SNS 발송 테스트)
+     */
+    public String createTestPrompt(String userId, String title, String content, String description, int price, String model) {
+        String promptUuid = UUID.randomUUID().toString();
+        String now = OffsetDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+
+        Map<String, Object> fullPayload = new LinkedHashMap<>();
+
+        fullPayload.put("PK", "PROMPT#" + promptUuid);
+        fullPayload.put("SK", "METADATA");
+        fullPayload.put("PROMPT_INDEX_PK", "USER_PROMPT_LIST");
+        fullPayload.put("PROMPT_INDEX_SK", "USER#" + userId + "#" + now);
+        fullPayload.put("type", "PROMPT");
+        fullPayload.put("create_user", "USER#" + userId);
+        fullPayload.put("title", title);
+        fullPayload.put("content", content);
+        fullPayload.put("prompt_description", description);
+        fullPayload.put("price", price);
+        fullPayload.put("prompt_type", "type_a");
+        fullPayload.put("examples", new ArrayList<>());
+        fullPayload.put("examples_s3_url", "");
+        fullPayload.put("model", model);
+        fullPayload.put("evaluation_metrics", createEmptyMetrics());
+        fullPayload.put("status", "processing");
+        fullPayload.put("created_at", now);
+        fullPayload.put("updated_at", "");
+        fullPayload.put("like_count", "0");
+        fullPayload.put("comment_count", "0");
+        fullPayload.put("bookmark_count", "0");
+        fullPayload.put("is_public", false);
+
+        sendSnsNotification(fullPayload);
+
+        return promptUuid;
     }
 }

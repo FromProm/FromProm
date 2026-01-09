@@ -18,6 +18,7 @@ import PurchasedPromptsPage from './pages/dashboard/PurchasedPromptsPage';
 import SellingPromptsPage from './pages/dashboard/SellingPromptsPage';
 import AnalyticsPage from './pages/dashboard/AnalyticsPage';
 import SettingsPage from './pages/dashboard/SettingsPage';
+import CreditHistoryPage from './pages/dashboard/CreditHistoryPage';
 
 // Components
 import Layout from './components/Layout';
@@ -118,6 +119,14 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <SettingsPage />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/dashboard/credit-history"
+                            element={
+                                <ProtectedRoute>
+                                    <CreditHistoryPage />
                                 </ProtectedRoute>
                             }
                         />

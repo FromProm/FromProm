@@ -9,7 +9,7 @@ import AnimatedContent from '../components/AnimatedContent';
 const MarketplacePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const { addToCart, isInCart } = useCartStore();
+  const { addToCart, removeFromCart, isInCart } = useCartStore();
   const { isPurchased } = usePurchaseStore();
   const navigate = useNavigate();
 
@@ -24,7 +24,9 @@ const MarketplacePage = () => {
       return;
     }
     
-    if (!isInCart(prompt.id) && !isPurchased(prompt.id)) {
+    if (isInCart(prompt.id)) {
+      removeFromCart(prompt.id);
+    } else if (!isPurchased(prompt.id)) {
       addToCart({
         id: prompt.id,
         title: prompt.title,
@@ -207,13 +209,12 @@ const MarketplacePage = () => {
                   <>
                     <button
                       onClick={(e) => handleAddToCart(prompt, e)}
-                      disabled={isInCart(prompt.id)}
                       className={`flex-1 px-3 py-2 rounded text-xs font-medium transition-colors ${isInCart(prompt.id)
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                         : 'border border-blue-900 text-blue-900 hover:bg-blue-50'
                         }`}
                     >
-                      {isInCart(prompt.id) ? '장바구니에 있음' : '장바구니'}
+                      {isInCart(prompt.id) ? '장바구니에서 제거' : '장바구니'}
                     </button>
                     <button
                       onClick={(e) => handlePurchase(prompt.id, e)}

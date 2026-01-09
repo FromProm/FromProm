@@ -20,6 +20,7 @@ interface PurchaseStore {
   getPurchasedPrompts: () => PurchasedPrompt[];
   isPurchased: (id: string) => boolean;
   incrementDownloadCount: (id: string) => void;
+  clearPurchases: () => void;
 }
 
 export const usePurchaseStore = create<PurchaseStore>()(
@@ -65,6 +66,10 @@ export const usePurchaseStore = create<PurchaseStore>()(
               : prompt
           )
         }));
+      },
+
+      clearPurchases: () => {
+        set({ purchasedPrompts: [] });
       },
     }),
     {

@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { User, AuthState } from '../types';
+import { useCartStore } from './cartStore';
+import { usePurchaseStore } from './purchaseStore';
 
 interface AuthStore extends AuthState {
   login: (email: string, password: string) => Promise<void>;
@@ -48,6 +50,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   logout: () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    // 장바구니 및 구매 내역 비우기
+    useCartStore.getState().clearCart();
+    usePurchaseStore.getState().clearPurchases();
     set({ user: null, isAuthenticated: false });
   },
 

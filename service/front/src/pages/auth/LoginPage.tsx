@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { userApi } from '../../services/api';
+import LightRays from '../../components/LightRays';
+import SplitText from '../../components/SplitText';
+import AnimatedContent from '../../components/AnimatedContent';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -31,11 +34,27 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-black">
-      {/* 조금 더 밝은 배경 */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-800/60 via-gray-900 to-black" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-blue-600/15 to-transparent blur-3xl" />
+    <div className="relative min-h-screen bg-black overflow-hidden">
+      {/* 배경 그라데이션 */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-gray-900 to-black" />
+      </div>
+
+      {/* LightRays 효과 */}
+      <div className="absolute inset-0 z-[1]" style={{ width: '100%', height: '100%' }}>
+        <LightRays
+          raysOrigin="top-center"
+          raysColor="#ffffff"
+          raysSpeed={1}
+          lightSpread={1}
+          rayLength={3}
+          followMouse={false}
+          fadeDistance={3}
+          saturation={1}
+          mouseInfluence={0.1}
+          noiseAmount={0.1}
+          distortion={0.05}
+        />
       </div>
 
       <div className="relative z-10 flex flex-col justify-center py-12 sm:px-6 lg:px-8 min-h-screen">
@@ -52,7 +71,8 @@ const LoginPage = () => {
                   onError={(e) => {
                     // 이미지 로드 실패 시 기본 아이콘으로 대체
                     e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling.style.display = 'flex';
+                    const sibling = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (sibling) sibling.style.display = 'flex';
                   }}
                 />
                 <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center shadow-lg" style={{ display: 'none' }}>
@@ -66,18 +86,55 @@ const LoginPage = () => {
 
           </div>
           <div className="flex justify-center items-center space-x-3 mb-3">
-            <span className="text-3xl font-bold text-white">로그인</span>
+            <SplitText
+              text="로그인"
+              className="text-3xl font-bold text-white"
+              delay={50}
+              duration={0.6}
+              ease="power3.out"
+              splitType="chars"
+              from={{ opacity: 0, y: 30 }}
+              to={{ opacity: 1, y: 0 }}
+              threshold={0.1}
+              rootMargin="-50px"
+              textAlign="center"
+              tag="h1"
+            />
           </div>
 
-
-          <p className="text-center text-gray-300">
-            FromProm에 오신 것을 환영합니다
-          </p>
+          <div className="text-center">
+            <SplitText
+              text="FromProm에 오신 것을 환영합니다"
+              className="text-gray-300"
+              delay={30}
+              duration={0.5}
+              ease="power3.out"
+              splitType="words"
+              from={{ opacity: 0, y: 20 }}
+              to={{ opacity: 1, y: 0 }}
+              threshold={0.1}
+              rootMargin="-50px"
+              textAlign="center"
+              tag="p"
+            />
+          </div>
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 py-8 px-4 shadow-2xl sm:rounded-xl sm:px-10">
-            <form className="space-y-6" onSubmit={handleSubmit}>
+          <AnimatedContent
+            distance={100}
+            direction="vertical"
+            reverse={false}
+            duration={0.8}
+            ease="power3.out"
+            initialOpacity={0}
+            animateOpacity
+            scale={0.95}
+            threshold={0.1}
+            delay={0.2}
+          >
+            <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 py-8 px-4 shadow-2xl sm:rounded-xl sm:px-10">
+              <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-300">
                   이메일
@@ -165,6 +222,7 @@ const LoginPage = () => {
               </div>
             </div>
           </div>
+          </AnimatedContent>
         </div>
       </div>
     </div>

@@ -1,23 +1,46 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { dummyPrompts } from '../services/dummyData';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
-import { useAuthStore } from '../store/authStore';
+import { userApi } from '../services/api';
+import AnimatedContent from '../components/AnimatedContent';
 
 const PromptDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const prompt = dummyPrompts.find(p => p.id === id);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+  const [credit, setCredit] = useState<number>(0);
   const { addToCart, isInCart } = useCartStore();
-  const { isPurchased } = usePurchaseStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isPurchased, addPurchasedPrompt } = usePurchaseStore();
 
   const isAlreadyInCart = prompt ? isInCart(prompt.id) : false;
   const isAlreadyPurchased = prompt ? isPurchased(prompt.id) : false;
 
+  const isLoggedIn = () => !!localStorage.getItem('accessToken');
+
+  useEffect(() => {
+    if (isLoggedIn()) {
+      userApi.getMe()
+        .then((response) => {
+          setCredit(response.data.credit || 0);
+        })
+        .catch((error) => {
+          console.error('Failed to fetch user info:', error);
+        });
+    }
+  }, []);
+
   const handleAddToCart = () => {
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+    
     if (prompt && !isAlreadyInCart && !isAlreadyPurchased) {
       addToCart({
         id: prompt.id,
@@ -31,9 +54,19 @@ const PromptDetailPage = () => {
     }
   };
 
+  const handlePurchase = () => {
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+    
+    navigate(`/purchase/${prompt?.id}`);
+  };
+
   if (!prompt) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">프롬프트를 찾을 수 없습니다</h1>
           <Link to="/marketplace" className="text-blue-600 hover:text-blue-500">
@@ -71,7 +104,8 @@ const PromptDetailPage = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -82,7 +116,7 @@ const PromptDetailPage = () => {
         <div className="mb-6">
           <Link
             to="/marketplace"
-            className="inline-flex items-center text-gray-600 hover:text-blue-900 font-medium text-sm transition-colors"
+            className="inline-flex items-center text-gray-700 hover:text-blue-900 font-medium text-sm transition-colors border border-gray-300 rounded-lg px-4 py-2 hover:border-blue-900 hover:bg-blue-50"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -91,7 +125,8 @@ const PromptDetailPage = () => {
           </Link>
         </div>
         {/* 프롬프트 기본 정보 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-8">
+        <AnimatedContent once distance={50} duration={0.6} delay={0}>
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
               <div className="flex items-center space-x-3 mb-4">
@@ -143,12 +178,12 @@ const PromptDetailPage = () => {
                     >
                       {isAlreadyInCart ? '장바구니에 있음' : '장바구니에 추가'}
                     </button>
-                    <Link
-                      to={`/purchase/${prompt.id}`}
+                    <button
+                      onClick={handlePurchase}
                       className="flex-1 bg-blue-900 text-white font-semibold px-3 py-3 rounded-lg hover:bg-blue-800 transition-colors text-center text-sm whitespace-nowrap"
                     >
                       구매
-                    </Link>
+                    </button>
                   </div>
                   {isAlreadyInCart && (
                     <Link
@@ -163,29 +198,42 @@ const PromptDetailPage = () => {
             </div>
           </div>
         </div>
+        </AnimatedContent>
 
         {/* 모델 정보 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">모델 정보</h2>
+        <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">모델 정보</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">추천 모델</h3>
               <p className="text-gray-600">{prompt.llmModel || 'GPT-4'}</p>
             </div>
-            <div>
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">모델 버전</h3>
               <p className="text-gray-600">{prompt.llmVersion || 'gpt-4-turbo-preview'}</p>
             </div>
           </div>
         </div>
+        </AnimatedContent>
 
         {/* 성능 지표 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">성능 지표</h2>
+        <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">성능 지표</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">토큰 사용량</h3>
+                <div className="flex items-center space-x-1">
+                  <h3 className="text-sm font-medium text-gray-700">토큰 사용량</h3>
+                  <div className="relative group">
+                    <button className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs flex items-center justify-center hover:bg-gray-300">?</button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                      고정 프롬프트의 토큰 수 (사용자 입력 부분 제외)
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <span className="text-lg font-bold text-gray-900">{performanceMetrics.tokenUsage}/100</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -196,9 +244,18 @@ const PromptDetailPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">출력대비 정보밀도</h3>
+                <div className="flex items-center space-x-1">
+                  <h3 className="text-sm font-medium text-gray-700">출력대비 정보밀도</h3>
+                  <div className="relative group">
+                    <button className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs flex items-center justify-center hover:bg-gray-300">?</button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                      출력 내용의 중복 없이 정보량이 풍부한 정도
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <span className="text-lg font-bold text-gray-900">{performanceMetrics.informationDensity}/100</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -209,9 +266,18 @@ const PromptDetailPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">응답의 일관성</h3>
+                <div className="flex items-center space-x-1">
+                  <h3 className="text-sm font-medium text-gray-700">응답의 일관성</h3>
+                  <div className="relative group">
+                    <button className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs flex items-center justify-center hover:bg-gray-300">?</button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                      여러 번 실행 시 응답 내용이 일관된 방향을 유지하는 정도
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <span className="text-lg font-bold text-gray-900">{performanceMetrics.responseConsistency}/100</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -222,9 +288,18 @@ const PromptDetailPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">모델별 성능편차</h3>
+                <div className="flex items-center space-x-1">
+                  <h3 className="text-sm font-medium text-gray-700">모델별 성능편차</h3>
+                  <div className="relative group">
+                    <button className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs flex items-center justify-center hover:bg-gray-300">?</button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                      모델 버전에 따른 답변 품질의 일정함
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <span className="text-lg font-bold text-gray-900">{performanceMetrics.modelPerformanceVariance}/100</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -235,9 +310,18 @@ const PromptDetailPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">환각 탐지</h3>
+                <div className="flex items-center space-x-1">
+                  <h3 className="text-sm font-medium text-gray-700">환각 탐지</h3>
+                  <div className="relative group">
+                    <button className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs flex items-center justify-center hover:bg-gray-300">?</button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                      LLM이 부정확하거나 잘못된 정보를 생성하지 않는 정도
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <span className="text-lg font-bold text-gray-900">{performanceMetrics.hallucinationDetection}/100</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -248,9 +332,18 @@ const PromptDetailPage = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">관련성</h3>
+                <div className="flex items-center space-x-1">
+                  <h3 className="text-sm font-medium text-gray-700">관련성</h3>
+                  <div className="relative group">
+                    <button className="w-4 h-4 rounded-full bg-gray-200 text-gray-500 text-xs flex items-center justify-center hover:bg-gray-300">?</button>
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-48 z-10">
+                      입력 대비 출력이 정확한 방향과 정보를 전달하는 정도
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                </div>
                 <span className="text-lg font-bold text-gray-900">{performanceMetrics.relevance}/100</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
@@ -262,11 +355,13 @@ const PromptDetailPage = () => {
             </div>
           </div>
         </div>
+        </AnimatedContent>
 
         {/* 프롬프트 미리보기 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">프롬프트 미리보기</h2>
-          <div className="bg-gray-50 rounded-lg p-6">
+        <AnimatedContent once distance={50} duration={0.6} delay={0.3}>
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">프롬프트 미리보기</h2>
+          <div className="bg-white rounded-lg p-6 border border-gray-100">
             <pre className="text-gray-700 whitespace-pre-wrap font-mono text-sm">
               {prompt.preview}
             </pre>
@@ -275,18 +370,20 @@ const PromptDetailPage = () => {
             💡 전체 프롬프트는 구매 후 확인할 수 있습니다.
           </p>
         </div>
+        </AnimatedContent>
 
         {/* 예시 입력/출력 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">예시 입력/출력</h2>
+        <AnimatedContent once distance={50} duration={0.6} delay={0.4}>
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">예시 입력/출력</h2>
           <div className="space-y-8">
             {examples.map((example, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">예시 {index + 1}</h3>
+              <div key={index} className="bg-white border border-gray-200 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">예시 {index + 1}</h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">입력</h4>
-                    <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
                       <pre className="text-gray-700 whitespace-pre-wrap text-sm">
                         {example.input}
                       </pre>
@@ -294,7 +391,7 @@ const PromptDetailPage = () => {
                   </div>
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">출력</h4>
-                    <div className="bg-green-50 rounded-lg p-4">
+                    <div className="bg-green-50 rounded-lg p-4 border border-green-100">
                       <pre className="text-gray-700 whitespace-pre-wrap text-sm">
                         {example.output}
                       </pre>
@@ -305,21 +402,24 @@ const PromptDetailPage = () => {
             ))}
           </div>
         </div>
+        </AnimatedContent>
 
         {/* 태그 */}
-        <div className="bg-white rounded-lg shadow-lg border border-blue-100 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">태그</h2>
+        <AnimatedContent once distance={50} duration={0.6} delay={0.5}>
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">태그</h2>
           <div className="flex flex-wrap gap-2">
             {prompt.tags.map((tag, index) => (
               <span
                 key={index}
-                className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm"
+                className="bg-white text-gray-700 px-3 py-1 rounded-full text-sm border border-gray-200"
               >
                 #{tag}
               </span>
             ))}
           </div>
         </div>
+        </AnimatedContent>
       </motion.div>
 
       {/* 결제 모달 */}
@@ -398,19 +498,54 @@ const PromptDetailPage = () => {
                 취소
               </button>
               <button
-                onClick={() => {
-                  // 실제 결제 처리 로직
-                  alert('결제가 완료되었습니다! 프롬프트를 확인해보세요.');
-                  setShowPaymentModal(false);
+                onClick={async () => {
+                  if (!prompt) return;
+                  
+                  if (credit < prompt.price) {
+                    alert('크레딧이 부족합니다. 충전 후 다시 시도해주세요.');
+                    setShowPaymentModal(false);
+                    navigate('/credit');
+                    return;
+                  }
+                  
+                  setIsPurchasing(true);
+                  try {
+                    await userApi.useCredit({
+                      amount: prompt.price,
+                      description: `프롬프트 구매: ${prompt.title}`
+                    });
+                    
+                    addPurchasedPrompt({
+                      id: prompt.id,
+                      title: prompt.title,
+                      price: prompt.price,
+                      category: prompt.category,
+                      sellerName: prompt.sellerName,
+                      description: prompt.description,
+                      rating: prompt.rating,
+                      content: prompt.preview
+                    });
+                    
+                    setShowPaymentModal(false);
+                    alert('결제가 완료되었습니다! 프롬프트를 확인해보세요.');
+                    navigate('/dashboard/purchased');
+                  } catch (error: any) {
+                    const message = error.response?.data || '결제 처리 중 오류가 발생했습니다.';
+                    alert(message);
+                  } finally {
+                    setIsPurchasing(false);
+                  }
                 }}
-                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors font-semibold"
+                disabled={isPurchasing}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {prompt.price}P 결제하기
+                {isPurchasing ? '처리 중...' : `${prompt.price}P 결제하기`}
               </button>
             </div>
           </motion.div>
         </div>
       )}
+      </div>
     </div>
   );
 };

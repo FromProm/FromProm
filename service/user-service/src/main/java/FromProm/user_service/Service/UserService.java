@@ -228,6 +228,11 @@ public class UserService {
         return userRepository.existsByNickname(nickname);
     }
 
+    // 이메일 중복 확인
+    public boolean isEmailDuplicated(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
     @Transactional
     public void updateProfile(String userSub, UserProfileUpdateRequest request) {
         String now = LocalDateTime.now().toString();

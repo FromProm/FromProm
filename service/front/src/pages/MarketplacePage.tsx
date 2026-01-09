@@ -1,19 +1,32 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { dummyPrompts, categories } from '../services/dummyData';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
+import SplitText from '../components/SplitText';
+import AnimatedContent from '../components/AnimatedContent';
 
 const MarketplacePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const { addToCart, isInCart } = useCartStore();
+  const { addToCart, removeFromCart, isInCart } = useCartStore();
   const { isPurchased } = usePurchaseStore();
+  const navigate = useNavigate();
+
+  const isLoggedIn = () => !!localStorage.getItem('accessToken');
 
   const handleAddToCart = (prompt: any, e: React.MouseEvent) => {
-    e.stopPropagation(); // 카드 클릭 이벤트 방지
-    if (!isInCart(prompt.id) && !isPurchased(prompt.id)) {
+    e.stopPropagation();
+    
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+    
+    if (isInCart(prompt.id)) {
+      removeFromCart(prompt.id);
+    } else if (!isPurchased(prompt.id)) {
       addToCart({
         id: prompt.id,
         title: prompt.title,
@@ -26,6 +39,18 @@ const MarketplacePage = () => {
     }
   };
 
+  const handlePurchase = (promptId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+    
+    navigate(`/purchase/${promptId}`);
+  };
+
   const filteredPrompts = dummyPrompts.filter(prompt => {
     const matchesCategory = selectedCategory === 'All' || prompt.category === selectedCategory;
     const matchesSearch = prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -34,13 +59,39 @@ const MarketplacePage = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+    <div className="min-h-screen bg-white">
       {/* 메인 콘텐츠 */}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* 페이지 헤더 */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">프롬프트 마켓플레이스</h1>
-          <p className="text-gray-600">검증된 고품질 AI 프롬프트를 찾아보세요</p>
+        <div className="mb-8 text-center flex flex-col items-center">
+          <SplitText
+            text="프롬프트 마켓플레이스"
+            className="text-3xl font-bold text-gray-900 mb-2"
+            delay={50}
+            duration={0.6}
+            ease="power3.out"
+            splitType="chars"
+            from={{ opacity: 0, y: 30 }}
+            to={{ opacity: 1, y: 0 }}
+            threshold={0.1}
+            rootMargin="-50px"
+            textAlign="center"
+            tag="h1"
+          />
+          <SplitText
+            text="검증된 고품질 AI 프롬프트를 찾아보세요"
+            className="text-gray-600"
+            delay={30}
+            duration={0.5}
+            ease="power3.out"
+            splitType="words"
+            from={{ opacity: 0, y: 20 }}
+            to={{ opacity: 1, y: 0 }}
+            threshold={0.1}
+            rootMargin="-50px"
+            textAlign="center"
+            tag="p"
+          />
         </div>
 
         {/* 검색 및 필터 */}
@@ -79,24 +130,27 @@ const MarketplacePage = () => {
         </div>
 
         {/* 프롬프트 그리드 */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPrompts.map((prompt, index) => (
-            <motion.div
+            <AnimatedContent
               key={prompt.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white border border-gray-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 hover:border-gray-300 transition-all cursor-pointer group"
-              onClick={() => window.location.href = `/prompt/${prompt.id}`}
+              distance={50}
+              direction="vertical"
+              reverse={false}
+              duration={0.6}
+              ease="power3.out"
+              initialOpacity={0}
+              animateOpacity
+              threshold={0.1}
+              delay={index * 0.1}
             >
+              <div
+                className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-blue-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 hover:border-blue-300 transition-all cursor-pointer group h-[320px] flex flex-col"
+                onClick={() => window.location.href = `/prompt/${prompt.id}`}
+              >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                  <span className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">
                     {prompt.category}
                   </span>
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -107,11 +161,11 @@ const MarketplacePage = () => {
                 </div>
               </div>
 
-              <h3 className="text-gray-900 text-lg font-semibold mb-2 group-hover:text-gray-700 transition-colors">
+              <h3 className="text-gray-900 text-lg font-semibold mb-2 group-hover:text-blue-900 transition-colors line-clamp-1">
                 {prompt.title}
               </h3>
 
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+              <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">
                 {prompt.description}
               </p>
 
@@ -125,7 +179,7 @@ const MarketplacePage = () => {
               </div>
 
               {/* 통계 정보 */}
-              <div className="flex items-center justify-between text-xs text-gray-500 border-t border-gray-200 pt-4">
+              <div className="flex items-center justify-between text-xs text-gray-500 border-t border-blue-200 pt-4">
                 <div className="flex items-center space-x-4">
                   <span className="flex items-center space-x-1">
                     <span>👁</span>
@@ -155,27 +209,26 @@ const MarketplacePage = () => {
                   <>
                     <button
                       onClick={(e) => handleAddToCart(prompt, e)}
-                      disabled={isInCart(prompt.id)}
                       className={`flex-1 px-3 py-2 rounded text-xs font-medium transition-colors ${isInCart(prompt.id)
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                         : 'border border-blue-900 text-blue-900 hover:bg-blue-50'
                         }`}
                     >
-                      {isInCart(prompt.id) ? '장바구니에 있음' : '장바구니'}
+                      {isInCart(prompt.id) ? '장바구니에서 제거' : '장바구니'}
                     </button>
-                    <Link
-                      to={`/purchase/${prompt.id}`}
-                      onClick={(e) => e.stopPropagation()}
+                    <button
+                      onClick={(e) => handlePurchase(prompt.id, e)}
                       className="flex-1 bg-blue-900 text-white px-3 py-2 rounded text-xs font-medium hover:bg-blue-800 transition-colors text-center"
                     >
                       구매
-                    </Link>
+                    </button>
                   </>
                 )}
               </div>
-            </motion.div>
+              </div>
+            </AnimatedContent>
           ))}
-        </motion.div>
+        </div>
 
         {/* 결과 없음 */}
         {filteredPrompts.length === 0 && (

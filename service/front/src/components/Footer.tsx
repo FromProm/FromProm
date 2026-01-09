@@ -5,13 +5,11 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">P</span>
-              </div>
+              <img src="/logo.png" alt="FromProm" className="w-8 h-8 rounded-lg" />
               <span className="text-xl font-bold">FromProm</span>
             </div>
             <p className="text-gray-400 mb-4">
-              고품질 프롬프트를 거래하는 전문 마켓플레이스입니다. 
+              고품질 프롬프트를 거래하는 전문 마켓플레이스입니다.
               성능 지표 기반의 검증된 프롬프트를 만나보세요.
             </p>
           </div>
@@ -36,7 +34,7 @@ const Footer = () => {
         </div>
         
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 FromProm. All rights reserved.</p>
+          <p>&copy; 2026 FromProm. All rights reserved.</p>
         </div>
       </div>
     </footer>

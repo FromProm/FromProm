@@ -323,18 +323,18 @@ public class PromptService {
         
         do {
             ScanRequest.Builder scanBuilder = ScanRequest.builder()
-                    .tableName(TABLE_NAME)
-                    .filterExpression("SK = :metadata AND #type = :promptType")
-                    .expressionAttributeNames(Map.of("#type", "type"))
-                    .expressionAttributeValues(Map.of(
-                            ":metadata", AttributeValue.builder().s("METADATA").build(),
-                            ":promptType", AttributeValue.builder().s("PROMPT").build()
+                .tableName(TABLE_NAME)
+                .filterExpression("SK = :metadata AND #type = :promptType")
+                .expressionAttributeNames(Map.of("#type", "type"))
+                .expressionAttributeValues(Map.of(
+                        ":metadata", AttributeValue.builder().s("METADATA").build(),
+                        ":promptType", AttributeValue.builder().s("PROMPT").build()
                     ));
             
             if (lastEvaluatedKey != null) {
                 scanBuilder.exclusiveStartKey(lastEvaluatedKey);
             }
-            
+
             ScanResponse response = dynamoDbClient.scan(scanBuilder.build());
             
             for (Map<String, AttributeValue> item : response.items()) {

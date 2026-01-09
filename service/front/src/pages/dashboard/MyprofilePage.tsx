@@ -16,7 +16,7 @@ interface MyPrompt {
   status: string;
   likeCount: number;
   commentCount: number;
-  bookmarkCount: number;
+  bookmarkCount: number; 
   isPublic: boolean;
   created_at: string;
 }

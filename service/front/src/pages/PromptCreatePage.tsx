@@ -77,7 +77,7 @@ const PromptCreatePage = () => {
           inputValues: [{ key: 'input', value: input }]
         }));
 
-      await promptApi.create({
+      const response = await promptApi.create({
         title: formData.title,
         description: formData.description,
         category: formData.category,
@@ -87,11 +87,14 @@ const PromptCreatePage = () => {
         inputs: [],  // 입력 필드 정의 (필요시 추가)
         examples: examples,
       });
-      alert('프롬프트가 성공적으로 등록되었습니다!');
-      navigate('/marketplace');
+      
+      console.log('프롬프트 등록 응답:', response.data);
+      alert('프롬프트가 성공적으로 등록되었습니다! AI 검증이 완료되면 마켓플레이스에 공개됩니다.');
+      navigate('/dashboard');
     } catch (error: any) {
-      const message = error.response?.data || '프롬프트 등록에 실패했습니다.';
-      alert(message);
+      console.error('프롬프트 등록 실패:', error);
+      const message = error.response?.data?.message || error.response?.data || '프롬프트 등록에 실패했습니다.';
+      alert(typeof message === 'string' ? message : '프롬프트 등록에 실패했습니다.');
     } finally {
       setIsSubmitting(false);
     }

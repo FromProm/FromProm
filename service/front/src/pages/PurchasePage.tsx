@@ -1,39 +1,72 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { dummyPrompts } from '../services/dummyData';
+import { promptTypeToCategory } from '../services/dummyData';
 import { usePurchaseStore } from '../store/purchaseStore';
-import { creditApi } from '../services/api';
+import { creditApi, promptApi } from '../services/api';
 import AnimatedContent from '../components/AnimatedContent';
+
+// 프롬프트 상세 타입
+interface PromptDetail {
+  promptId: string;
+  title: string;
+  content: string;
+  description: string;
+  price: number;
+  promptType: string;
+  model: string;
+  status: string;
+  createUser: string;
+  likeCount: number;
+  commentCount: number;
+  bookmarkCount: number;
+  isPublic: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 const PurchasePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addPurchasedPrompt, isPurchased } = usePurchaseStore();
-  const [prompt, setPrompt] = useState<any>(null);
+  const [prompt, setPrompt] = useState<PromptDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [purchaseComplete, setPurchaseComplete] = useState(false);
   const [credit, setCredit] = useState<number>(0);
 
   useEffect(() => {
-    if (id) {
-      const foundPrompt = dummyPrompts.find(p => p.id === id);
-      setPrompt(foundPrompt);
-
-      // 이미 구매한 프롬프트인지 확인
-      if (foundPrompt && isPurchased(id)) {
-        setPurchaseComplete(true);
+    const fetchData = async () => {
+      if (!id) return;
+      
+      setIsLoading(true);
+      try {
+        // 프롬프트 상세 정보 가져오기
+        const response = await promptApi.getPromptDetail(id);
+        if (response.data.success) {
+          setPrompt(response.data.prompt);
+          
+          // 이미 구매한 프롬프트인지 확인
+          if (isPurchased(id)) {
+            setPurchaseComplete(true);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch prompt:', error);
+      } finally {
+        setIsLoading(false);
       }
-    }
 
-    // 크레딧 정보 가져오기
-    creditApi.getBalance()
-      .then((response) => {
-        setCredit(response.data.balance || 0);
-      })
-      .catch((error) => {
+      // 크레딧 정보 가져오기
+      try {
+        const creditResponse = await creditApi.getBalance();
+        setCredit(creditResponse.data.balance || 0);
+      } catch (error) {
         console.error('Failed to fetch credit balance:', error);
-      });
+      }
+    };
+
+    fetchData();
   }, [id, isPurchased]);
 
   const handlePurchase = async () => {
@@ -50,16 +83,24 @@ const PurchasePage = () => {
     try {
       // 단일 프롬프트 구매 API 호출
       await creditApi.purchasePrompt({
-        sellerSub: prompt.sellerSub || prompt.sellerId || '',  // 판매자 ID
+        sellerSub: prompt.createUser?.replace('USER#', '') || '',
         promptPrice: prompt.price,
         promptTitle: prompt.title,
-        promptId: prompt.id,
+        promptId: prompt.promptId,
       });
+
+      const category = promptTypeToCategory[prompt.promptType] || prompt.promptType;
 
       // 구매한 프롬프트로 추가
       addPurchasedPrompt({
-        ...prompt,
-        content: `이것은 "${prompt.title}" 프롬프트의 실제 내용입니다. 구매해주셔서 감사합니다!\n\n실제 프롬프트 내용이 여기에 표시됩니다.`
+        id: prompt.promptId,
+        title: prompt.title,
+        price: prompt.price,
+        category: category,
+        sellerName: '판매자',
+        description: prompt.description,
+        rating: 4.5,
+        content: prompt.content
       });
 
       setPurchaseComplete(true);
@@ -70,6 +111,17 @@ const PurchasePage = () => {
       setIsProcessing(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 mt-4">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!prompt) {
     return (
@@ -86,6 +138,8 @@ const PurchasePage = () => {
       </div>
     );
   }
+
+  const category = promptTypeToCategory[prompt.promptType] || prompt.promptType;
 
   if (purchaseComplete) {
     return (
@@ -130,7 +184,7 @@ const PurchasePage = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <Link
-            to={`/prompt/${prompt.id}`}
+            to={`/prompt/${prompt.promptId}`}
             className="inline-flex items-center text-blue-900 font-medium hover:underline mb-4"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,10 +203,14 @@ const PurchasePage = () => {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                    {prompt.category}
+                    {category}
                   </span>
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-xs text-green-600 font-medium">Verified</span>
+                  {prompt.status === 'completed' && (
+                    <>
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-xs text-green-600 font-medium">Verified</span>
+                    </>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-gray-900">{prompt.price}P</div>
@@ -164,11 +222,10 @@ const PurchasePage = () => {
               <p className="text-gray-600 mb-6">{prompt.description}</p>
 
               <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
-                <span>by {prompt.sellerName}</span>
-                <div className="flex items-center space-x-1">
-                  <span>⭐</span>
-                  <span>{prompt.rating}</span>
-                  <span>({prompt.reviewCount} reviews)</span>
+                <span>{prompt.model}</span>
+                <div className="flex items-center space-x-2">
+                  <span>❤️ {prompt.likeCount}</span>
+                  <span>💬 {prompt.commentCount}</span>
                 </div>
               </div>
 
@@ -231,7 +288,7 @@ const PurchasePage = () => {
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">보유 크레딧</span>
-                  <span className={`font-medium ${credit >= (prompt?.price || 0) ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className={`font-medium ${credit >= prompt.price ? 'text-green-600' : 'text-red-600'}`}>
                     {credit}P
                   </span>
                 </div>

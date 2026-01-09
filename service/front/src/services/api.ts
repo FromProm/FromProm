@@ -9,6 +9,8 @@ const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
   },
 });
 
@@ -144,6 +146,9 @@ export const promptApi = {
     inputs: data.inputs,
     examples: data.examples,
   }),
+
+  // 모든 프롬프트 목록 조회 (마켓플레이스용)
+  getAllPrompts: (limit: number = 50) => api.get(`/api/test/prompts/all?limit=${limit}&_t=${Date.now()}`),
 
   // 내가 등록한 프롬프트 목록 조회
   getMyPrompts: () => api.get('/api/prompts/my'),

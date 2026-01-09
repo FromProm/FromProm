@@ -19,8 +19,8 @@ public class User {
     private int credit;
     private String bio;
     private String profileImage;
-    private String createdAt;
-    private String updatedAt;
+    private String created_at;
+    private String updated_at;
 
     @DynamoDbPartitionKey
     @DynamoDbAttribute("PK")
@@ -33,15 +33,15 @@ public class User {
     @DynamoDbAttribute("type")
     public String gettype() { return type; }
 
-    // 닉네임 중복 체크를 위한 GSI 설정 (핵심 부분!)
+    // 이메일 중복 체크를 위한 GSI 설정
+    @DynamoDbSecondaryPartitionKey(indexNames = "email-index") // 콘솔의 GSI 이름과 일치시켜야 함
+    @DynamoDbAttribute("email")
+    public String getEmail() { return email; }
+
+    // 닉네임 중복 체크를 위한 GSI 설정
     @DynamoDbSecondaryPartitionKey(indexNames = "nickname-index")
     @DynamoDbAttribute("nickname")
     public String getNickname() { return nickname; }
-
-    // 이메일 중복 체크를 위한 GSI 설정
-    @DynamoDbSecondaryPartitionKey(indexNames = "email-index")
-    @DynamoDbAttribute("email")
-    public String getEmail() { return email; }
 
     @DynamoDbAttribute("credit")
     public int getCredit() { return credit; }
@@ -49,12 +49,12 @@ public class User {
     @DynamoDbAttribute("bio")
     public String getBio() { return bio; }
 
-    @DynamoDbAttribute("profileImage")
+    @DynamoDbAttribute("profile_image")
     public String getProfileImage() { return profileImage; }
 
-    @DynamoDbAttribute("createdAt")
-    public String getCreatedAt() { return createdAt; }
+    @DynamoDbAttribute("created_at")
+    public String getCreatedAt() { return created_at; }
 
-    @DynamoDbAttribute("updatedAt")
-    public String getUpdatedAt() { return updatedAt; }
+    @DynamoDbAttribute("updated_at")
+    public String getUpdatedAt() { return updated_at; }
 }

@@ -9,12 +9,21 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +31,7 @@ public class UserService {
     private final CognitoIdentityProviderClient cognitoClient;
     private final UserRepository userRepository;
     private final CreditRepository creditRepository;
+    private final DynamoDbEnhancedClient enhancedClient; // [추가 필요!] 빨간불 방지
 
     @Value("${aws.cognito.clientId}")
     private String clientId;
@@ -50,6 +60,13 @@ public class UserService {
 
         cognitoClient.signUp(signUpRequest);
 
+    }
+
+    //이메일 중복 확인
+    public boolean checkEmailDuplicate(String email) {
+        // 공백 제거 등 기초적인 전처리 후 리포지토리 호출
+        String cleanEmail = email.trim();
+        return userRepository.existsByEmail(cleanEmail);
     }
 
     // 이메일 인증 확인
@@ -88,8 +105,8 @@ public class UserService {
                 .bio("")                                                // 기본값
                 .profileImage("https://default-image-url.com/user.png") // 기본값
                 .credit(0)
-                .createdAt(Instant.now().toString())               // 자동 생성: 현재 시간
-                .updatedAt(Instant.now().toString())               // 자동 생성: 현재 시간
+                .created_at(Instant.now().toString())               // 자동 생성: 현재 시간
+                .updated_at(Instant.now().toString())               // 자동 생성: 현재 시간
                 .build();
 
         userRepository.save(newUser);
@@ -218,6 +235,8 @@ public class UserService {
 
     @Transactional
     public void updateProfile(String userSub, UserProfileUpdateRequest request) {
+        String now = LocalDateTime.now().toString();
+
         // 1. 기존 유저 정보 조회
         User user = userRepository.findUser(userSub)
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
@@ -242,7 +261,7 @@ public class UserService {
         }
 
         // 5. 업데이트 날짜 갱신 및 저장
-        user.setUpdatedAt(LocalDateTime.now().toString());
+        user.setUpdated_at(now);
         userRepository.update(user);
     }
 
@@ -283,70 +302,5 @@ public class UserService {
 
         // 2. 기존 withdraw 로직 호출 (PK 형식에 맞게 "USER#" 추가)
         withdraw("USER#" + userSub);
-    }
-
-    @Transactional
-    public void chargeCredit(String userSub, int amount) {
-        // 1. 유저 정보 조회
-        User user = userRepository.findUser(userSub)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-
-        // 2. 새로운 잔액 계산
-        int oldBalance = user.getCredit();
-        int newBalance = oldBalance + amount;
-
-        // 3. 유저 엔티티 잔액 업데이트
-        user.setCredit(newBalance);
-        user.setUpdatedAt(LocalDateTime.now().toString());
-
-        // 4. 내역(History) 객체 생성
-        Credit history = Credit.builder()
-                .PK(userSub)
-                .SK("CREDIT#" + System.currentTimeMillis()) // 고유 타임스탬프
-                .type("CREDIT")
-                .amount(amount)
-                .balance(newBalance)
-                .description("크레딧 충전")
-                .createdAt(LocalDateTime.now().toString())
-                .build();
-
-        // 5. DB 저장
-        userRepository.update(user); // 유저 잔액 갱신
-        creditRepository.save(history); // 내역 저장
-    }
-
-    @Transactional
-    public void useCredit(String userSub, CreditUseRequest request) {
-        // 1. 유저 정보 조회
-        User user = userRepository.findUser(userSub)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-
-        // 2. 잔액 검증
-        if (user.getCredit() < request.getAmount()) {
-            throw new RuntimeException("잔액이 부족합니다. 현재 잔액: " + user.getCredit());
-        }
-
-        // 3. 새로운 잔액 계산 (차감)
-        int oldBalance = user.getCredit();
-        int newBalance = oldBalance - request.getAmount();
-
-        // 4. 유저 엔티티 잔액 업데이트
-        user.setCredit(newBalance);
-        user.setUpdatedAt(LocalDateTime.now().toString());
-
-        // 5. 사용 내역(History) 객체 생성
-        Credit history = Credit.builder()
-                .PK(userSub)
-                .SK("CREDIT#" + System.currentTimeMillis())
-                .type("CREDIT")
-                .amount(-request.getAmount()) // 사용은 음수(-)로 기록해서 구분
-                .balance(newBalance)
-                .description(request.getDescription())
-                .createdAt(LocalDateTime.now().toString())
-                .build();
-
-        // 6. DB 저장
-        userRepository.update(user);
-        creditRepository.save(history);
     }
 }

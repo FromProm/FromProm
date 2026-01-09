@@ -28,6 +28,6 @@ public class PromptController {
         String promptUuid = promptService.createInitialPrompt(userId, request);
 
         // 3. 결과 응답 (생성된 ID 반환)
-        return ResponseEntity.ok("프롬프트 등록 프로세스가 시작되었습니다. (ID: " + promptUuid + ", 상태: PROCESSING)");
+        return ResponseEntity.ok("프롬프트 등록 프로세스가 시작되었습니다. (ID: " + promptUuid + ", 상태: processing)");
     }
 }

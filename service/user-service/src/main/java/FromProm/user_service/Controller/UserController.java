@@ -1,6 +1,7 @@
 package FromProm.user_service.Controller;
 
 import FromProm.user_service.DTO.*;
+import FromProm.user_service.Entity.Credit;
 import FromProm.user_service.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,6 +29,22 @@ public class UserController {
             // 에러 발생 시 에러 메시지 반환
             return ResponseEntity.badRequest().body("회원가입 실패: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/check-email")
+    public ResponseEntity<Map<String, Object>> checkEmail(@RequestParam("email") String email) {
+        boolean isDuplicate = userService.checkEmailDuplicate(email);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("email", email);
+
+        if (isDuplicate) {
+            response.put("message", "해당 이메일이 이미 존재합니다.");
+        } else {
+            response.put("message", "사용 가능한 이메일입니다.");
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     // 이메일 인증 확인
@@ -150,6 +168,7 @@ public class UserController {
         }
     }
 
+    //닉네임 증복 확인
     @PostMapping("/check-nickname")
     public ResponseEntity<Boolean> checkNickname(@RequestBody NicknameCheckRequest request) {
         // request.getNickname()으로 값을 꺼냅니다.
@@ -203,48 +222,6 @@ public class UserController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("회원 탈퇴 실패: " + e.getMessage());
-        }
-    }
-
-    // 크레딧 충전
-    @PostMapping("/credit/charge")
-    public ResponseEntity<String> chargeCredit(
-            @RequestHeader("Authorization") String bearerToken,
-            @RequestBody CreditChargeRequest request
-    ) {
-        try {
-            // 1. Bearer 토큰에서 accessToken 추출
-            String accessToken = bearerToken.substring(7).trim();
-            // 2. accessToken으로 Cognito에서 사용자 정보 조회
-            UserResponse userInfo = userService.getMyInfo(accessToken);
-            // 3. PK는 이미 USER#uuid 형식이므로 그대로 사용
-            String userSub = userInfo.getPK();
-            // 4. 크레딧 충전 수행
-            userService.chargeCredit(userSub, request.getAmount());
-            return ResponseEntity.ok(request.getAmount() + "원이 성공적으로 충전되었습니다.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("크레딧 충전 실패: " + e.getMessage());
-        }
-    }
-
-    // 크레딧 사용
-    @PostMapping("/credit/use")
-    public ResponseEntity<String> useCredit(
-            @RequestHeader("Authorization") String bearerToken,
-            @RequestBody CreditUseRequest request
-    ) {
-        try {
-            // 1. Bearer 토큰에서 accessToken 추출
-            String accessToken = bearerToken.substring(7).trim();
-            // 2. accessToken으로 Cognito에서 사용자 정보 조회
-            UserResponse userInfo = userService.getMyInfo(accessToken);
-            // 3. PK는 이미 USER#uuid 형식이므로 그대로 사용
-            String userSub = userInfo.getPK();
-            // 4. 크레딧 사용 수행
-            userService.useCredit(userSub, request);
-            return ResponseEntity.ok(request.getAmount() + "원이 사용되었습니다.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("크레딧 사용 실패: " + e.getMessage());
         }
     }
 }

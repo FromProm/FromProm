@@ -14,10 +14,7 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortK
 public class Prompt {
     private String PK;           // PROMPT#<uuid>
     private String SK;           // METADATA
-    //    private String type;         // PROMPT
-//    private String title;
-//    private String content;
-    private int likeCount;       // 좋아요 수
+    private int like_count;       // 좋아요 수
 
     @DynamoDbPartitionKey
     @DynamoDbAttribute("PK")
@@ -31,8 +28,8 @@ public class Prompt {
         return SK;
     }
 
-    @DynamoDbAttribute("likeCount")
+    @DynamoDbAttribute("like_count")
     public int getLikeCount() {
-        return likeCount;
+        return like_count;
     }
 }

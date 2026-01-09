@@ -90,9 +90,10 @@ public class UserRepository {
      * - 사용자가 작성한 댓글들
      * - 사용자가 등록한 프롬프트들
      */
-    public void hardDeleteUser(String userPK) {
-        // userPK = "USER#xxx" 형태
-        String userId = userPK.replace("USER#", "");
+    public void hardDeleteUser(String userSub) {
+        // userSub는 "USER#xxx" 형태가 아닌 순수 ID일 수 있음
+        String userId = userSub.startsWith("USER#") ? userSub.replace("USER#", "") : userSub;
+        String userPK = "USER#" + userId;
         
         // 1. USER#{userId} 파티션의 모든 아이템 삭제 (PROFILE, LIKE, BOOKMARK, CREDIT)
         deleteAllItemsByPK(userPK);
@@ -106,6 +107,7 @@ public class UserRepository {
 
     /**
      * 특정 PK의 모든 아이템 삭제
+     * - LIKE#, BOOKMARK# 삭제 시 해당 프롬프트의 카운트도 감소
      */
     private void deleteAllItemsByPK(String pk) {
         QueryRequest queryRequest = QueryRequest.builder()
@@ -119,13 +121,86 @@ public class UserRepository {
         for (Map<String, AttributeValue> item : response.items()) {
             String sk = item.get("SK").s();
             
-            dynamoDbClient.deleteItem(DeleteItemRequest.builder()
-                    .tableName(TABLE_NAME)
-                    .key(Map.of(
-                            "PK", AttributeValue.builder().s(pk).build(),
-                            "SK", AttributeValue.builder().s(sk).build()
-                    ))
-                    .build());
+            // LIKE# 삭제 시 프롬프트의 like_count 감소
+            if (sk.startsWith("LIKE#")) {
+                String promptId = sk.replace("LIKE#", "");
+                try {
+                    dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
+                            .transactItems(
+                                    TransactWriteItem.builder()
+                                            .delete(Delete.builder()
+                                                    .tableName(TABLE_NAME)
+                                                    .key(Map.of(
+                                                            "PK", AttributeValue.builder().s(pk).build(),
+                                                            "SK", AttributeValue.builder().s(sk).build()
+                                                    ))
+                                                    .build())
+                                            .build(),
+                                    TransactWriteItem.builder()
+                                            .update(Update.builder()
+                                                    .tableName(TABLE_NAME)
+                                                    .key(Map.of(
+                                                            "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                                                            "SK", AttributeValue.builder().s("METADATA").build()
+                                                    ))
+                                                    .updateExpression("SET like_count = if_not_exists(like_count, :zero) - :dec")
+                                                    .expressionAttributeValues(Map.of(
+                                                            ":dec", AttributeValue.builder().n("1").build(),
+                                                            ":zero", AttributeValue.builder().n("0").build()
+                                                    ))
+                                                    .build())
+                                            .build()
+                            )
+                            .build());
+                } catch (Exception e) {
+                    System.err.println("좋아요 삭제 실패: " + pk + "/" + sk + " - " + e.getMessage());
+                }
+            }
+            // BOOKMARK# 삭제 시 프롬프트의 bookmark_count 감소
+            else if (sk.startsWith("BOOKMARK#")) {
+                String promptId = sk.replace("BOOKMARK#", "");
+                try {
+                    dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
+                            .transactItems(
+                                    TransactWriteItem.builder()
+                                            .delete(Delete.builder()
+                                                    .tableName(TABLE_NAME)
+                                                    .key(Map.of(
+                                                            "PK", AttributeValue.builder().s(pk).build(),
+                                                            "SK", AttributeValue.builder().s(sk).build()
+                                                    ))
+                                                    .build())
+                                            .build(),
+                                    TransactWriteItem.builder()
+                                            .update(Update.builder()
+                                                    .tableName(TABLE_NAME)
+                                                    .key(Map.of(
+                                                            "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                                                            "SK", AttributeValue.builder().s("METADATA").build()
+                                                    ))
+                                                    .updateExpression("SET bookmark_count = if_not_exists(bookmark_count, :zero) - :dec")
+                                                    .expressionAttributeValues(Map.of(
+                                                            ":dec", AttributeValue.builder().n("1").build(),
+                                                            ":zero", AttributeValue.builder().n("0").build()
+                                                    ))
+                                                    .build())
+                                            .build()
+                            )
+                            .build());
+                } catch (Exception e) {
+                    System.err.println("북마크 삭제 실패: " + pk + "/" + sk + " - " + e.getMessage());
+                }
+            }
+            // 일반 아이템 삭제 (PROFILE, CREDIT# 등)
+            else {
+                dynamoDbClient.deleteItem(DeleteItemRequest.builder()
+                        .tableName(TABLE_NAME)
+                        .key(Map.of(
+                                "PK", AttributeValue.builder().s(pk).build(),
+                                "SK", AttributeValue.builder().s(sk).build()
+                        ))
+                        .build());
+            }
         }
     }
 

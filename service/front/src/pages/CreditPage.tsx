@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { userApi } from '../services/api';
+import AnimatedContent from '../components/AnimatedContent';
 
 const CreditPage = () => {
   const [selectedAmount, setSelectedAmount] = useState(1000);
@@ -92,6 +93,7 @@ const CreditPage = () => {
           </div>
 
           {/* 현재 크레딧 표시 */}
+          <AnimatedContent once distance={50} duration={0.6} delay={0}>
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 mb-8 text-white shadow-lg shadow-blue-500/20">
             <div className="flex items-center justify-between">
               <div>
@@ -103,10 +105,12 @@ const CreditPage = () => {
               </div>
             </div>
           </div>
+          </AnimatedContent>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* 충전 금액 선택 */}
             <div className="lg:col-span-2">
+              <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
               <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">충전 금액 선택</h2>
                 
@@ -182,10 +186,12 @@ const CreditPage = () => {
                   </div>
                 </div>
               </div>
+              </AnimatedContent>
             </div>
 
             {/* 결제 정보 */}
             <div className="lg:col-span-1">
+              <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
               <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 sticky top-24">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">결제 정보</h3>
                 
@@ -280,10 +286,12 @@ const CreditPage = () => {
                   결제 완료 후 즉시 크레딧이 충전됩니다
                 </p>
               </div>
+              </AnimatedContent>
             </div>
           </div>
 
           {/* 크레딧 사용 안내 */}
+          <AnimatedContent once distance={50} duration={0.6} delay={0.3}>
           <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 크레딧 사용 안내</h3>
             <ul className="space-y-2 text-sm text-blue-800">
@@ -294,6 +302,7 @@ const CreditPage = () => {
               <li>• 미사용 크레딧은 계정에 영구 보관됩니다</li>
             </ul>
           </div>
+          </AnimatedContent>
         </motion.div>
       </main>
 

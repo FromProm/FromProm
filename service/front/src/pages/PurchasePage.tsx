@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { dummyPrompts } from '../services/dummyData';
 import { usePurchaseStore } from '../store/purchaseStore';
 import { userApi } from '../services/api';
+import AnimatedContent from '../components/AnimatedContent';
 
 const PurchasePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -141,6 +142,7 @@ const PurchasePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 프롬프트 정보 */}
           <div className="lg:col-span-2">
+            <AnimatedContent once distance={50} duration={0.6} delay={0}>
             <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-2">
@@ -198,10 +200,12 @@ const PurchasePage = () => {
                 </ul>
               </div>
             </div>
+            </AnimatedContent>
           </div>
 
           {/* 결제 정보 */}
           <div className="lg:col-span-1">
+            <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
             <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm sticky top-8">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">결제 정보</h3>
 
@@ -255,6 +259,7 @@ const PurchasePage = () => {
                 </p>
               </div>
             </div>
+            </AnimatedContent>
           </div>
         </div>
       </div>

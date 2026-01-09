@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { categories, getCategoryModels } from '../services/dummyData';
 import { promptApi } from '../services/api';
+import AnimatedContent from '../components/AnimatedContent';
 
 const PromptCreatePage = () => {
   const navigate = useNavigate();
@@ -111,6 +112,7 @@ const PromptCreatePage = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
+            <AnimatedContent once distance={50} duration={0.6} delay={0}>
             <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">기본 정보</h2>
 
@@ -203,8 +205,10 @@ const PromptCreatePage = () => {
                 </div>
               </div>
             </div>
+            </AnimatedContent>
 
             {/* 프롬프트 내용 */}
+            <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
             <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">프롬프트 내용</h2>
               {formData.category === '이미지 창작 및 생성' && (
@@ -234,8 +238,10 @@ const PromptCreatePage = () => {
                 </div>
               </div>
             </div>
+            </AnimatedContent>
 
             {/* 예시 입력 */}
+            <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
             <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">예시 입력</h2>
               <p className="text-sm text-gray-600 mb-6">프롬프트 성능 검증을 위해 3개의 예시 입력을 제공해주세요.</p>
@@ -258,6 +264,7 @@ const PromptCreatePage = () => {
                 ))}
               </div>
             </div>
+            </AnimatedContent>
 
             {/* 제출 버튼 */}
             <div className="flex items-center justify-between">

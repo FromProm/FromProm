@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
 import { userApi } from '../services/api';
 import Header from '../components/Header';
+import AnimatedContent from '../components/AnimatedContent';
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -108,13 +108,8 @@ const CartPage = () => {
           {/* 장바구니 아이템 목록 */}
           <div className="lg:col-span-2 space-y-4">
             {items.map((item, index) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-                className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm"
-              >
+              <AnimatedContent key={item.id} once distance={50} duration={0.6} delay={index * 0.1}>
+              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
@@ -150,13 +145,16 @@ const CartPage = () => {
                     </svg>
                   </button>
                 </div>
-              </motion.div>
+              </div>
+              </AnimatedContent>
             ))}
           </div>
 
           {/* 주문 요약 */}
           <div className="lg:col-span-1">
-            <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm sticky top-8">
+            <div className="sticky top-8">
+            <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
+            <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">주문 요약</h3>
               
               <div className="space-y-3 mb-6">
@@ -215,6 +213,8 @@ const CartPage = () => {
                   계속 쇼핑하기
                 </Link>
               </div>
+            </div>
+            </AnimatedContent>
             </div>
           </div>
         </div>

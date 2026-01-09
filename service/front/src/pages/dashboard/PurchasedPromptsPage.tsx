@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePurchaseStore } from '../../store/purchaseStore';
+import AnimatedContent from '../../components/AnimatedContent';
 
 const PurchasedPromptsPage = () => {
   const { getPurchasedPrompts, incrementDownloadCount } = usePurchaseStore();
@@ -113,10 +114,9 @@ const PurchasedPromptsPage = () => {
       {/* 프롬프트 목록 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPrompts.map((prompt, index) => (
+          <AnimatedContent key={prompt.id} once distance={50} duration={0.6} delay={index * 0.1}>
           <div
-            key={prompt.id}
-            className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300 opacity-0 animate-fade-in"
-            style={{ animationDelay: `${index * 100}ms` }}
+            className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-2">
@@ -190,6 +190,7 @@ const PurchasedPromptsPage = () => {
               </div>
             )}
           </div>
+          </AnimatedContent>
         ))}
       </div>
 

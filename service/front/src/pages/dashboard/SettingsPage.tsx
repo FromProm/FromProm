@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../../services/api';
+import AnimatedContent from '../../components/AnimatedContent';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -109,6 +110,7 @@ const SettingsPage = () => {
           )}
 
           {/* 닉네임 변경 */}
+          <AnimatedContent once distance={50} duration={0.6} delay={0}>
           <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">닉네임 변경</h2>
           <form onSubmit={handleNicknameChange}>
@@ -134,8 +136,10 @@ const SettingsPage = () => {
             </button>
           </form>
         </div>
+        </AnimatedContent>
 
         {/* 비밀번호 변경 */}
+        <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">비밀번호 변경</h2>
           <form onSubmit={handlePasswordChange}>
@@ -187,8 +191,10 @@ const SettingsPage = () => {
             </button>
           </form>
         </div>
+        </AnimatedContent>
 
         {/* 회원 탈퇴 */}
+        <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-red-200 rounded-lg p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-red-600 mb-4">회원 탈퇴</h2>
           <p className="text-gray-600 mb-4">
@@ -202,6 +208,7 @@ const SettingsPage = () => {
             {isLoading ? '처리 중...' : '회원 탈퇴'}
           </button>
         </div>
+        </AnimatedContent>
         </div>
       </div>
     </div>

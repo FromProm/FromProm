@@ -5,6 +5,7 @@ import { dummyPrompts } from '../services/dummyData';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
 import { userApi } from '../services/api';
+import AnimatedContent from '../components/AnimatedContent';
 
 const PromptDetailPage = () => {
   const { id } = useParams();
@@ -124,6 +125,7 @@ const PromptDetailPage = () => {
           </Link>
         </div>
         {/* 프롬프트 기본 정보 */}
+        <AnimatedContent once distance={50} duration={0.6} delay={0}>
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <div className="flex items-start justify-between mb-6">
             <div className="flex-1">
@@ -196,8 +198,10 @@ const PromptDetailPage = () => {
             </div>
           </div>
         </div>
+        </AnimatedContent>
 
         {/* 모델 정보 */}
+        <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">모델 정보</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -211,8 +215,10 @@ const PromptDetailPage = () => {
             </div>
           </div>
         </div>
+        </AnimatedContent>
 
         {/* 성능 지표 */}
+        <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">성능 지표</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -349,8 +355,10 @@ const PromptDetailPage = () => {
             </div>
           </div>
         </div>
+        </AnimatedContent>
 
         {/* 프롬프트 미리보기 */}
+        <AnimatedContent once distance={50} duration={0.6} delay={0.3}>
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">프롬프트 미리보기</h2>
           <div className="bg-white rounded-lg p-6 border border-gray-100">
@@ -362,8 +370,10 @@ const PromptDetailPage = () => {
             💡 전체 프롬프트는 구매 후 확인할 수 있습니다.
           </p>
         </div>
+        </AnimatedContent>
 
         {/* 예시 입력/출력 */}
+        <AnimatedContent once distance={50} duration={0.6} delay={0.4}>
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">예시 입력/출력</h2>
           <div className="space-y-8">
@@ -392,8 +402,10 @@ const PromptDetailPage = () => {
             ))}
           </div>
         </div>
+        </AnimatedContent>
 
         {/* 태그 */}
+        <AnimatedContent once distance={50} duration={0.6} delay={0.5}>
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">태그</h2>
           <div className="flex flex-wrap gap-2">
@@ -407,6 +419,7 @@ const PromptDetailPage = () => {
             ))}
           </div>
         </div>
+        </AnimatedContent>
       </motion.div>
 
       {/* 결제 모달 */}

@@ -119,15 +119,42 @@ export const categories = [
 export const categoryConfig: Record<string, { promptType: string; models: string[] }> = {
   '사실/정보/근거 요구': {
     promptType: 'type_a',
-    models: ['anthropic.claude-3-5-sonnet-20240620-v1:0'],
+    models: [
+      // GPT
+      'gpt-oss-120b',
+      'gpt-oss-20b',
+      // Claude
+      'claude sonnet 4.5',
+      'claude 3.5 sonnet v1',
+      'claude 3 haiku',
+      // Gemma
+      'Gemma 3 27B Instruct',
+      'Gemma 3 12B IT',
+      'Gemma 3 4B Instruct',
+    ],
   },
   '글 창작 및 생성': {
     promptType: 'type_b_text',
-    models: ['anthropic.claude-3-haiku-20240307-v1:0'],
+    models: [
+      // GPT
+      'gpt-oss-120b',
+      'gpt-oss-20b',
+      // Claude
+      'claude sonnet 4.5',
+      'claude 3.5 sonnet v1',
+      'claude 3 haiku',
+      // Gemma
+      'Gemma 3 27B Instruct',
+      'Gemma 3 12B IT',
+      'Gemma 3 4B Instruct',
+    ],
   },
   '이미지 창작 및 생성': {
     promptType: 'type_b_image',
-    models: ['amazon.nova-canvas-v1:0'],
+    models: [
+      'Titan Image Generator G1 v2',
+      'Nova Canvas 1.0',
+    ],
   },
 };
 

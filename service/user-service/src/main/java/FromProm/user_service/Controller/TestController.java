@@ -4,6 +4,8 @@ import FromProm.user_service.Entity.Credit;
 import FromProm.user_service.Entity.User;
 import FromProm.user_service.Repository.CreditRepository;
 import FromProm.user_service.Repository.UserRepository;
+import FromProm.user_service.Service.InteractionService;
+import FromProm.user_service.Service.PromptService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,8 @@ public class TestController {
 
     private final UserRepository userRepository;
     private final CreditRepository creditRepository;
+    private final PromptService promptService;
+    private final InteractionService interactionService;
 
     // 테스트용 사용자 생성
     @PostMapping("/create-user")
@@ -404,6 +408,210 @@ public class TestController {
                 "success", true,
                 "message", "사용자와 관련된 모든 데이터가 삭제되었습니다.",
                 "deletedUser", userSub
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    // 테스트용 내 프롬프트 목록 조회 (토큰 없이)
+    @GetMapping("/prompts/my/{userSub}")
+    public ResponseEntity<Map<String, Object>> testGetMyPrompts(@PathVariable String userSub) {
+        try {
+            var prompts = promptService.getMyPrompts(userSub);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "count", prompts.size(),
+                "prompts", prompts
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    // 테스트용 프롬프트 상세 조회
+    @GetMapping("/prompts/{promptId}")
+    public ResponseEntity<Map<String, Object>> testGetPromptDetail(@PathVariable String promptId) {
+        try {
+            var detail = promptService.getPromptDetail(promptId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "prompt", detail
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    // 테스트용 프롬프트 삭제 (토큰 없이)
+    @DeleteMapping("/prompts/{promptId}")
+    public ResponseEntity<Map<String, Object>> testDeletePrompt(
+            @PathVariable String promptId,
+            @RequestParam String userSub) {
+        try {
+            promptService.deletePrompt(userSub, promptId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "프롬프트가 삭제되었습니다.",
+                "deletedPromptId", promptId
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    // 테스트용 프롬프트 상세 + 댓글 통합 조회
+    @GetMapping("/prompts/{promptId}/detail")
+    public ResponseEntity<Map<String, Object>> testGetPromptDetailWithComments(@PathVariable String promptId) {
+        try {
+            var result = promptService.getPromptDetailWithComments(promptId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", result
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    // 테스트용 프롬프트 통계 조회 (좋아요/북마크/댓글 개수)
+    @GetMapping("/prompts/{promptId}/stats")
+    public ResponseEntity<Map<String, Object>> testGetPromptStats(@PathVariable String promptId) {
+        try {
+            var stats = promptService.getPromptStats(promptId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "stats", stats
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    // 테스트용 프롬프트 댓글 목록 조회
+    @GetMapping("/prompts/{promptId}/comments")
+    public ResponseEntity<Map<String, Object>> testGetPromptComments(@PathVariable String promptId) {
+        try {
+            var comments = promptService.getPromptComments(promptId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "comments", comments,
+                "count", comments.size()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    // 테스트용 - DB에 저장된 모든 프롬프트 목록 조회 (최대 10개)
+    @GetMapping("/prompts/all")
+    public ResponseEntity<Map<String, Object>> testGetAllPrompts() {
+        try {
+            var prompts = promptService.getAllPrompts(10);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "prompts", prompts,
+                "count", prompts.size()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    // 테스트용 좋아요 추가 (토큰 없이)
+    @PostMapping("/like")
+    public ResponseEntity<Map<String, Object>> testAddLike(@RequestBody Map<String, Object> request) {
+        try {
+            String userSub = (String) request.get("userSub");
+            String promptId = (String) request.get("promptId");
+            
+            interactionService.addLike(userSub, promptId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "좋아요가 추가되었습니다.",
+                "userSub", userSub,
+                "promptId", promptId
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    // 테스트용 북마크 추가 (토큰 없이)
+    @PostMapping("/bookmark")
+    public ResponseEntity<Map<String, Object>> testAddBookmark(@RequestBody Map<String, Object> request) {
+        try {
+            String userSub = (String) request.get("userSub");
+            String promptId = (String) request.get("promptId");
+            
+            interactionService.addBookmark(userSub, promptId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "북마크가 추가되었습니다.",
+                "userSub", userSub,
+                "promptId", promptId
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+
+    // 테스트용 댓글 추가 (토큰 없이)
+    @PostMapping("/comment")
+    public ResponseEntity<Map<String, Object>> testAddComment(@RequestBody Map<String, Object> request) {
+        try {
+            String userSub = (String) request.get("userSub");
+            String nickname = (String) request.get("nickname");
+            String promptId = (String) request.get("promptId");
+            String content = (String) request.get("content");
+            
+            interactionService.addComment(userSub, nickname, promptId, content);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "댓글이 추가되었습니다.",
+                "userSub", userSub,
+                "promptId", promptId,
+                "content", content
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(

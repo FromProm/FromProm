@@ -34,6 +34,30 @@ const MarketplacePage = () => {
 
   const isLoggedIn = () => !!localStorage.getItem('accessToken');
 
+  // 모델명 정제 함수 (AWS Bedrock 모델 ID -> 사용자 친화적 이름)
+  const formatModelName = (model: string): string => {
+    if (!model) return 'AI Model';
+    
+    const modelMap: Record<string, string> = {
+      // Claude 모델
+      'anthropic.claude-3-haiku-20240307-v1:0': 'claude 3 haiku',
+      'anthropic.claude-3-5-sonnet-20240620-v1:0': 'claude 3.5 sonnet v1',
+      'anthropic.claude-sonnet-4-5-20250514-v1:0': 'claude sonnet 4.5',
+      // Nova / Titan 이미지 모델
+      'amazon.nova-canvas-v1:0': 'Nova Canvas 1.0',
+      'amazon.titan-image-generator-v2:0': 'Titan Image Generator G1 v2',
+      // GPT 모델
+      'gpt-oss-120b': 'gpt-oss-120b',
+      'gpt-oss-20b': 'gpt-oss-20b',
+      // Gemma 모델
+      'gemma-3-27b-instruct': 'Gemma 3 27B Instruct',
+      'gemma-3-12b-it': 'Gemma 3 12B IT',
+      'gemma-3-4b-instruct': 'Gemma 3 4B Instruct',
+    };
+    
+    return modelMap[model] || model;
+  };
+
   // 프롬프트 목록 가져오기
   useEffect(() => {
     const fetchPrompts = async () => {
@@ -225,7 +249,7 @@ const MarketplacePage = () => {
                     </p>
 
                     <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                      <span>{prompt.model}</span>
+                      <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">{formatModelName(prompt.model)}</span>
                       <div className="flex items-center space-x-1">
                         <span>❤️ {prompt.likeCount}</span>
                         <span>💬 {prompt.commentCount}</span>

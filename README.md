@@ -1,6 +1,6 @@
 AWS Cloud School 11기 3조 최종프로젝트
 ## 프로젝트 실행 방법
-TEST
+
 ### 사전 요구사항
 
 - Node.js 18+

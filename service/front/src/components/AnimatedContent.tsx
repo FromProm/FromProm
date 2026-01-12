@@ -20,6 +20,7 @@ interface AnimatedContentProps {
   disappearAfter?: number;
   disappearDuration?: number;
   disappearEase?: string;
+  once?: boolean;
   onComplete?: () => void;
   onDisappearanceComplete?: () => void;
   className?: string;
@@ -41,6 +42,7 @@ const AnimatedContent = ({
   disappearAfter = 0,
   disappearDuration = 0.5,
   disappearEase = 'power3.in',
+  once = false,
   onComplete,
   onDisappearanceComplete,
   className = '',
@@ -106,8 +108,32 @@ const AnimatedContent = ({
       trigger: el,
       scroller: scrollerTarget,
       start: `top ${startPct}%`,
-      once: true,
-      onEnter: () => tl.play()
+      end: `bottom 20%`,
+      once: once,
+      onEnter: () => tl.play(),
+      onLeave: () => {
+        if (!once) {
+          tl.reverse();
+          gsap.set(el, {
+            [axis]: offset,
+            scale,
+            opacity: animateOpacity ? initialOpacity : 1
+          });
+        }
+      },
+      onEnterBack: () => {
+        if (!once) tl.play();
+      },
+      onLeaveBack: () => {
+        if (!once) {
+          tl.reverse();
+          gsap.set(el, {
+            [axis]: offset,
+            scale,
+            opacity: animateOpacity ? initialOpacity : 1
+          });
+        }
+      }
     });
 
     return () => {
@@ -129,6 +155,7 @@ const AnimatedContent = ({
     disappearAfter,
     disappearDuration,
     disappearEase,
+    once,
     onComplete,
     onDisappearanceComplete
   ]);

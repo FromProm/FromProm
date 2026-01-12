@@ -1,46 +1,162 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { dummyPrompts, categories } from '../services/dummyData';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { categories, promptTypeToCategory } from '../services/dummyData';
+import { promptApi } from '../services/api';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
+import SplitText from '../components/SplitText';
+import AnimatedContent from '../components/AnimatedContent';
+
+// 프롬프트 타입 정의
+interface PromptItem {
+  promptId: string;
+  title: string;
+  description: string;
+  price: number;
+  promptType: string;
+  model: string;
+  status: string;
+  likeCount: number;
+  commentCount: number;
+  bookmarkCount: number;
+  isPublic: boolean;
+  created_at: string;
+}
 
 const MarketplacePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const { addToCart, isInCart } = useCartStore();
+  const [prompts, setPrompts] = useState<PromptItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { addToCart, removeFromCart, isInCart } = useCartStore();
   const { isPurchased } = usePurchaseStore();
+  const navigate = useNavigate();
 
-  const handleAddToCart = (prompt: any, e: React.MouseEvent) => {
-    e.stopPropagation(); // 카드 클릭 이벤트 방지
-    if (!isInCart(prompt.id) && !isPurchased(prompt.id)) {
+  const isLoggedIn = () => !!localStorage.getItem('accessToken');
+
+  // 모델명 정제 함수 (AWS Bedrock 모델 ID -> 사용자 친화적 이름)
+  const formatModelName = (model: string): string => {
+    if (!model) return 'AI Model';
+    
+    const modelMap: Record<string, string> = {
+      // Claude 모델
+      'anthropic.claude-3-haiku-20240307-v1:0': 'claude 3 haiku',
+      'anthropic.claude-3-5-sonnet-20240620-v1:0': 'claude 3.5 sonnet v1',
+      'anthropic.claude-sonnet-4-5-20250514-v1:0': 'claude sonnet 4.5',
+      // Nova / Titan 이미지 모델
+      'amazon.nova-canvas-v1:0': 'Nova Canvas 1.0',
+      'amazon.titan-image-generator-v2:0': 'Titan Image Generator G1 v2',
+      // GPT 모델
+      'gpt-oss-120b': 'gpt-oss-120b',
+      'gpt-oss-20b': 'gpt-oss-20b',
+      // Gemma 모델
+      'gemma-3-27b-instruct': 'Gemma 3 27B Instruct',
+      'gemma-3-12b-it': 'Gemma 3 12B IT',
+      'gemma-3-4b-instruct': 'Gemma 3 4B Instruct',
+    };
+    
+    return modelMap[model] || model;
+  };
+
+  // 프롬프트 목록 가져오기
+  useEffect(() => {
+    const fetchPrompts = async () => {
+      setIsLoading(true);
+      try {
+        const response = await promptApi.getAllPrompts(50);
+        if (response.data.success) {
+          setPrompts(response.data.prompts || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch prompts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchPrompts();
+  }, []);
+
+  const handleAddToCart = (prompt: PromptItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+    
+    if (isInCart(prompt.promptId)) {
+      removeFromCart(prompt.promptId);
+    } else if (!isPurchased(prompt.promptId)) {
+      const category = promptTypeToCategory[prompt.promptType] || prompt.promptType;
       addToCart({
-        id: prompt.id,
+        id: prompt.promptId,
         title: prompt.title,
         price: prompt.price,
-        category: prompt.category,
-        sellerName: prompt.sellerName,
+        category: category,
+        sellerName: '판매자',
+        sellerSub: '',
         description: prompt.description,
-        rating: prompt.rating
+        rating: 4.5
       });
     }
   };
 
-  const filteredPrompts = dummyPrompts.filter(prompt => {
-    const matchesCategory = selectedCategory === 'All' || prompt.category === selectedCategory;
+  const handlePurchase = (promptId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+    
+    navigate(`/purchase/${promptId}`);
+  };
+
+  // 카테고리 필터링
+  const filteredPrompts = prompts.filter(prompt => {
+    const category = promptTypeToCategory[prompt.promptType] || prompt.promptType;
+    const matchesCategory = selectedCategory === 'All' || category === selectedCategory;
     const matchesSearch = prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       prompt.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+    <div className="min-h-screen bg-white">
       {/* 메인 콘텐츠 */}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* 페이지 헤더 */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">프롬프트 마켓플레이스</h1>
-          <p className="text-gray-600">검증된 고품질 AI 프롬프트를 찾아보세요</p>
+        <div className="mb-8 text-center flex flex-col items-center">
+          <SplitText
+            text="프롬프트 마켓플레이스"
+            className="text-3xl font-bold text-gray-900 mb-2"
+            delay={50}
+            duration={0.6}
+            ease="power3.out"
+            splitType="chars"
+            from={{ opacity: 0, y: 30 }}
+            to={{ opacity: 1, y: 0 }}
+            threshold={0.1}
+            rootMargin="-50px"
+            textAlign="center"
+            tag="h1"
+          />
+          <SplitText
+            text="검증된 고품질 AI 프롬프트를 찾아보세요"
+            className="text-gray-600"
+            delay={30}
+            duration={0.5}
+            ease="power3.out"
+            splitType="words"
+            from={{ opacity: 0, y: 20 }}
+            to={{ opacity: 1, y: 0 }}
+            threshold={0.1}
+            rootMargin="-50px"
+            textAlign="center"
+            tag="p"
+          />
         </div>
 
         {/* 검색 및 필터 */}
@@ -78,111 +194,131 @@ const MarketplacePage = () => {
           </div>
         </div>
 
-        {/* 프롬프트 그리드 */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          {filteredPrompts.map((prompt, index) => (
-            <motion.div
-              key={prompt.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white border border-gray-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 hover:border-gray-300 transition-all cursor-pointer group"
-              onClick={() => window.location.href = `/prompt/${prompt.id}`}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                    {prompt.category}
-                  </span>
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <span className="text-xs text-green-600 font-medium">Verified</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-gray-900">{prompt.price}P</div>
-                </div>
-              </div>
-
-              <h3 className="text-gray-900 text-lg font-semibold mb-2 group-hover:text-gray-700 transition-colors">
-                {prompt.title}
-              </h3>
-
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {prompt.description}
-              </p>
-
-              <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                <span>by {prompt.sellerName}</span>
-                <div className="flex items-center space-x-1">
-                  <span>⭐</span>
-                  <span>{prompt.rating}</span>
-                  <span>({prompt.reviewCount})</span>
-                </div>
-              </div>
-
-              {/* 통계 정보 */}
-              <div className="flex items-center justify-between text-xs text-gray-500 border-t border-gray-200 pt-4">
-                <div className="flex items-center space-x-4">
-                  <span className="flex items-center space-x-1">
-                    <span>👁</span>
-                    <span>{(prompt.salesCount * 8.5).toFixed(0)}K</span>
-                  </span>
-                  <span className="flex items-center space-x-1">
-                    <span>📌</span>
-                    <span>{(prompt.salesCount * 1.2).toFixed(0)}</span>
-                  </span>
-                  <span className="flex items-center space-x-1">
-                    <span>❤️</span>
-                    <span>{(prompt.salesCount * 0.8).toFixed(0)}</span>
-                  </span>
-                </div>
-                <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded text-xs font-medium">
-                  HOT
-                </div>
-              </div>
-
-              {/* 액션 버튼 */}
-              <div className="mt-4 flex space-x-2">
-                {isPurchased(prompt.id) ? (
-                  <div className="flex-1 bg-green-100 text-green-800 px-3 py-2 rounded text-xs font-medium text-center">
-                    ✓ 구매 완료
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      onClick={(e) => handleAddToCart(prompt, e)}
-                      disabled={isInCart(prompt.id)}
-                      className={`flex-1 px-3 py-2 rounded text-xs font-medium transition-colors ${isInCart(prompt.id)
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        : 'border border-blue-900 text-blue-900 hover:bg-blue-50'
-                        }`}
-                    >
-                      {isInCart(prompt.id) ? '장바구니에 있음' : '장바구니'}
-                    </button>
-                    <Link
-                      to={`/purchase/${prompt.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex-1 bg-blue-900 text-white px-3 py-2 rounded text-xs font-medium hover:bg-blue-800 transition-colors text-center"
-                    >
-                      구매
-                    </Link>
-                  </>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* 결과 없음 */}
-        {filteredPrompts.length === 0 && (
+        {/* 로딩 상태 */}
+        {isLoading ? (
           <div className="text-center py-12">
-            <div className="text-gray-600 text-lg mb-2">검색 결과가 없습니다</div>
-            <p className="text-gray-500 text-sm">다른 키워드나 카테고리를 시도해보세요</p>
+            <div className="w-12 h-12 mx-auto border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-gray-500 mt-4">프롬프트를 불러오는 중...</p>
           </div>
+        ) : (
+          <>
+            {/* 프롬프트 그리드 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPrompts.map((prompt, index) => {
+                const category = promptTypeToCategory[prompt.promptType] || prompt.promptType;
+                return (
+                  <AnimatedContent
+                    key={prompt.promptId}
+                    distance={50}
+                    direction="vertical"
+                    reverse={false}
+                    duration={0.6}
+                    ease="power3.out"
+                    initialOpacity={0}
+                    animateOpacity
+                    threshold={0.1}
+                    delay={index * 0.1}
+                  >
+                    <div
+                      className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-blue-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 hover:border-blue-300 transition-all cursor-pointer group h-[320px] flex flex-col"
+                      onClick={() => navigate(`/prompt/${prompt.promptId}`)}
+                    >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">
+                          {category}
+                        </span>
+                        {prompt.status === 'completed' && (
+                          <>
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-xs text-green-600 font-medium">Verified</span>
+                          </>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-gray-900">{prompt.price}P</div>
+                      </div>
+                    </div>
+
+                    <h3 className="text-gray-900 text-lg font-semibold mb-2 group-hover:text-blue-900 transition-colors line-clamp-1">
+                      {prompt.title}
+                    </h3>
+
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">
+                      {prompt.description}
+                    </p>
+
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">{formatModelName(prompt.model)}</span>
+                      <div className="flex items-center space-x-1">
+                        <span>❤️ {prompt.likeCount}</span>
+                        <span>💬 {prompt.commentCount}</span>
+                      </div>
+                    </div>
+
+                    {/* 통계 정보 */}
+                    <div className="flex items-center justify-between text-xs text-gray-500 border-t border-blue-200 pt-4">
+                      <div className="flex items-center space-x-4">
+                        <span className="flex items-center space-x-1">
+                          <span>❤️</span>
+                          <span>{prompt.likeCount}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <span>📌</span>
+                          <span>{prompt.bookmarkCount}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <span>💬</span>
+                          <span>{prompt.commentCount}</span>
+                        </span>
+                      </div>
+                      {prompt.status === 'completed' && (
+                        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded text-xs font-medium">
+                          HOT
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 액션 버튼 */}
+                    <div className="mt-4 flex space-x-2">
+                      {isPurchased(prompt.promptId) ? (
+                        <div className="flex-1 bg-green-100 text-green-800 px-3 py-2 rounded text-xs font-medium text-center">
+                          ✓ 구매 완료
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            onClick={(e) => handleAddToCart(prompt, e)}
+                            className={`flex-1 px-3 py-2 rounded text-xs font-medium transition-colors ${isInCart(prompt.promptId)
+                              ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                              : 'border border-blue-900 text-blue-900 hover:bg-blue-50'
+                              }`}
+                          >
+                            {isInCart(prompt.promptId) ? '장바구니에서 제거' : '장바구니'}
+                          </button>
+                          <button
+                            onClick={(e) => handlePurchase(prompt.promptId, e)}
+                            className="flex-1 bg-blue-900 text-white px-3 py-2 rounded text-xs font-medium hover:bg-blue-800 transition-colors text-center"
+                          >
+                            구매
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    </div>
+                  </AnimatedContent>
+                );
+              })}
+            </div>
+
+            {/* 결과 없음 */}
+            {filteredPrompts.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-600 text-lg mb-2">검색 결과가 없습니다</div>
+                <p className="text-gray-500 text-sm">다른 키워드나 카테고리를 시도해보세요</p>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>

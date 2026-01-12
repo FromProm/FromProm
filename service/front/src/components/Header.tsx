@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
+import { usePurchaseStore } from '../store/purchaseStore';
 import { userApi } from '../services/api';
 
 const Header = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [nickname, setNickname] = useState<string>('');
-  const { getItemCount } = useCartStore();
+  const { getItemCount, clearCart } = useCartStore();
+  const { clearPurchases } = usePurchaseStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const cartItemCount = getItemCount();
 
   // 로그인 상태 확인 및 사용자 정보 가져오기
@@ -36,14 +39,22 @@ const Header = () => {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('idToken');
+      clearCart();
+      clearPurchases();
       setIsAuthenticated(false);
       setShowMenu(false);
-      navigate('/');
+      
+      // 현재 페이지가 마켓플레이스면 마켓플레이스에 머무르고, 아니면 랜딩페이지로
+      if (location.pathname === '/marketplace' || location.pathname.startsWith('/prompt/')) {
+        navigate('/marketplace');
+      } else {
+        navigate('/');
+      }
     }
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm">
+    <header className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border-b border-blue-200 shadow-sm">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* 로고 */}
@@ -124,7 +135,7 @@ const Header = () => {
                       to="/dashboard"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      대시보드
+                      내 프로필
                     </Link>
                     <Link
                       to="/dashboard/purchased"

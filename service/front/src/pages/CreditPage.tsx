@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { userApi } from '../services/api';
+import { creditApi } from '../services/api';
+import AnimatedContent from '../components/AnimatedContent';
+import SplitText from '../components/SplitText';
 
 const CreditPage = () => {
   const [selectedAmount, setSelectedAmount] = useState(1000);
@@ -14,17 +16,17 @@ const CreditPage = () => {
 
   // 사용자 크레딧 정보 가져오기
   useEffect(() => {
-    const fetchUserInfo = async () => {
+    const fetchCreditBalance = async () => {
       try {
-        const response = await userApi.getMe();
-        setCurrentCredits(response.data.credit || 0);
+        const response = await creditApi.getBalance();
+        setCurrentCredits(response.data.balance || 0);
       } catch (error) {
-        console.error('Failed to fetch user info:', error);
+        console.error('Failed to fetch credit balance:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchUserInfo();
+    fetchCreditBalance();
   }, []);
 
   // 미리 정의된 충전 금액 옵션
@@ -44,8 +46,11 @@ const CreditPage = () => {
       const bonus = creditPackages.find(pkg => pkg.credits === finalAmount)?.bonus || 0;
       const totalAmount = finalAmount + bonus;
       
-      // 실제 API 호출
-      await userApi.chargeCredit(totalAmount);
+      // 크레딧 충전 API 호출
+      await creditApi.charge({
+        amount: totalAmount,
+        paymentMethod: paymentMethod,
+      });
       
       // 성공 시 크레딧 업데이트
       setCurrentCredits(prev => prev + totalAmount);
@@ -69,14 +74,14 @@ const CreditPage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-gray-600">로딩 중...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-white">
+    <div className="min-h-screen bg-white">
 
       {/* 메인 콘텐츠 */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -87,11 +92,42 @@ const CreditPage = () => {
         >
           {/* 페이지 헤더 */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">크레딧 충전</h1>
-            <p className="text-gray-600">FromProm 크레딧을 충전하여 프롬프트를 구매하세요</p>
+            <div>
+              <SplitText
+                text="크레딧 충전"
+                className="text-3xl font-bold text-gray-900 mb-2"
+                delay={50}
+                duration={0.6}
+                ease="power3.out"
+                splitType="chars"
+                from={{ opacity: 0, y: 30 }}
+                to={{ opacity: 1, y: 0 }}
+                threshold={0.1}
+                rootMargin="-50px"
+                textAlign="left"
+                tag="h1"
+              />
+            </div>
+            <div>
+              <SplitText
+                text="FromProm 크레딧을 충전하여 프롬프트를 구매하세요"
+                className="text-gray-600"
+                delay={30}
+                duration={0.5}
+                ease="power3.out"
+                splitType="words"
+                from={{ opacity: 0, y: 20 }}
+                to={{ opacity: 1, y: 0 }}
+                threshold={0.1}
+                rootMargin="-50px"
+                textAlign="left"
+                tag="p"
+              />
+            </div>
           </div>
 
           {/* 현재 크레딧 표시 */}
+          <AnimatedContent once distance={50} duration={0.6} delay={0}>
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 mb-8 text-white shadow-lg shadow-blue-500/20">
             <div className="flex items-center justify-between">
               <div>
@@ -103,11 +139,13 @@ const CreditPage = () => {
               </div>
             </div>
           </div>
+          </AnimatedContent>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* 충전 금액 선택 */}
             <div className="lg:col-span-2">
-              <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
+              <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
+              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">충전 금액 선택</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -182,11 +220,13 @@ const CreditPage = () => {
                   </div>
                 </div>
               </div>
+              </AnimatedContent>
             </div>
 
             {/* 결제 정보 */}
             <div className="lg:col-span-1">
-              <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 sticky top-24">
+              <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
+              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 sticky top-24">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">결제 정보</h3>
                 
                 {/* 주문 요약 */}
@@ -280,10 +320,12 @@ const CreditPage = () => {
                   결제 완료 후 즉시 크레딧이 충전됩니다
                 </p>
               </div>
+              </AnimatedContent>
             </div>
           </div>
 
           {/* 크레딧 사용 안내 */}
+          <AnimatedContent once distance={50} duration={0.6} delay={0.3}>
           <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 크레딧 사용 안내</h3>
             <ul className="space-y-2 text-sm text-blue-800">
@@ -294,6 +336,7 @@ const CreditPage = () => {
               <li>• 미사용 크레딧은 계정에 영구 보관됩니다</li>
             </ul>
           </div>
+          </AnimatedContent>
         </motion.div>
       </main>
 

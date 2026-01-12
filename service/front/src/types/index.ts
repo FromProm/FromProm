@@ -16,6 +16,7 @@ export interface Prompt {
   category: string;
   price: number;
   sellerId: string;
+  sellerSub?: string; // 판매자 USER ID (백엔드 구매 API용)
   sellerName: string;
   preview: string; // 미리보기 텍스트
   fullContent?: string; // 구매 후에만 제공

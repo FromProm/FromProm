@@ -28,6 +28,7 @@ public class InteractionController {
         return ResponseEntity.ok("좋아요 성공! (User: " + userId + ")");
     }
 
+    //좋아요 취소
     @DeleteMapping("/{promptId}/like")
     public ResponseEntity<String> deleteLike(
             @PathVariable String promptId,
@@ -64,6 +65,7 @@ public class InteractionController {
         return ResponseEntity.ok("북마크 취소 완료");
     }
 
+    // 댓글 등록
     @PostMapping("/{promptId}/comments")
     public ResponseEntity<String> addComment(
             @PathVariable String promptId,
@@ -76,11 +78,12 @@ public class InteractionController {
         String nickname = userInfo.get("nickname");
 
         // 2. DB에 저장 (이미 있는 닉네임 사용)
-        likeService.addComment(userId, nickname, promptId, req.getContent());
+        likeService.addComment(userId, nickname, promptId, req.getComment_content());
 
         return ResponseEntity.ok("댓글 등록 완료 (작성자: " + nickname + ")");
     }
 
+    //댓글 수정
     @PatchMapping("/{promptId}/comments")
     public ResponseEntity<String> updateComment(
             @PathVariable String promptId,
@@ -88,11 +91,11 @@ public class InteractionController {
             @RequestHeader("Authorization") String authHeader) { // 변수명 변경
 
         String userId = likeService.getUserIdFromToken(authHeader); // ID 추출 로직 추가
-        likeService.updateComment(promptId, req.getCommentSK(), userId, req.getContent());
+        likeService.updateComment(promptId, req.getCommentSK(), userId, req.getComment_content());
         return ResponseEntity.ok("댓글 수정 완료");
     }
 
-    // 삭제 (Delete)
+    // 댓글 삭제
     @DeleteMapping("/{promptId}/comments/{commentSk}") // URL 경로에 commentSk 추가
     public ResponseEntity<String> deleteComment(
             @PathVariable String promptId,

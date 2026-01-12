@@ -1,4 +1,5 @@
 AWS Cloud School 11기 3조 최종프로젝트
+git lab test
 ## 프로젝트 실행 방법
 
 ### 사전 요구사항

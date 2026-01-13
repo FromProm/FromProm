@@ -13,3 +13,8 @@ async def health_check():
         timestamp=datetime.utcnow(),
         version=settings.api_version
     )
+
+@router.get("/healthy")
+async def healthy():
+    """간단한 헬스 체크 (로드밸런서용)"""
+    return {"status": "healthy", "service": "ai-service"}

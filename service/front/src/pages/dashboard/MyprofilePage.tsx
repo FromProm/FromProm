@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { usePurchaseStore } from '../../store/purchaseStore';
-import { useCartStore } from '../../store/cartStore';
 import { userApi, promptApi } from '../../services/api';
 import AnimatedContent from '../../components/AnimatedContent';
 
@@ -23,7 +21,7 @@ interface MyPrompt {
 
 const MyprofilePage = () => {
   const navigate = useNavigate();
-  const [nickname, setNickname] = useState<string>('');
+  const [, setNickname] = useState<string>('');
   const [bio, setBio] = useState<string>('');
   const [credit, setCredit] = useState<number>(0);
   const [isEditingBio, setIsEditingBio] = useState(false);
@@ -32,9 +30,7 @@ const MyprofilePage = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [myPrompts, setMyPrompts] = useState<MyPrompt[]>([]);
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(true);
-  
-  const { getPurchasedPrompts } = usePurchaseStore();
-  const { getItemCount } = useCartStore();
+  const [purchasedPrompts, ] = useState<{id: string; title: string; category: string; price: number}[]>([]);
 
   // 로그인 체크
   useEffect(() => {
@@ -101,26 +97,6 @@ const MyprofilePage = () => {
     setEditBio(bio);
     setIsEditingBio(false);
   };
-  
-  const purchasedPrompts = getPurchasedPrompts();
-  const cartItemCount = getItemCount();
-  
-  // 통계 데이터
-  const stats = {
-    totalPurchased: purchasedPrompts.length,
-    totalSpent: purchasedPrompts.reduce((sum, prompt) => sum + prompt.price, 0),
-    cartItems: cartItemCount,
-    favoriteCategory: purchasedPrompts.length > 0 
-      ? purchasedPrompts.reduce((acc, prompt) => {
-          acc[prompt.category] = (acc[prompt.category] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
-      : {}
-  };
-  
-  const mostUsedCategory = Object.keys(stats.favoriteCategory).length > 0
-    ? Object.entries(stats.favoriteCategory).sort(([,a], [,b]) => b - a)[0][0]
-    : '없음';
 
   return (
     <div className="min-h-screen bg-white">

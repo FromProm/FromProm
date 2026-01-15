@@ -28,6 +28,15 @@ class Settings(BaseSettings):
     perplexity_api_key_2: str = ""
     perplexity_model: str = "sonar-pro"
     
+    # MCP API Keys
+    brave_api_key: str = ""
+    tavily_api_key: str = ""
+    google_search_api_key: str = ""
+    google_search_engine_id: str = ""
+    
+    # Agent Settings
+    agent_alias_id: str = ""
+    
     @property
     def perplexity_api_keys(self) -> List[str]:
         """사용 가능한 Perplexity API 키들 반환"""
@@ -51,6 +60,11 @@ class Settings(BaseSettings):
         "cohere_multilingual": "cohere.embed-multilingual-v3",
         "nova_multimodal": "amazon.nova-2-multimodal-embeddings-v1:0",
         "cohere_v4": "cohere.embed-english-v3.0"
+    }
+    
+    # Reranker Models
+    reranker_models: Dict[str, str] = {
+        "cohere_rerank": "cohere.rerank-v3-5:0"
     }
     
     # Judge Model (저렴한 모델)
@@ -141,7 +155,10 @@ class Settings(BaseSettings):
     cache_ttl: int = 3600  # 1 hour
     
     # Mock Mode (테스트용)
-    mock_mode: bool = True  # AWS 없이 테스트할 때 True
+    mock_mode: bool = False  # AWS 없이 테스트할 때 True
+    
+    # Agent Pipeline Settings
+    use_agent_pipeline: bool = True  # True면 Agent 파이프라인, False면 기존 Orchestrator
     
     class Config:
         env_file = ".env"

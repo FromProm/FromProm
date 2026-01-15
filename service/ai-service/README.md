@@ -2,6 +2,8 @@
 
 AI 프롬프트 평가를 위한 고성능 병렬 처리 API
 
+> **배포 가이드**: [DEPLOYMENT_OPTIONS.md](DEPLOYMENT_OPTIONS.md)에서 배포 옵션 비교 및 선택 가이드 확인
+
 ## 🚀 주요 기능
 
 - **병렬 파이프라인**: 6개 지표 동시 계산
@@ -139,6 +141,36 @@ curl "http://localhost:8000/jobs/{job_id}"
 - **DuckDuckGo**: 웹 검색
 - **ArXiv**: 학술 논문 검색
 - **Web Scraper**: 웹 페이지 스크래핑
+
+## 🚢 배포 옵션
+
+### 옵션 1: AgentCore 배포 (권장)
+
+AgentCore를 사용한 서버리스 배포:
+
+```bash
+cd service/ai-service
+agentcore deploy
+```
+
+자세한 내용: [AGENTCORE_DEPLOYMENT.md](AGENTCORE_DEPLOYMENT.md)
+
+### 옵션 2: Lambda + AgentCore (경량 배포)
+
+Lambda에서 AgentCore를 호출하는 경량 배포 (DB 저장 없음):
+
+```bash
+cd service/ai-service/lambda
+./deploy.sh prompt-evaluation-lambda ai_service-rASjsT5Fh5
+```
+
+자세한 내용: [lambda/DEPLOYMENT_GUIDE.md](lambda/DEPLOYMENT_GUIDE.md)
+
+**특징**:
+- DB 저장 기능 없음 (AgentCore에서 평가만 수행)
+- 경량 Lambda 함수 (boto3만 사용)
+- API Gateway / SQS 연동 가능
+- 비용 효율적
 
 ## 🔍 문제 해결
 

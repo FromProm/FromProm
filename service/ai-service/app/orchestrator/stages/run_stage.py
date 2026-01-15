@@ -39,6 +39,12 @@ class RunStage:
         
         runner = self.context.get_runner()
         
+        # prompt_type을 문자열로 변환 (먼저 처리)
+        if prompt_type and hasattr(prompt_type, 'value'):
+            prompt_type_str = prompt_type.value
+        else:
+            prompt_type_str = prompt_type or "type_a"
+        
         # 모델 선택 - RecommendedModel enum을 문자열로 변환
         if recommended_model:
             if hasattr(recommended_model, 'value'):
@@ -50,14 +56,8 @@ class RunStage:
                 model = recommended_model
                 logger.info(f"Using model string: {model}")
         else:
-            model = self._get_default_model(example_inputs)
+            model = self._get_default_model(example_inputs, prompt_type_str)
             logger.info(f"Using default model: {model}")
-        
-        # prompt_type을 문자열로 변환
-        if prompt_type and hasattr(prompt_type, 'value'):
-            prompt_type_str = prompt_type.value
-        else:
-            prompt_type_str = prompt_type or "type_a"
         
         # Variance 계산용 추가 모델들 가져오기
         variance_models = self._get_variance_models(prompt_type_str, model)
@@ -181,13 +181,9 @@ class RunStage:
         }
     
     def _get_variance_models(self, prompt_type: str, main_model: str) -> List[str]:
-        """Variance 계산용 모델들 반환 - config의 model_families 사용 (테스트용으로 1개만)"""
+        """Variance 계산용 모델들 반환 - config의 model_families 사용"""
         # config에서 비교 모델 가져오기
         comparison_models = settings.model_families.get(main_model, [])
-        
-        # 테스트용으로 첫 번째 비교 모델만 사용
-        if comparison_models:
-            comparison_models = comparison_models[:1]
         
         # 선택된 모델 + 비교 모델들
         all_models = [main_model] + comparison_models
@@ -195,14 +191,19 @@ class RunStage:
         logger.info(f"Variance models for {main_model}: {all_models}")
         return all_models
     
-    def _get_default_model(self, example_inputs: List[ExampleInput]) -> str:
+    def _get_default_model(self, example_inputs: List[ExampleInput], prompt_type_str: str = None) -> str:
         """입력 타입에 따른 기본 모델 선택"""
-        has_image = any(inp.input_type == "image" for inp in example_inputs)
+        # prompt_type이 type_b_image면 이미지 모델 사용
+        if prompt_type_str == "type_b_image":
+            return settings.default_models["type_b_image"]
         
+        # 입력에 이미지가 있으면 이미지 모델
+        has_image = any(inp.input_type == "image" for inp in example_inputs)
         if has_image:
             return settings.default_models["type_b_image"]
-        else:
-            return settings.default_models["type_a"]
+        
+        # 기본은 텍스트 모델
+        return settings.default_models["type_a"]
     
     def _fill_prompt(self, prompt: str, input_content: str) -> str:
         """프롬프트의 {{변수명}} 플레이스홀더를 실제 입력으로 치환"""

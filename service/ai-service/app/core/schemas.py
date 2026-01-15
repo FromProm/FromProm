@@ -97,6 +97,8 @@ class EvaluationResult(BaseModel):
     model_variance: Optional[MetricScore] = None
     hallucination: Optional[MetricScore] = None
     relevance: Optional[MetricScore] = None
+    final_score: Optional[float] = Field(None, description="최종 종합 점수")
+    weighted_scores: Optional[Dict[str, float]] = Field(None, description="가중치 적용된 개별 점수들")
     execution_results: Optional[Dict[str, Any]] = Field(None, description="실제 AI 출력 결과들")
     feedback: Optional[Dict[str, Any]] = Field(None, description="프롬프트 개선 피드백")
 

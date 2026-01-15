@@ -48,6 +48,8 @@ class BedrockEmbedder(BaseEmbedder):
         if not texts:
             return []
         
+        logger.info(f"Batch embedding {len(texts)} texts with Titan Text v2")
+        
         # 텍스트 길이 제한 적용
         truncated_texts = [self._truncate_text(text, 'titan_text') for text in texts]
         
@@ -72,6 +74,8 @@ class BedrockEmbedder(BaseEmbedder):
         if not texts:
             return []
         
+        logger.info(f"Batch embedding {len(texts)} texts with Cohere Multilingual v3")
+        
         # 텍스트 길이 제한 적용
         truncated_texts = [self._truncate_text(text, 'cohere_multilingual') for text in texts]
         
@@ -93,12 +97,58 @@ class BedrockEmbedder(BaseEmbedder):
             return await asyncio.gather(*tasks, return_exceptions=True)
     
     async def embed_multimodal(self, content: str) -> List[float]:
-        """Nova Multimodal 임베딩"""
-        content = self._truncate_text(content, 'nova_multimodal')
-        return await self._invoke_embedding(
-            settings.embedding_models['nova_multimodal'],
-            {"inputText": content}  # Nova Multimodal 요청 형식
-        )
+        """Nova Multimodal 임베딩 - 이미지 S3 URL"""
+        # content는 S3 URL이어야 함 (s3://bucket/key)
+        return await self._invoke_embedding_nova_image(content)
+    
+    async def _invoke_embedding_nova_image(self, s3_url: str) -> List[float]:
+        """Nova Multimodal 이미지 임베딩 (S3 URL)"""
+        try:
+            logger.info(f"Invoking Nova Multimodal for image: {s3_url}")
+            
+            # 이미지 형식 추출 (기본값: jpeg)
+            image_format = "jpeg"
+            if s3_url.lower().endswith(".png"):
+                image_format = "png"
+            elif s3_url.lower().endswith(".webp"):
+                image_format = "webp"
+            elif s3_url.lower().endswith(".gif"):
+                image_format = "gif"
+            
+            body = {
+                "schemaVersion": "nova-multimodal-embed-v1",
+                "taskType": "SINGLE_EMBEDDING",
+                "singleEmbeddingParams": {
+                    "embeddingPurpose": "IMAGE_RETRIEVAL",
+                    "embeddingDimension": 1024,
+                    "image": {
+                        "format": image_format,
+                        "source": {
+                            "s3Location": {
+                                "uri": s3_url
+                            }
+                        }
+                    }
+                }
+            }
+            
+            response = self.client.invoke_model(
+                modelId=settings.embedding_models['nova_multimodal'],
+                body=json.dumps(body),
+                contentType='application/json'
+            )
+            
+            response_body = json.loads(response['body'].read())
+            embeddings = response_body.get('embeddings', [])
+            
+            if embeddings and len(embeddings) > 0:
+                return embeddings[0].get('embedding', [])
+            else:
+                raise EmbeddingError("No embeddings returned from Nova Multimodal")
+                
+        except Exception as e:
+            logger.error(f"Nova Multimodal embedding failed: {str(e)}")
+            raise EmbeddingError(f"Nova Multimodal embedding failed: {str(e)}")
     
     async def embed_cohere_v4(self, content: str) -> List[float]:
         """Cohere v4 임베딩"""
@@ -127,7 +177,7 @@ class BedrockEmbedder(BaseEmbedder):
     async def _invoke_embedding_raw(self, model_id: str, body: dict) -> dict:
         """임베딩 모델 원시 호출 (응답 파싱 없음)"""
         try:
-            logger.debug(f"Invoking embedding model: {model_id}")
+            logger.info(f"Invoking embedding model: {model_id}")
             
             # 입력 검증: texts 배열의 각 요소가 문자열인지 확인
             if "texts" in body:

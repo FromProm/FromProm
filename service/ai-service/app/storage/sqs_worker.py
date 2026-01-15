@@ -41,7 +41,9 @@ print(f"[init] SQS_QUEUE_URL: {QUEUE_URL}")
 from app.storage.fromprom_repo import save_prompt_record, save_error_record, upload_outputs_to_s3, update_status_processing
 from app.core.schemas import JobCreateRequest, ExampleInput, PromptType, RecommendedModel
 from app.orchestrator.pipeline import Orchestrator
+from app.agents.agent_pipeline import AgentPipeline
 from app.orchestrator.context import ExecutionContext
+from app.core.config import settings
 
 sqs = boto3.client(
     "sqs", 
@@ -176,10 +178,19 @@ async def process_message(pk: str, payload: dict) -> dict:
         # 2) ExecutionContext 생성 및 파이프라인 실행
         log(f"  → ExecutionContext 생성...")
         context = ExecutionContext()
-        log(f"  → Orchestrator 생성...")
-        orchestrator = Orchestrator(context)
-        log(f"  → 파이프라인 실행 시작...")
-        result = await orchestrator.run(job_request)
+        
+        # 설정에 따라 Agent 파이프라인 또는 기존 Orchestrator 선택
+        if settings.use_agent_pipeline:
+            log(f"  → Agent 파이프라인 사용")
+            pipeline = AgentPipeline(context)
+            log(f"  → Agent 파이프라인 실행 시작...")
+            result = await pipeline.run(job_request)
+        else:
+            log(f"  → 기존 Orchestrator 파이프라인 사용")
+            orchestrator = Orchestrator(context)
+            log(f"  → Orchestrator 파이프라인 실행 시작...")
+            result = await orchestrator.run(job_request)
+        
         log(f"  → 파이프라인 실행 완료")
         
     except Exception as e:
@@ -201,9 +212,16 @@ async def process_message(pk: str, payload: dict) -> dict:
         "model_variance": result.model_variance.score if result.model_variance else 0,
         "hallucination": result.hallucination.score if result.hallucination else 0,
         "relevance": result.relevance.score if result.relevance else 0,
-        "final_score": 0,  # 추후 계산
+        "final_score": getattr(result, 'final_score', 0),
         "feedback": result.feedback if hasattr(result, 'feedback') and result.feedback else {},
     }
+    
+    # 디버깅: 각 지표 점수 로깅
+    log(f"  → 지표별 점수:")
+    for metric_name, score in metrics.items():
+        if metric_name != "feedback":
+            log(f"     {metric_name}: {score}")
+    log(f"  → 최종 점수: {metrics['final_score']}")
     
     # 4) examples의 output 필드 채우기 + 실제 사용된 모델 저장
     execution_results = result.execution_results if hasattr(result, 'execution_results') else {}
@@ -237,6 +255,7 @@ def main():
     # 환경변수 체크
     log("=" * 50)
     log("SQS Worker 시작")
+    log(f"파이프라인 모드: {'Agent Pipeline' if settings.use_agent_pipeline else 'Traditional Orchestrator'}")
     log("=" * 50)
     log(f"AWS_REGION: {AWS_REGION}")
     log(f"SQS_QUEUE_URL: {QUEUE_URL}")
@@ -256,9 +275,9 @@ def main():
         try:
             resp = sqs.receive_message(
                 QueueUrl=QUEUE_URL,
-                MaxNumberOfMessages=10,
+                MaxNumberOfMessages=1,  # 한 번에 하나씩만
                 WaitTimeSeconds=20,
-                VisibilityTimeout=60,
+                VisibilityTimeout=600,  # 10분 (600초)
             )
         except Exception as e:
             log(f"SQS 연결 에러: {e}")
@@ -413,6 +432,11 @@ def main():
             err = f"{type(e).__name__}: {e}"
             log(f"❌ 에러 발생: {err}")
             traceback.print_exc()
+            
+            # 디버깅: 상세 에러 정보 출력
+            log(f"  → 에러 발생 위치: PK={pk}")
+            log(f"  → 페이로드 크기: {len(str(payload))} 문자")
+            log(f"  → 실행 단계: 파이프라인 실행 중")
 
             if pk and payload:
                 try:
@@ -421,6 +445,11 @@ def main():
                 except Exception as e2:
                     log(f"  → DynamoDB 에러 저장 실패: {e2}")
 
+            # 메시지 삭제 (무한 반복 방지)
+            log(f"  → 에러 메시지 삭제 중...")
+            sqs.delete_message(QueueUrl=QUEUE_URL, ReceiptHandle=receipt)
+            log(f"  → 에러 메시지 삭제 완료")
+            
             log("=" * 50)
             time.sleep(1)
 

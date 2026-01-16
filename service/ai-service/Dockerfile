@@ -29,6 +29,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     python-dotenv>=1.0.0 \
     requests>=2.31.0 \
     anthropic>=0.40.0 \
+    aws-xray-sdk>=2.12.0 \
     langchain \
     langchain-aws \
     langchain-community \

@@ -10,7 +10,11 @@ requires-python = ">=3.10"
 dependencies = [
     # AgentCore SDK
     "bedrock-agentcore>=1.2.0",
+    "bedrock-agentcore-starter-toolkit>=0.2.6",
     "strands-agents>=0.1.0",
+    
+    # X-Ray
+    "aws-xray-sdk>=2.12.0",
     
     # Core
     "pydantic>=2.5.0",

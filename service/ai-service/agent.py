@@ -22,24 +22,50 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.info("=== AgentCore Starting ===")
 
-# .env 파일 로드 (AgentCore 배포용)
+# Secrets Manager에서 credential 로드
+def load_secrets_from_aws():
+    """AWS Secrets Manager에서 민감한 정보 로드"""
+    try:
+        import boto3
+        
+        secret_name = "ai-service/credentials"
+        region_name = "us-east-1"
+        
+        logger.info(f"Loading secrets from AWS Secrets Manager: {secret_name}")
+        
+        client = boto3.client('secretsmanager', region_name=region_name)
+        response = client.get_secret_value(SecretId=secret_name)
+        
+        secrets = json.loads(response['SecretString'])
+        logger.info(f"Successfully loaded {len(secrets)} secrets from Secrets Manager")
+        
+        return secrets
+    except Exception as e:
+        logger.warning(f"Failed to load from Secrets Manager: {str(e)}")
+        logger.info("Falling back to environment variables")
+        return {}
+
+# Secrets Manager에서 로드 (프로덕션)
+secrets = load_secrets_from_aws()
+
+# .env 파일 로드 (로컬 개발용 fallback)
 from dotenv import load_dotenv
 load_dotenv()
-logger.info("Environment file loaded")
+logger.info("Environment file loaded as fallback")
 
-# 환경변수 직접 설정 (AgentCore 배포용)
+# 환경변수 설정 (Secrets Manager 우선, .env fallback)
 os.environ.setdefault("AWS_REGION", "us-east-1")
-os.environ.setdefault("AWS_ACCESS_KEY_ID", os.getenv("AWS_ACCESS_KEY_ID", ""))
-os.environ.setdefault("AWS_SECRET_ACCESS_KEY", os.getenv("AWS_SECRET_ACCESS_KEY", ""))
-os.environ.setdefault("BRAVE_API_KEY", os.getenv("BRAVE_API_KEY", ""))
-os.environ.setdefault("TAVILY_API_KEY", os.getenv("TAVILY_API_KEY", ""))
-os.environ.setdefault("GOOGLE_SEARCH_API_KEY", os.getenv("GOOGLE_SEARCH_API_KEY", ""))
-os.environ.setdefault("GOOGLE_SEARCH_ENGINE_ID", os.getenv("GOOGLE_SEARCH_ENGINE_ID", ""))
+os.environ.setdefault("AWS_ACCESS_KEY_ID", secrets.get("AWS_ACCESS_KEY_ID", os.getenv("AWS_ACCESS_KEY_ID", "")))
+os.environ.setdefault("AWS_SECRET_ACCESS_KEY", secrets.get("AWS_SECRET_ACCESS_KEY", os.getenv("AWS_SECRET_ACCESS_KEY", "")))
+os.environ.setdefault("BRAVE_API_KEY", secrets.get("BRAVE_API_KEY", os.getenv("BRAVE_API_KEY", "")))
+os.environ.setdefault("TAVILY_API_KEY", secrets.get("TAVILY_API_KEY", os.getenv("TAVILY_API_KEY", "")))
+os.environ.setdefault("GOOGLE_SEARCH_API_KEY", secrets.get("GOOGLE_SEARCH_API_KEY", os.getenv("GOOGLE_SEARCH_API_KEY", "")))
+os.environ.setdefault("GOOGLE_SEARCH_ENGINE_ID", secrets.get("GOOGLE_SEARCH_ENGINE_ID", os.getenv("GOOGLE_SEARCH_ENGINE_ID", "")))
 os.environ.setdefault("MOCK_MODE", "false")
 os.environ.setdefault("USE_AGENT_PIPELINE", "true")
 os.environ.setdefault("CACHE_ENABLED", "true")
 os.environ.setdefault("ALPHA", "0.2")
-logger.info("Environment variables configured")
+logger.info("Environment variables configured from Secrets Manager")
 
 from bedrock_agentcore import BedrockAgentCoreApp
 
@@ -200,6 +226,8 @@ async def evaluate_from_dynamodb_format(request: dict) -> dict:
         examples_raw = request.get("examples", [])
         recommended_model = request.get("model", "")
         prompt_id = request.get("PK", "").replace("PROMPT#", "")
+        price = request.get("price", 0)
+        created_at = request.get("created_at", "")
         
         if not prompt or not prompt_type:
             error_msg = "prompt_content and prompt_type are required"
@@ -368,13 +396,15 @@ async def evaluate_from_dynamodb_format(request: dict) -> dict:
         now = datetime.utcnow().isoformat() + "Z"
         table.update_item(
             Key={'PK': request.get('PK'), 'SK': request.get('SK', 'METADATA')},
-            UpdateExpression='SET #status = :status, evaluation_metrics = :metrics, examples = :examples, examples_s3_url = :s3_url, updated_at = :updated_at',
+            UpdateExpression='SET #status = :status, evaluation_metrics = :metrics, examples = :examples, examples_s3_url = :s3_url, price = :price, created_at = :created_at, updated_at = :updated_at',
             ExpressionAttributeNames={'#status': 'status'},
             ExpressionAttributeValues={
                 ':status': 'completed',
                 ':metrics': evaluation_metrics_safe,
                 ':examples': updated_examples_safe,
                 ':s3_url': examples_s3_url,
+                ':price': price,
+                ':created_at': created_at,
                 ':updated_at': now
             }
         )
@@ -386,6 +416,8 @@ async def evaluate_from_dynamodb_format(request: dict) -> dict:
         request["evaluation_metrics"] = evaluation_metrics
         request["examples"] = updated_examples_safe
         request["examples_s3_url"] = examples_s3_url
+        request["price"] = price
+        request["created_at"] = created_at
         request["updated_at"] = now
         
         return request

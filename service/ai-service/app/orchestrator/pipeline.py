@@ -3,6 +3,8 @@ import logging
 from typing import Dict, Any, List
 from datetime import datetime
 
+from aws_xray_sdk.core import xray_recorder
+
 from app.core.schemas import JobCreateRequest, EvaluationResult, MetricScore, PromptType
 from app.orchestrator.context import ExecutionContext
 from app.orchestrator.stages.run_stage import RunStage
@@ -44,13 +46,14 @@ class Orchestrator:
         try:
             # [1단계] 프롬프트 실행 - 출력 생성 + Variance 모델 실행 (선행 필수)
             logger.info("Step 1: Starting RunStage execution...")
-            execution_results = await self.stages['run'].execute(
-                job_request.prompt,
-                job_request.example_inputs,
-                job_request.recommended_model,
-                job_request.repeat_count,
-                job_request.prompt_type
-            )
+            with xray_recorder.in_subsegment('RunStage'):
+                execution_results = await self.stages['run'].execute(
+                    job_request.prompt,
+                    job_request.example_inputs,
+                    job_request.recommended_model,
+                    job_request.repeat_count,
+                    job_request.prompt_type
+                )
             logger.info("Step 1: RunStage execution completed")
             
             # 실행 결과 보존 (S3 저장용)
@@ -64,57 +67,39 @@ class Orchestrator:
             
             # 토큰 계산 (항상)
             parallel_tasks.append(
-                self.stages['token'].execute(job_request.prompt, execution_results)
+                self._execute_with_xray('TokenStage', self.stages['token'].execute, job_request.prompt, execution_results)
             )
             task_names.append('token')
             
             # 정보 밀도 (TYPE_A, TYPE_B_TEXT)
             if job_request.prompt_type in [PromptType.TYPE_A, PromptType.TYPE_B_TEXT]:
                 parallel_tasks.append(
-                    self.stages['density'].execute(execution_results)
+                    self._execute_with_xray('DensityStage', self.stages['density'].execute, execution_results)
                 )
                 task_names.append('density')
             
             # 임베딩 생성 (일관성 계산용)
             parallel_tasks.append(
-                self.stages['embed'].execute(
-                    execution_results,
-                    job_request.example_inputs,
-                    job_request.prompt_type
-                )
+                self._execute_with_xray('EmbedStage', self.stages['embed'].execute, execution_results, job_request.example_inputs, job_request.prompt_type)
             )
             task_names.append('embed')
             
             # 정확도 계산 (모든 타입)
             parallel_tasks.append(
-                self.stages['relevance'].execute(
-                    job_request.prompt,
-                    job_request.example_inputs,
-                    execution_results,
-                    job_request.prompt_type
-                )
+                self._execute_with_xray('RelevanceStage', self.stages['relevance'].execute, job_request.prompt, job_request.example_inputs, execution_results, job_request.prompt_type)
             )
             task_names.append('relevance')
             
             # 환각 탐지 (TYPE_A만)
             if job_request.prompt_type == PromptType.TYPE_A:
                 parallel_tasks.append(
-                    self.stages['judge'].execute(
-                        job_request.example_inputs,
-                        execution_results
-                    )
+                    self._execute_with_xray('JudgeStage', self.stages['judge'].execute, job_request.example_inputs, execution_results)
                 )
                 task_names.append('judge')
             
             # 모델별 편차 (모든 타입) - 기존 출력 재사용
             parallel_tasks.append(
-                self.stages['variance'].execute(
-                    job_request.prompt,
-                    job_request.example_inputs,
-                    job_request.prompt_type,
-                    job_request.recommended_model,
-                    execution_results  # 기존 출력 전달
-                )
+                self._execute_with_xray('VarianceStage', self.stages['variance'].execute, job_request.prompt, job_request.example_inputs, job_request.prompt_type, job_request.recommended_model, execution_results)
             )
             task_names.append('variance')
             
@@ -143,24 +128,26 @@ class Orchestrator:
             consistency_score = None
             if job_request.prompt_type in [PromptType.TYPE_A, PromptType.TYPE_B_IMAGE]:
                 if embeddings and 'outputs' in embeddings:
-                    consistency_score = await self.stages['consistency'].execute(
-                        embeddings['outputs']
-                    )
+                    with xray_recorder.in_subsegment('ConsistencyStage'):
+                        consistency_score = await self.stages['consistency'].execute(
+                            embeddings['outputs']
+                        )
                 else:
                     logger.warning("Embeddings not available for consistency calculation")
             
             # [4단계] 최종 점수 집계
-            final_result = await self.stages['aggregate'].execute(
-                job_request.prompt_type,
-                {
-                    'token_usage': token_score,
-                    'information_density': density_score,
-                    'consistency': consistency_score,
-                    'relevance': relevance_score,
-                    'hallucination': hallucination_score,
-                    'model_variance': variance_score
-                }
-            )
+            with xray_recorder.in_subsegment('AggregateStage'):
+                final_result = await self.stages['aggregate'].execute(
+                    job_request.prompt_type,
+                    {
+                        'token_usage': token_score,
+                        'information_density': density_score,
+                        'consistency': consistency_score,
+                        'relevance': relevance_score,
+                        'hallucination': hallucination_score,
+                        'model_variance': variance_score
+                    }
+                )
             
             # 실제 AI 출력 결과 포함
             final_result.execution_results = execution_results
@@ -177,12 +164,13 @@ class Orchestrator:
                     'execution_results': execution_results
                 }
                 
-                feedback = await self.stages['feedback'].execute(
-                    evaluation_data,
-                    prompt=job_request.prompt,
-                    prompt_type=job_request.prompt_type,
-                    example_inputs=job_request.example_inputs
-                )
+                with xray_recorder.in_subsegment('FeedbackStage'):
+                    feedback = await self.stages['feedback'].execute(
+                        evaluation_data,
+                        prompt=job_request.prompt,
+                        prompt_type=job_request.prompt_type,
+                        example_inputs=job_request.example_inputs
+                    )
                 final_result.feedback = feedback
                 logger.info("Feedback generation completed")
             except Exception as e:
@@ -195,3 +183,8 @@ class Orchestrator:
         except Exception as e:
             logger.error(f"Pipeline execution failed: {str(e)}")
             raise
+    
+    async def _execute_with_xray(self, segment_name: str, func, *args):
+        """X-Ray 서브세그먼트로 감싸서 실행"""
+        with xray_recorder.in_subsegment(segment_name):
+            return await func(*args)

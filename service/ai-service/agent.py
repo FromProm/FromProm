@@ -11,6 +11,11 @@ import asyncio
 from typing import Any
 from pathlib import Path
 
+# X-Ray 초기화 (가장 먼저 실행)
+from aws_xray_sdk.core import xray_recorder, patch_all
+xray_recorder.configure(service='ai-service')
+patch_all()  # boto3, requests, httpx 등 자동 추적
+
 # 로깅 설정 (CloudWatch용)
 logging.basicConfig(
     level=logging.INFO,
@@ -21,6 +26,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 logger.info("=== AgentCore Starting ===")
+logger.info("X-Ray SDK initialized")
 
 # Secrets Manager에서 credential 로드
 def load_secrets_from_aws():

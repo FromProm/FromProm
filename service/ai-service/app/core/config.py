@@ -23,11 +23,6 @@ class Settings(BaseSettings):
     sqs_queue_url: str = ""
     ddb_table_name: str = "FromProm_Table"
     
-    # Perplexity Settings
-    perplexity_api_key: str = ""
-    perplexity_api_key_2: str = ""
-    perplexity_model: str = "sonar-pro"
-    
     # MCP API Keys
     brave_api_key: str = ""
     tavily_api_key: str = ""
@@ -36,16 +31,6 @@ class Settings(BaseSettings):
     
     # Agent Settings
     agent_alias_id: str = ""
-    
-    @property
-    def perplexity_api_keys(self) -> List[str]:
-        """사용 가능한 Perplexity API 키들 반환"""
-        keys = []
-        if self.perplexity_api_key:
-            keys.append(self.perplexity_api_key)
-        if self.perplexity_api_key_2:
-            keys.append(self.perplexity_api_key_2)
-        return keys
     
     # Model Configuration
     default_models: Dict[str, str] = {

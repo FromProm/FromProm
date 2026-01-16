@@ -4,11 +4,28 @@ Amazon Bedrock AgentCore 진입점
 """
 
 import os
+import sys
 import json
 import logging
 import asyncio
 from typing import Any
 from pathlib import Path
+
+# 로깅 설정 (CloudWatch용)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
+logger.info("=== AgentCore Starting ===")
+
+# .env 파일 로드 (AgentCore 배포용)
+from dotenv import load_dotenv
+load_dotenv()
+logger.info("Environment file loaded")
 
 # 환경변수 직접 설정 (AgentCore 배포용)
 os.environ.setdefault("AWS_REGION", "us-east-1")
@@ -22,21 +39,22 @@ os.environ.setdefault("MOCK_MODE", "false")
 os.environ.setdefault("USE_AGENT_PIPELINE", "true")
 os.environ.setdefault("CACHE_ENABLED", "true")
 os.environ.setdefault("ALPHA", "0.2")
-print("Environment variables loaded from code")
+logger.info("Environment variables configured")
 
 from bedrock_agentcore import BedrockAgentCoreApp
 
+logger.info("Importing application modules...")
 from app.core.schemas import (
     JobCreateRequest, PromptType, ExampleInput, RecommendedModel
 )
 from app.orchestrator.context import ExecutionContext
 from app.agents.agent_pipeline import AgentPipeline
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger.info("All modules imported successfully")
 
 # AgentCore 앱 생성
 app = BedrockAgentCoreApp()
+logger.info("BedrockAgentCoreApp initialized")
 
 # 전역 컨텍스트 (초기화 지연)
 _context: ExecutionContext = None

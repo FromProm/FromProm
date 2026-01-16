@@ -28,8 +28,8 @@ agents:
         idle_runtime_session_timeout: null
         max_lifetime: null
     bedrock_agentcore:
-      agent_id: ai_service-rASjsT5Fh5
-      agent_arn: arn:aws:bedrock-agentcore:us-east-1:261595668962:runtime/ai_service-rASjsT5Fh5
+      agent_id: ai_service-IiSUYrFdjB
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:261595668962:runtime/ai_service-IiSUYrFdjB
       agent_session_id: null
     codebuild:
       project_name: bedrock-agentcore-ai_service-builder

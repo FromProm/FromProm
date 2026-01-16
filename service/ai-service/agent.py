@@ -11,11 +11,6 @@ import asyncio
 from typing import Any
 from pathlib import Path
 
-# X-Ray 초기화 (가장 먼저 실행)
-from aws_xray_sdk.core import xray_recorder, patch_all
-xray_recorder.configure(service='ai-service')
-patch_all()  # boto3, requests, httpx 등 자동 추적
-
 # 로깅 설정 (CloudWatch용)
 logging.basicConfig(
     level=logging.INFO,
@@ -26,7 +21,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 logger.info("=== AgentCore Starting ===")
-logger.info("X-Ray SDK initialized")
 
 # Secrets Manager에서 credential 로드
 def load_secrets_from_aws():
@@ -74,6 +68,7 @@ os.environ.setdefault("ALPHA", "0.2")
 logger.info("Environment variables configured from Secrets Manager")
 
 from bedrock_agentcore import BedrockAgentCoreApp
+from opentelemetry import trace
 
 logger.info("Importing application modules...")
 from app.core.schemas import (
@@ -87,6 +82,10 @@ logger.info("All modules imported successfully")
 # AgentCore 앱 생성
 app = BedrockAgentCoreApp()
 logger.info("BedrockAgentCoreApp initialized")
+
+# OpenTelemetry tracer 초기화
+tracer = trace.get_tracer(__name__)
+logger.info("OpenTelemetry tracer initialized")
 
 # 전역 컨텍스트 (초기화 지연)
 _context: ExecutionContext = None
@@ -133,23 +132,24 @@ async def handle_request(request: dict) -> dict:
         ...
     }
     """
-    logger.info(f"Received request with keys: {list(request.keys())}")
-    
-    # 백엔드 DynamoDB 형식인지 확인
-    if "PK" in request or "prompt_content" in request:
-        return await evaluate_from_dynamodb_format(request)
-    
-    # 단순 형식
-    action = request.get("action", "evaluate")
-    
-    if action == "evaluate":
-        return await evaluate_prompt(request)
-    elif action == "get_models":
-        return get_supported_models()
-    elif action == "get_metrics":
-        return get_evaluation_metrics()
-    else:
-        return {"error": f"Unknown action: {action}"}
+    with tracer.start_as_current_span('handle_request'):
+        logger.info(f"Received request with keys: {list(request.keys())}")
+        
+        # 백엔드 DynamoDB 형식인지 확인
+        if "PK" in request or "prompt_content" in request:
+            return await evaluate_from_dynamodb_format(request)
+        
+        # 단순 형식
+        action = request.get("action", "evaluate")
+        
+        if action == "evaluate":
+            return await evaluate_prompt(request)
+        elif action == "get_models":
+            return get_supported_models()
+        elif action == "get_metrics":
+            return get_evaluation_metrics()
+        else:
+            return {"error": f"Unknown action: {action}"}
 
 
 async def evaluate_prompt(request: dict) -> dict:

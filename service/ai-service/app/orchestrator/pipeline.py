@@ -3,7 +3,7 @@ import logging
 from typing import Dict, Any, List
 from datetime import datetime
 
-from aws_xray_sdk.core import xray_recorder
+from opentelemetry import trace
 
 from app.core.schemas import JobCreateRequest, EvaluationResult, MetricScore, PromptType
 from app.orchestrator.context import ExecutionContext
@@ -26,6 +26,7 @@ class Orchestrator:
     
     def __init__(self, context: ExecutionContext):
         self.context = context
+        self.tracer = trace.get_tracer(__name__)
         self.stages = {
             'run': RunStage(context),
             'token': TokenStage(context),
@@ -46,7 +47,7 @@ class Orchestrator:
         try:
             # [1단계] 프롬프트 실행 - 출력 생성 + Variance 모델 실행 (선행 필수)
             logger.info("Step 1: Starting RunStage execution...")
-            with xray_recorder.in_subsegment('RunStage'):
+            with self.tracer.start_as_current_span('RunStage'):
                 execution_results = await self.stages['run'].execute(
                     job_request.prompt,
                     job_request.example_inputs,
@@ -128,7 +129,7 @@ class Orchestrator:
             consistency_score = None
             if job_request.prompt_type in [PromptType.TYPE_A, PromptType.TYPE_B_IMAGE]:
                 if embeddings and 'outputs' in embeddings:
-                    with xray_recorder.in_subsegment('ConsistencyStage'):
+                    with self.tracer.start_as_current_span('ConsistencyStage'):
                         consistency_score = await self.stages['consistency'].execute(
                             embeddings['outputs']
                         )
@@ -136,7 +137,7 @@ class Orchestrator:
                     logger.warning("Embeddings not available for consistency calculation")
             
             # [4단계] 최종 점수 집계
-            with xray_recorder.in_subsegment('AggregateStage'):
+            with self.tracer.start_as_current_span('AggregateStage'):
                 final_result = await self.stages['aggregate'].execute(
                     job_request.prompt_type,
                     {
@@ -164,7 +165,7 @@ class Orchestrator:
                     'execution_results': execution_results
                 }
                 
-                with xray_recorder.in_subsegment('FeedbackStage'):
+                with self.tracer.start_as_current_span('FeedbackStage'):
                     feedback = await self.stages['feedback'].execute(
                         evaluation_data,
                         prompt=job_request.prompt,
@@ -185,6 +186,6 @@ class Orchestrator:
             raise
     
     async def _execute_with_xray(self, segment_name: str, func, *args):
-        """X-Ray 서브세그먼트로 감싸서 실행"""
-        with xray_recorder.in_subsegment(segment_name):
+        """OpenTelemetry span으로 감싸서 실행"""
+        with self.tracer.start_as_current_span(segment_name):
             return await func(*args)

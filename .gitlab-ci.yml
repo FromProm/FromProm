@@ -1,21 +1,27 @@
 stages:
   - test
 
+variables:
+  # GitLab Variables에 등록한 값이 이 환경 변수로 주입됩니다.
+  AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+  AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+  AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+
 runner-eks-test:
   stage: test
   image: 
     name: amazon/aws-cli:latest
     entrypoint: [""]
   script:
-    # 1. kubectl 설치
+    # 1. 환경 변수 주입 여부 확인 (보안을 위해 값은 출력하지 않음)
+    - if [ -z "$AWS_ACCESS_KEY_ID" ]; then echo "AWS Credentials are missing"; exit 1; fi
+    
+    # 2. kubectl 설치
     - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
     - chmod +x ./kubectl
     - mv ./kubectl /usr/local/bin/kubectl
     
-    - echo 0117
-    # 2. EKS 클러스터 연결 설정
-    - aws eks update-kubeconfig --region ap-northeast-2 --name fromprom-cluster
-    
-    # 3. 클러스터 상태 확인 명령
+    # 3. EKS 연결 및 권한 테스트
+    - aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name fromprom-cluster
     - kubectl get nodes
-    - kubectl get pods -A
+    - kubectl get pods -n kube-system

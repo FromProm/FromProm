@@ -2,7 +2,11 @@ stages:
   - test
 
 variables:
-  AWS_REGION: "ap-northeast-2"
+  # GitLab UI에서 등록한 변수가 아래로 주입됩니다.
+  AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+  AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+  # 리전 이름을 직접 기입하여 변수 치환 오류를 원천 차단합니다.
+  AWS_REGION: "ap-northeast-2" 
 
 runner-eks-test:
   stage: test
@@ -10,21 +14,17 @@ runner-eks-test:
     name: amazon/aws-cli:latest
     entrypoint: [""]
   script:
-    # 1. 변수 길이 및 상태 확인 (값 노출 방지)
-    - echo "Checking AWS Credentials..."
-    - if [ -z "$AWS_ACCESS_KEY_ID" ]; then echo "Error: AWS_ACCESS_KEY_ID is empty"; exit 1; fi
-    - echo "Access Key ID length is ${#AWS_ACCESS_KEY_ID}" # 보통 20자
-    - echo "Secret Access Key length is ${#AWS_SECRET_ACCESS_KEY}" # 보통 40자
-
-    # 2. kubectl 설치
+    # 1. AWS 자격 증명 강제 설정 (변수가 비어있는지 확인)
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws configure set region $AWS_REGION
+    
+    # 2. kubectl 설치 (EKS 버전에 맞춤)
     - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
     - chmod +x ./kubectl
     - mv ./kubectl /usr/local/bin/kubectl
-
-    # 3. 자격 증명 명시적 주입 및 테스트
-    - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-    - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-    - export AWS_DEFAULT_REGION=$AWS_REGION
     
+    # 3. EKS 연결 설정 및 테스트
     - aws eks update-kubeconfig --region $AWS_REGION --name fromprom-cluster
     - kubectl get nodes
+    - kubectl get pods -A

@@ -12,6 +12,7 @@ runner-eks-test:
     - chmod +x ./kubectl
     - mv ./kubectl /usr/local/bin/kubectl
     
+    - echo 0117
     # 2. EKS 클러스터 연결 설정
     - aws eks update-kubeconfig --region ap-northeast-2 --name fromprom-cluster
     

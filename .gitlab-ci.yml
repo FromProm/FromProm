@@ -1,0 +1,20 @@
+stages:
+  - test
+
+runner-eks-test:
+  stage: test
+  image: 
+    name: amazon/aws-cli:latest
+    entrypoint: [""]
+  script:
+    # 1. kubectl 설치
+    - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+    - chmod +x ./kubectl
+    - mv ./kubectl /usr/local/bin/kubectl
+    
+    # 2. EKS 클러스터 연결 설정
+    - aws eks update-kubeconfig --region ap-northeast-2 --name fromprom-cluster
+    
+    # 3. 클러스터 상태 확인 명령
+    - kubectl get nodes
+    - kubectl get pods -A

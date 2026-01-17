@@ -14,6 +14,9 @@ runner-eks-test:
     name: amazon/aws-cli:latest
     entrypoint: [""]
   script:
+    # 변수가 비어있지 않은지, 길이는 적당한지 확인 (값 노출 방지)
+    - echo "Access Key ID length is ${#AWS_ACCESS_KEY_ID}"
+    
     # 1. AWS 자격 증명 강제 설정 (변수가 비어있는지 확인)
     - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
     - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY

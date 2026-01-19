@@ -19,7 +19,7 @@ spec:
       - name: auth-service
         image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:afedf075
         ports:
-        - containerPort: 8080
+        - containerPort: 33000
         env:
         # Spring Boot 3.x 규칙: aws.credentials.accessKey -> AWS_CREDENTIALS_ACCESSKEY
         - name: AWS_CREDENTIALS_ACCESSKEY
@@ -70,13 +70,13 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthy
-            port: 8080
+            port: 33000
           initialDelaySeconds: 60
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /healthy
-            port: 8080
+            port: 33000
           initialDelaySeconds: 30
           periodSeconds: 5
 ---
@@ -89,5 +89,5 @@ spec:
     app: auth-service
   ports:
   - port: 33000
-    targetPort: 8080
+    targetPort: 33000
   type: ClusterIP

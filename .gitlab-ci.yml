@@ -201,12 +201,12 @@ update-manifest-auth:
     - echo "New image tag: $IMAGE_TAG"
     
     # Update the manifest file
-    - sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml
+    - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml'
     
     # Commit and push changes
     - git add infra/k8s-manifests/auth-service.yaml
-    - git commit -m "chore: update auth-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
-    - git push origin ${CI_COMMIT_REF_NAME}
+    - 'git commit -m "chore: update auth-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"'
+    - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
   only:
     refs:
       - main
@@ -240,12 +240,12 @@ update-manifest-search:
     - echo "New image tag: $IMAGE_TAG"
     
     # Update the manifest file
-    - sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:${IMAGE_TAG}|g" infra/k8s-manifests/search-service.yaml
+    - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:${IMAGE_TAG}|g" infra/k8s-manifests/search-service.yaml'
     
     # Commit and push changes
     - git add infra/k8s-manifests/search-service.yaml
-    - git commit -m "chore: update search-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
-    - git push origin ${CI_COMMIT_REF_NAME}
+    - 'git commit -m "chore: update search-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"'
+    - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
   only:
     refs:
       - main

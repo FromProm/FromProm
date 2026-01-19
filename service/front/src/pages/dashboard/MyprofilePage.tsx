@@ -105,7 +105,7 @@ const MyprofilePage = () => {
   const purchasedPrompts = getPurchasedPrompts();
   const cartItemCount = getItemCount();
   
-  // 통계 데이터
+  /* 통계 데이터
   const stats = {
     totalPurchased: purchasedPrompts.length,
     totalSpent: purchasedPrompts.reduce((sum, prompt) => sum + prompt.price, 0),
@@ -117,6 +117,8 @@ const MyprofilePage = () => {
         }, {} as Record<string, number>)
       : {}
   };
+  */
+
   /* 나중에 사용 예정
   const mostUsedCategory = Object.keys(stats.favoriteCategory).length > 0
     ? Object.entries(stats.favoriteCategory).sort(([,a], [,b]) => b - a)[0][0]

@@ -2,12 +2,12 @@ default_agent: ai_service
 agents:
   ai_service:
     name: ai_service
-    entrypoint: C:/FromProm/FromProm/service/ai-service/agent.py
+    entrypoint: ./agent.py
     deployment_type: container
     runtime_type: null
-    platform: linux/arm64
+    platform: linux/amd64
     container_runtime: none
-    source_path: C:\FromProm\FromProm\service\ai-service
+    source_path: .
     aws:
       execution_role: arn:aws:iam::261595668962:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-ec40b9ec00
       execution_role_auto_create: false

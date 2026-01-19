@@ -55,6 +55,7 @@ deploy:
   
   script:
     # CodeBuild를 사용한 클라우드 빌드 (Docker 불필요)
+    - cd service/ai-service
     - agentcore deploy
   
   environment:

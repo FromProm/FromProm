@@ -20,8 +20,12 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable()) // POST, PATCH 테스트를 위해 필수!
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/healthy").permitAll()
                         .anyRequest().permitAll() // 일단 모든 API를 인증 없이 허용 (테스트용)
                 );
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable);
+                
         return http.build();
     }
 

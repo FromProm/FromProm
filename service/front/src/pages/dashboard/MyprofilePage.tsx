@@ -23,7 +23,7 @@ interface MyPrompt {
 
 const MyprofilePage = () => {
   const navigate = useNavigate();
-  const [nickname: _nickname, setNickname] = useState<string>('');
+  const [_nickname, setNickname] = useState<string>('');
   const [bio, setBio] = useState<string>('');
   const [credit, setCredit] = useState<number>(0);
   const [isEditingBio, setIsEditingBio] = useState(false);

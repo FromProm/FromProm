@@ -1,0 +1,46 @@
+stages:
+  - deploy
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  AWS_REGION: "us-east-1"
+
+cache:
+  paths:
+    - .cache/pip/
+
+deploy:
+  stage: deploy
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  
+  before_script:
+    # Python 설치
+    - apk add --no-cache python3 py3-pip
+    
+    # AgentCore toolkit 설치 (AWS SDK 포함됨)
+    - pip install --break-system-packages bedrock-agentcore-starter-toolkit
+    
+    # AWS 인증 확인 (boto3 사용)
+    - python3 -c "import boto3; print(boto3.client('sts').get_caller_identity())"
+    
+    # 프로젝트 디렉토리로 이동
+    - cd service/ai-service
+    
+    # 프로젝트 의존성 설치
+    - pip install --break-system-packages -e .
+    
+    # 버전 확인
+    - agentcore --version
+  
+  script:
+    - agentcore deploy
+  
+  environment:
+    name: production
+  
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "new_ai"'
+      when: manual
+    - when: never

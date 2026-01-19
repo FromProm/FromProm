@@ -33,7 +33,8 @@ public class SecurityConfig {
         
         // 🚨 중요: 실제 프론트엔드 도메인 추가
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000", 
+            "http://localhost:3000",
+            "http://localhost:30000",
             "https://www.fromprom.cloud",
             "https://www.fromprom.cloud/",
             "https://fromprom.cloud",

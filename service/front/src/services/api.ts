@@ -2,7 +2,9 @@ import axios from 'axios';
 import { categoryToPromptType } from './dummyData';
 
 // 백엔드 서버 URL을 한 곳에서 관리
-const API_BASE_URL = 'http://localhost:33000';
+// 프로덕션: '' (EKS ALB Ingress)
+// 개발: http://localhost:33000
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // axios 인스턴스 생성
 const api = axios.create({

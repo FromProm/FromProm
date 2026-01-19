@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { userApi, promptApi } from '../../services/api';
+import { promptApi, userApi } from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
 import AnimatedContent from '../../components/AnimatedContent';
 
 // 내 프롬프트 타입 정의
@@ -21,9 +22,7 @@ interface MyPrompt {
 
 const MyprofilePage = () => {
   const navigate = useNavigate();
-  const [, setNickname] = useState<string>('');
-  const [bio, setBio] = useState<string>('');
-  const [credit, setCredit] = useState<number>(0);
+  const { userInfo, fetchUserInfo, updateUserInfo, isAuthenticated } = useAuthStore();
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [editBio, setEditBio] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -41,22 +40,19 @@ const MyprofilePage = () => {
     }
   }, [navigate]);
 
-  // 사용자 정보 가져오기
+  // 사용자 정보 가져오기 (전역 상태 사용)
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const response = await userApi.getMe();
-        setNickname(response.data.nickname || '사용자');
-        setBio(response.data.bio || '');
-        setCredit(response.data.credit || 0);
-        setEditBio(response.data.bio || '');
-      } catch (error) {
-        console.error('Failed to fetch user info:', error);
-        setNickname('사용자');
-      }
-    };
-    fetchUserInfo();
-  }, []);
+    if (isAuthenticated) {
+      fetchUserInfo();
+    }
+  }, [isAuthenticated, fetchUserInfo]);
+
+  // editBio 초기값 설정
+  useEffect(() => {
+    if (userInfo?.bio !== undefined) {
+      setEditBio(userInfo.bio);
+    }
+  }, [userInfo?.bio]);
 
   // 내 프롬프트 목록 가져오기
   useEffect(() => {
@@ -82,7 +78,7 @@ const MyprofilePage = () => {
     setMessage({ type: '', text: '' });
     try {
       await userApi.updateProfile({ bio: editBio });
-      setBio(editBio);
+      updateUserInfo({ bio: editBio });
       setIsEditingBio(false);
       setMessage({ type: 'success', text: '자기소개가 저장되었습니다.' });
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
@@ -94,7 +90,7 @@ const MyprofilePage = () => {
   };
 
   const handleCancelEdit = () => {
-    setEditBio(bio);
+    setEditBio(userInfo?.bio || '');
     setIsEditingBio(false);
   };
 
@@ -163,7 +159,7 @@ const MyprofilePage = () => {
               </div>
             ) : (
               <p className="text-gray-600">
-                {bio || '아직 자기소개가 없습니다. 수정 버튼을 눌러 자기소개를 작성해보세요!'}
+                {userInfo?.bio || '아직 자기소개가 없습니다. 수정 버튼을 눌러 자기소개를 작성해보세요!'}
               </p>
             )}
           </div>
@@ -175,7 +171,7 @@ const MyprofilePage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-medium mb-1">보유 크레딧</h2>
-                <p className="text-3xl font-bold">{credit.toLocaleString()}P</p>
+                <p className="text-3xl font-bold">{(userInfo?.credit || 0).toLocaleString()}P</p>
               </div>
               <div className="flex space-x-2">
                 <Link

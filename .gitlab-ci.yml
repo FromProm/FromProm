@@ -31,8 +31,8 @@ deploy:
     # 프로젝트 의존성 설치
     - pip install --break-system-packages -e .
     
-    # 버전 확인
-    - agentcore --version
+    # agentcore 명령어 확인
+    - which agentcore
   
   script:
     - agentcore deploy

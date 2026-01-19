@@ -1,24 +1,87 @@
-runner-eks-test:
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  FRONT_ROOT: "service/front"
+  # 빌드 결과물 폴더명
+  FRONT_BUILD_OUTPUT: "dist"
+
+# ==========================================
+# 1. Frontend Build
+# ==========================================
+build-frontend:
+  stage: build
+  image: node:20-alpine
+  script:
+    - echo "📂 Moving to Frontend Directory: $FRONT_ROOT"
+    - cd $FRONT_ROOT
+    
+    - echo "🏗️ Installing Dependencies & Building..."
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - "$FRONT_ROOT/$FRONT_BUILD_OUTPUT/"
+    expire_in: 1 hour
+  only:
+    refs:
+      - main
+      - GitLab-Runner-Test 
+    changes:
+      - "$FRONT_ROOT/**/*"
+
+# ==========================================
+# 2. Infrastructure Test
+# ==========================================
+test-infra-connection:
   stage: test
   image: 
     name: amazon/aws-cli:latest
     entrypoint: [""]
   script:
-    # 키가 제대로 들어왔는지 길이 검사 (20자가 아니면 실패 처리)
-    - |
-      if [ ${#AWS_ACCESS_KEY_ID} -ne 20 ]; then
-        echo "Error: AWS_ACCESS_KEY_ID is ${#AWS_ACCESS_KEY_ID} characters long. It must be 20."
-        exit 1
-      fi
-
-    # 별도의 configure 없이 환경변수로 직접 주입 (이게 더 확실함)
-    - export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-    - export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-    - export AWS_DEFAULT_REGION=${AWS_REGION}
-
+    - echo "🔍 Checking AWS Connection (IAM Role)..."
+    # IAM Role이 제대로 연결되었는지 확인
+    - aws sts get-caller-identity
+    
+    - echo "🔍 Checking EKS Connection..."
     - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
     - chmod +x ./kubectl
     - mv ./kubectl /usr/local/bin/kubectl
-
-    - aws eks update-kubeconfig --region $AWS_DEFAULT_REGION --name fromprom-cluster
+    
+    - aws eks update-kubeconfig --region $AWS_REGION --name fromprom-cluster
     - kubectl get nodes
+  only:
+    - main
+    - GitLab-Runner-Test
+
+# ==========================================
+# 3. Frontend Deploy
+# ==========================================
+deploy-frontend:
+  stage: deploy
+  image: 
+    name: amazon/aws-cli:latest
+    entrypoint: [""]
+  needs: ["build-frontend"]
+  script:
+    - echo "🚀 Deploying Frontend to S3..."
+    - aws s3 sync $FRONT_ROOT/$BUILD_OUTPUT/ s3://$S3_FRONT_BUCKET_NAME --delete
+    
+    - echo "🔄 Invalidating CloudFront Cache..."
+    - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*"
+  only:
+    refs:
+      - main
+      - GitLab-Runner-Test
+    changes:
+      - "$FRONT_ROOT/**/*"
+    # CLOUDFRONT_DIST_ID 변수는 GitLab Settings에서 가져옴
+    - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DIST_ID --paths "/*"
+  only:
+    refs:
+      - main
+      - GitLab-Runner-Test
+    changes:
+      - "$FRONT_ROOT/**/*"

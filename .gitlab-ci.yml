@@ -35,7 +35,7 @@ deploy:
     - which agentcore
   
   script:
-    - agentcore deploy
+    - agentcore deploy --local-build
   
   environment:
     name: production

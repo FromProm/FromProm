@@ -8,7 +8,7 @@ variables:
 cache:
   paths:
     - .cache/pip/
-
+# dd
 # AI 서비스 배포
 deploy:
   stage: deploy
@@ -16,7 +16,6 @@ deploy:
   before_script:
     - python -m venv venv
     - source venv/bin/activate
-    - pip install bedrock-agentcore-starter-toolkit
   script:
     - source venv/bin/activate
     - pip install -e .

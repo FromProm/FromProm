@@ -19,7 +19,6 @@ deploy:
     - pip install bedrock-agentcore-starter-toolkit
   script:
     - source venv/bin/activate
-    - cd service/ai-service
     - pip install -e .
     - agentcore deploy
   environment:

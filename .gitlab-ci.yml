@@ -30,7 +30,7 @@ build-frontend:
   only:
     refs:
       - main
-      - gitlab-runner-backend-test
+      - dev
     changes:
       - "service/front/**/*"
 
@@ -53,7 +53,7 @@ test-infra-connection:
     - kubectl get nodes
   only:
     - main
-    - gitlab-runner-backend-test
+    - dev
 
 # ==========================================
 # 3. Backend Build - Auth Service
@@ -92,7 +92,7 @@ build-auth-service:
   only:
     refs:
       - main
-      - gitlab-runner-backend-test
+      - dev
     changes:
       - "service/auth-service/**/*"
 
@@ -132,7 +132,7 @@ build-search-service:
   only:
     refs:
       - main
-      - gitlab-runner-backend-test
+      - dev
     changes:
       - "service/search-service/**/*"
 
@@ -153,7 +153,7 @@ deploy-frontend:
   only:
     refs:
       - main
-      - gitlab-runner-backend-test
+      - dev
     changes:
       - "service/front/**/*"
 
@@ -206,7 +206,7 @@ update-manifest-auth:
   only:
     refs:
       - main
-      - gitlab-runner-backend-test
+      - dev
     changes:
       - "service/auth-service/**/*"
 
@@ -234,6 +234,6 @@ update-manifest-search:
   only:
     refs:
       - main
-      - gitlab-runner-backend-test
+      - dev
     changes:
       - "service/search-service/**/*"

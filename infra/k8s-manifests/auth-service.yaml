@@ -43,12 +43,12 @@ spec:
               key: cognito-user-pool-id
 
         # 3. SNS & DynamoDB & Region
-        - name: AWS_SNS_TOPICARN # 언더바 제거
+        - name: AWS_SNS_TOPIC_ARN
           valueFrom:
             secretKeyRef:
               name: auth-service-secrets
               key: sns-topic-arn
-        - name: AWS_DYNAMODB_TABLENAME # 언더바 제거
+        - name: AWS_DYNAMODB_TABLE_NAME
           valueFrom:
             configMapKeyRef:
               name: auth-service-config

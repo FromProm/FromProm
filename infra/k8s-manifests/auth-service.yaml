@@ -5,6 +5,7 @@ metadata:
   labels:
     app: auth-service
 spec:
+  revisionHistoryLimit: 3
   replicas: 2
   selector:
     matchLabels:
@@ -56,14 +57,14 @@ spec:
             path: /healthy
             # [수정] 앱이 떠 있는 8080 포트로 헬스체크 수행
             port: 8080 
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /healthy
             # [수정] 앱이 떠 있는 8080 포트로 준비상태 확인
             port: 8080 
-          initialDelaySeconds: 30
+          initialDelaySeconds: 60
           periodSeconds: 5
 ---
 apiVersion: v1

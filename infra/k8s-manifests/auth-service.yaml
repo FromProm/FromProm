@@ -15,27 +15,21 @@ spec:
       serviceAccountName: auth-service-sa
       containers:
       - name: auth-service
-        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:949eb180
+        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:52453acf
         ports:
-        - containerPort: 8080
+        - containerPort: 8080 # 스프링 기본 포트
         env:
-        # Spring Boot 매핑용 (가장 중요한 부분)
+        # Spring Boot 3.x 규칙: aws.credentials.accessKey -> AWS_CREDENTIALS_ACCESSKEY
         - name: AWS_CREDENTIALS_ACCESSKEY
           valueFrom:
             secretKeyRef:
               name: auth-service-secrets
-              key: access-key
+              key: aws-access-key
         - name: AWS_CREDENTIALS_SECRETKEY
           valueFrom:
             secretKeyRef:
               name: auth-service-secrets
-              key: secret-key
-        # 나머지 환경 변수
-        - name: AWS_REGION
-          valueFrom:
-            configMapKeyRef:
-              name: auth-service-config
-              key: aws-region
+              key: aws-secret-key
         - name: AWS_COGNITO_CLIENT_ID
           valueFrom:
             secretKeyRef:
@@ -56,6 +50,11 @@ spec:
             configMapKeyRef:
               name: auth-service-config
               key: dynamodb-table-name
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: auth-service-config
+              key: aws-region
         livenessProbe:
           httpGet:
             path: /healthy

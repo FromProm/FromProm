@@ -15,7 +15,7 @@ build-frontend:
   stage: build
   image: node:20-alpine
   script:
-    - echo "📂 Moving to Frontend Directory: $FRONT_ROOT"
+    - echo "📂 Moving to Frontend Directory..."
     - cd $FRONT_ROOT
     
     - echo "🏗️ Installing Dependencies & Building..."

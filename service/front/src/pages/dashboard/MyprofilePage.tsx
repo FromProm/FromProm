@@ -117,11 +117,11 @@ const MyprofilePage = () => {
         }, {} as Record<string, number>)
       : {}
   };
-  
-  const _mostUsedCategory = Object.keys(stats.favoriteCategory).length > 0
+  /* 나중에 사용 예정
+  const mostUsedCategory = Object.keys(stats.favoriteCategory).length > 0
     ? Object.entries(stats.favoriteCategory).sort(([,a], [,b]) => b - a)[0][0]
     : '없음';
-
+  */
   return (
     <div className="min-h-screen bg-white">
       {/* 배경 그라데이션 효과 */}

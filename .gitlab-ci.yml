@@ -5,10 +5,13 @@ stages:
   - update-manifest
 
 variables:
+  # 경로 변수들 (script 내부에서만 사용 가능)
   FRONT_ROOT: "service/front"
   FRONT_BUILD_OUTPUT: "dist"
   AUTH_SERVICE_ROOT: "service/auth-service"
   SEARCH_SERVICE_ROOT: "service/search-service"
+  
+  # AWS / ECR 설정
   ECR_REGISTRY: "261595668962.dkr.ecr.ap-northeast-2.amazonaws.com"
   ECR_REPO_AUTH: "fromprom/auth"
   ECR_REPO_SEARCH: "fromprom/search"
@@ -21,10 +24,10 @@ build-frontend:
   stage: build
   image: node:20-alpine
   script:
-    - echo "Moving to Frontend Directory..."
+    - echo "📂 Moving to Frontend Directory..."
     - cd $FRONT_ROOT
     
-    - echo "Installing Dependencies & Building..."
+    - echo "🏗️ Installing Dependencies & Building..."
     - npm ci
     - npm run build
   artifacts:
@@ -36,7 +39,8 @@ build-frontend:
       - main
       - GitLab-Runner-Test 
     changes:
-      - "$FRONT_ROOT/**/*"
+      # [수정] 변수($FRONT_ROOT) 사용 불가 -> 실제 경로 입력
+      - "service/front/**/*"
 
 # ==========================================
 # 2. Infrastructure Test
@@ -48,7 +52,6 @@ test-infra-connection:
     entrypoint: [""]
   script:
     - echo "🔍 Checking AWS Connection (IAM Role)..."
-    # IAM Role이 제대로 연결되었는지 확인
     - aws sts get-caller-identity
     
     - echo "🔍 Checking EKS Connection..."
@@ -102,7 +105,8 @@ build-auth-service:
       - main
       - GitLab-Runner-Test
     changes:
-      - "$AUTH_SERVICE_ROOT/**/*"
+      # [수정] 변수($AUTH_SERVICE_ROOT) 사용 불가 -> 실제 경로 입력
+      - "service/auth-service/**/*"
 
 # ==========================================
 # 4. Backend Build - Search Service
@@ -144,7 +148,8 @@ build-search-service:
       - main
       - GitLab-Runner-Test
     changes:
-      - "$SEARCH_SERVICE_ROOT/**/*"
+      # [수정] 변수($SEARCH_SERVICE_ROOT) 사용 불가 -> 실제 경로 입력
+      - "service/search-service/**/*"
 
 # ==========================================
 # 5. Frontend Deploy
@@ -157,6 +162,7 @@ deploy-frontend:
   needs: ["build-frontend"]
   script:
     - echo "🚀 Deploying Frontend to S3..."
+    # [수정] 변수명 오타 수정 ($BUILD_OUTPUT -> $FRONT_BUILD_OUTPUT)
     - aws s3 sync $FRONT_ROOT/$FRONT_BUILD_OUTPUT/ s3://$S3_FRONT_BUCKET_NAME --delete
     
     - echo "🔄 Invalidating CloudFront Cache..."
@@ -166,7 +172,8 @@ deploy-frontend:
       - main
       - GitLab-Runner-Test
     changes:
-      - "$FRONT_ROOT/**/*"
+      # [수정] 변수($FRONT_ROOT) 사용 불가 -> 실제 경로 입력
+      - "service/front/**/*"
 
 # ==========================================
 # 6. Update K8s Manifest - Auth Service
@@ -187,18 +194,21 @@ update-manifest-auth:
     - echo "New image tag: $IMAGE_TAG"
     
     # Update the manifest file
-    - sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml
+    - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml'
     
     # Commit and push changes
     - git add infra/k8s-manifests/auth-service.yaml
     - git commit -m "chore: update auth-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
+    
+    # [중요] GITLAB_TOKEN 변수가 CI/CD Settings에 등록되어 있어야 합니다.
     - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
   only:
     refs:
       - main
       - GitLab-Runner-Test
     changes:
-      - "$AUTH_SERVICE_ROOT/**/*"
+      # [수정] 변수($AUTH_SERVICE_ROOT) 사용 불가 -> 실제 경로 입력
+      - "service/auth-service/**/*"
 
 # ==========================================
 # 7. Update K8s Manifest - Search Service
@@ -219,7 +229,7 @@ update-manifest-search:
     - echo "New image tag: $IMAGE_TAG"
     
     # Update the manifest file
-    - sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:${IMAGE_TAG}|g" infra/k8s-manifests/search-service.yaml
+    - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:${IMAGE_TAG}|g" infra/k8s-manifests/search-service.yaml'
     
     # Commit and push changes
     - git add infra/k8s-manifests/search-service.yaml
@@ -230,4 +240,5 @@ update-manifest-search:
       - main
       - GitLab-Runner-Test
     changes:
-      - "$SEARCH_SERVICE_ROOT/**/*"
+      # [수정] 변수($SEARCH_SERVICE_ROOT) 사용 불가 -> 실제 경로 입력
+      - "service/search-service/**/*"

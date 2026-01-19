@@ -2,10 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: auth-service
-  labels:
-    app: auth-service
 spec:
-  revisionHistoryLimit: 3
   replicas: 2
   selector:
     matchLabels:
@@ -18,13 +15,26 @@ spec:
       serviceAccountName: auth-service-sa
       containers:
       - name: auth-service
-        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:56bfb78c
+        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:latest
         ports:
-        # [수정] 컨테이너 내부 실제 포트인 8080으로 변경
-        - containerPort: 8080 
+        - containerPort: 8080
         env:
+        # 중요: 스프링의 aws.credentials.accessKey는 AWS_CREDENTIALS_ACCESS_KEY로 변환되어 인식됨
+        - name: AWS_CREDENTIALS_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: auth-service-secrets
+              key: access-key
+        - name: AWS_CREDENTIALS_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: auth-service-secrets
+              key: secret-key
         - name: AWS_REGION
-          value: "ap-northeast-2"
+          valueFrom:
+            configMapKeyRef:
+              name: auth-service-config
+              key: aws-region
         - name: AWS_COGNITO_CLIENT_ID
           valueFrom:
             secretKeyRef:
@@ -45,27 +55,17 @@ spec:
             configMapKeyRef:
               name: auth-service-config
               key: dynamodb-table-name
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
-            memory: "1Gi"
-            cpu: "500m"
+        # 포트 및 프로브 설정 (8080 유지)
         livenessProbe:
           httpGet:
             path: /healthy
-            # [수정] 앱이 떠 있는 8080 포트로 헬스체크 수행
-            port: 8080 
+            port: 8080
           initialDelaySeconds: 120
-          periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /healthy
-            # [수정] 앱이 떠 있는 8080 포트로 준비상태 확인
-            port: 8080 
+            port: 8080
           initialDelaySeconds: 60
-          periodSeconds: 5
 ---
 apiVersion: v1
 kind: Service
@@ -75,7 +75,6 @@ spec:
   selector:
     app: auth-service
   ports:
-  - port: 33000          # 외부/다른 서비스에서 접속할 포트 (유지)
-    # [수정] 서비스가 받은 신호를 전달할 실제 타겟 포트 (8080으로 변경)
-    targetPort: 8080 
+  - port: 33000
+    targetPort: 8080
   type: ClusterIP

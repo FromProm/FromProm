@@ -191,14 +191,14 @@ update-manifest-auth:
     
     # Read the image tag
     - export IMAGE_TAG=$(cat service/image_tag.txt)
-    - echo "New image tag: $IMAGE_TAG"
+    - 'echo "New image tag: $IMAGE_TAG"'
     
     # Update the manifest file
     - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml'
     
     # Commit and push changes
     - git add infra/k8s-manifests/auth-service.yaml
-    - git commit -m "chore: update auth-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
+    - 'git commit -m "chore: update auth-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"'
     
     # [중요] GITLAB_TOKEN 변수가 CI/CD Settings에 등록되어 있어야 합니다.
     - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
@@ -226,14 +226,14 @@ update-manifest-search:
     
     # Read the image tag
     - export IMAGE_TAG=$(cat service/search_image_tag.txt)
-    - echo "New image tag: $IMAGE_TAG"
+    - 'echo "New image tag: $IMAGE_TAG"'
     
     # Update the manifest file
     - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:${IMAGE_TAG}|g" infra/k8s-manifests/search-service.yaml'
     
     # Commit and push changes
     - git add infra/k8s-manifests/search-service.yaml
-    - git commit -m "chore: update search-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"
+    - 'git commit -m "chore: update search-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"'
     - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
   only:
     refs:

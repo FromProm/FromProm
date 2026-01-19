@@ -2,7 +2,7 @@ import axios from 'axios';
 import { categoryToPromptType } from './dummyData';
 
 // 백엔드 서버 URL을 한 곳에서 관리
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = '';
 
 // axios 인스턴스 생성
 const api = axios.create({

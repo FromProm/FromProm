@@ -19,8 +19,11 @@ spec:
       - name: auth-service
         image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:afedf075
         ports:
-        - containerPort: 33000
+        - containerPort: 8080
         env:
+        # Spring Boot 프로파일 활성화
+        - name: SPRING_PROFILES_ACTIVE
+          value: "aws"
         # Spring Boot 3.x 규칙: aws.credentials.accessKey -> AWS_CREDENTIALS_ACCESSKEY
         - name: AWS_CREDENTIALS_ACCESSKEY
           valueFrom:
@@ -32,19 +35,18 @@ spec:
             secretKeyRef:
               name: auth-service-secrets
               key: aws-secret-key
-# 2. Cognito (에러 발생 중인 부분 수정)
-        - name: AWS_COGNITO_CLIENTID  # AWS_COGNITO_CLIENT_ID에서 언더바 제거
+        # Cognito
+        - name: AWS_COGNITO_CLIENTID
           valueFrom:
             secretKeyRef:
               name: auth-service-secrets
               key: cognito-client-id
-        - name: AWS_COGNITO_USERPOOLID # AWS_COGNITO_USER_POOL_ID에서 언더바 제거
+        - name: AWS_COGNITO_USERPOOLID
           valueFrom:
             secretKeyRef:
               name: auth-service-secrets
               key: cognito-user-pool-id
-
-        # 3. SNS & DynamoDB & Region
+        # SNS & DynamoDB & Region
         - name: AWS_SNS_TOPIC_ARN
           valueFrom:
             secretKeyRef:
@@ -70,15 +72,19 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthy
-            port: 33000
-          initialDelaySeconds: 60
+            port: 8080
+          initialDelaySeconds: 90
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /healthy
-            port: 33000
-          initialDelaySeconds: 30
-          periodSeconds: 5
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
 ---
 apiVersion: v1
 kind: Service
@@ -89,5 +95,5 @@ spec:
     app: auth-service
   ports:
   - port: 33000
-    targetPort: 33000
+    targetPort: 8080
   type: ClusterIP

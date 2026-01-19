@@ -15,9 +15,28 @@ deploy:
   services:
     - docker:24-dind
   
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_TLS_VERIFY: 1
+    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+  
   before_script:
     # Python 및 빌드 도구 설치
     - apk add --no-cache python3 py3-pip gcc g++ musl-dev python3-dev
+    
+    # Docker 연결 대기 및 확인
+    - |
+      echo "Waiting for Docker daemon..."
+      for i in $(seq 1 30); do
+        if docker info >/dev/null 2>&1; then
+          echo "Docker is ready!"
+          docker info
+          break
+        fi
+        echo "Waiting for Docker... ($i/30)"
+        sleep 2
+      done
     
     # AgentCore toolkit 설치 (AWS SDK 포함됨)
     - pip install --break-system-packages bedrock-agentcore-starter-toolkit
@@ -35,7 +54,8 @@ deploy:
     - which agentcore
   
   script:
-    - agentcore deploy --local-build
+    # CodeBuild를 사용한 클라우드 빌드 (Docker 불필요)
+    - agentcore deploy
   
   environment:
     name: production

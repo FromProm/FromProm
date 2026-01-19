@@ -77,11 +77,3 @@ deploy-frontend:
       - GitLab-Runner-Test
     changes:
       - "$FRONT_ROOT/**/*"
-    # CLOUDFRONT_DIST_ID 변수는 GitLab Settings에서 가져옴
-    - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DIST_ID --paths "/*"
-  only:
-    refs:
-      - main
-      - GitLab-Runner-Test
-    changes:
-      - "$FRONT_ROOT/**/*"

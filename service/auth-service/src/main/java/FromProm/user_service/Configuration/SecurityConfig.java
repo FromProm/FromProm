@@ -24,7 +24,7 @@ public class SecurityConfig {
                         .anyRequest().permitAll()
                 )
                 .formLogin(form -> form.disable())
-                .httpBasic(basic -> basic.disable()); //야호
+                .httpBasic(basic -> basic.disable());
 
         return http.build();
     }

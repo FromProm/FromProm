@@ -166,20 +166,21 @@ deploy-frontend:
 update-manifest-auth:
   stage: update-manifest
   image: 
-    name: amazon/aws-cli:latest # kubectl과 aws-cli가 필요하므로 이미지 변경
+    name: amazon/aws-cli:latest
     entrypoint: [""]
   needs: ["build-auth-service"]
   before_script:
-    - apk add --no-cache git curl
+    # [수정] amazon-linux 기반이므로 yum 사용 (git은 보통 설치되어 있음)
+    - yum install -y git tar gzip
     - echo "🔧 Installing kubectl..."
     - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
     - chmod +x ./kubectl
     - mv ./kubectl /usr/local/bin/kubectl
     - aws eks update-kubeconfig --region $AWS_REGION --name fromprom-cluster
   script:
-    - echo "🔐 Creating/Updating Secrets and ConfigMaps from GitLab Variables..."
+    - echo "🔐 Creating/Updating Secrets and ConfigMaps..."
     
-    # 1. Secret 생성 (GitLab 변수를 참조하여 클러스터에 직접 주입)
+    # Secret 및 ConfigMap 생성 (기존과 동일)
     - |
       kubectl create secret generic auth-service-secrets \
         --from-literal=cognito-client-id="$COGNITO_CLIENT_ID" \
@@ -187,7 +188,6 @@ update-manifest-auth:
         --from-literal=sns-topic-arn="$SNS_TOPIC_ARN" \
         --dry-run=client -o yaml | kubectl apply -f -
 
-    # 2. ConfigMap 생성
     - |
       kubectl create configmap auth-service-config \
         --from-literal=dynamodb-table-name="$DYNAMODB_TABLE_NAME" \
@@ -196,12 +196,14 @@ update-manifest-auth:
     - echo "📝 Updating Auth Service Manifest Tag..."
     - git config --global user.email "gitlab-ci@fromprom.cloud"
     - git config --global user.name "GitLab CI"
+    
+    # [주의] 아티팩트 위치 확인 (이전 빌드 단계에서 생성된 파일)
+    - export IMAGE_TAG=$(cat service/auth_image_tag.txt)
+    
     - git clone https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git repo
     - cd repo
     - git checkout ${CI_COMMIT_REF_NAME}
     
-    # 이미지 태그 업데이트
-    - export IMAGE_TAG=$(cat ../service/auth_image_tag.txt)
     - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml'
     
     - git add infra/k8s-manifests/auth-service.yaml

@@ -4,8 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -17,16 +16,13 @@ public class AwsConfig {
     @Value("${aws.region}")
     private String region;
 
-    @Value("${aws.credentials.accessKey}")
-    private String accessKey;
-
-    @Value("${aws.credentials.secretKey}")
-    private String secretKey;
-
-    private StaticCredentialsProvider getCredentials() {
-        return StaticCredentialsProvider.create(
-                AwsBasicCredentials.create(accessKey, secretKey)
-        );
+    // IRSA 사용: DefaultCredentialsProvider는 다음 순서로 자격증명을 찾음
+    // 1. 환경변수 (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    // 2. Web Identity Token (IRSA - EKS에서 자동 주입)
+    // 3. EC2 Instance Profile
+    // 4. AWS CLI 프로필 (~/.aws/credentials)
+    private DefaultCredentialsProvider getCredentials() {
+        return DefaultCredentialsProvider.create();
     }
 
     @Bean
@@ -38,7 +34,7 @@ public class AwsConfig {
     }
 
     @Bean
-    @Primary // 우선순위를 부여하여 충돌 방지
+    @Primary
     public DynamoDbClient dynamoDbClient() {
         return DynamoDbClient.builder()
                 .region(Region.of(region))

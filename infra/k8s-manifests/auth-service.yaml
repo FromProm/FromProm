@@ -24,7 +24,7 @@ spec:
         # Spring Boot 프로파일 활성화
         - name: SPRING_PROFILES_ACTIVE
           value: "aws"
-        # IRSA 사용 - Access Key 제거하고 Web Identity Token 사용
+        # IRSA 사용 - Access Key 불필요 (DefaultCredentialsProvider가 Web Identity Token 사용)
         # Cognito
         - name: AWS_COGNITO_CLIENTID
           valueFrom:

@@ -24,6 +24,7 @@ wheels/
 venv/
 env/
 ENV/
+.venv/
 
 # Environment Variables
 .env
@@ -56,4 +57,4 @@ outputs/
 # MCP - 설정 파일은 포함하되 캐시는 제외
 .kiro/cache/
 .kiro/logs/
-!.kiro/settings/
+!.kiro/settings/venv/ 

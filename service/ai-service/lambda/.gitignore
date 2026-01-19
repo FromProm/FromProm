@@ -1,0 +1,23 @@
+# Lambda 배포 파일
+package/
+lambda_function.zip
+response.json
+trust-policy.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 환경
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

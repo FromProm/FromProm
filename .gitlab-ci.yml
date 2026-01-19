@@ -161,23 +161,49 @@ deploy-frontend:
       - "service/front/**/*"
 
 # ==========================================
-# 6. Update K8s Manifest - Auth Service
+# 6. Update K8s Manifest & Secrets - Auth Service
 # ==========================================
 update-manifest-auth:
   stage: update-manifest
-  image: alpine:latest
+  image: 
+    name: amazon/aws-cli:latest # kubectl과 aws-cli가 필요하므로 이미지 변경
+    entrypoint: [""]
   needs: ["build-auth-service"]
   before_script:
-    - apk add --no-cache git
+    - apk add --no-cache git curl
+    - echo "🔧 Installing kubectl..."
+    - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
+    - chmod +x ./kubectl
+    - mv ./kubectl /usr/local/bin/kubectl
+    - aws eks update-kubeconfig --region $AWS_REGION --name fromprom-cluster
+  script:
+    - echo "🔐 Creating/Updating Secrets and ConfigMaps from GitLab Variables..."
+    
+    # 1. Secret 생성 (GitLab 변수를 참조하여 클러스터에 직접 주입)
+    - |
+      kubectl create secret generic auth-service-secrets \
+        --from-literal=cognito-client-id="$COGNITO_CLIENT_ID" \
+        --from-literal=cognito-user-pool-id="$COGNITO_USER_POOL_ID" \
+        --from-literal=sns-topic-arn="$SNS_TOPIC_ARN" \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+    # 2. ConfigMap 생성
+    - |
+      kubectl create configmap auth-service-config \
+        --from-literal=dynamodb-table-name="$DYNAMODB_TABLE_NAME" \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+    - echo "📝 Updating Auth Service Manifest Tag..."
     - git config --global user.email "gitlab-ci@fromprom.cloud"
     - git config --global user.name "GitLab CI"
     - git clone https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git repo
     - cd repo
     - git checkout ${CI_COMMIT_REF_NAME}
-  script:
-    - echo "📝 Updating Auth Service Manifest..."
+    
+    # 이미지 태그 업데이트
     - export IMAGE_TAG=$(cat ../service/auth_image_tag.txt)
     - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml'
+    
     - git add infra/k8s-manifests/auth-service.yaml
     - 'git commit -m "chore: update auth-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes"'
     - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}

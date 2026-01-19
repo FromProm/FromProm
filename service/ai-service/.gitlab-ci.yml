@@ -1,0 +1,29 @@
+stages:
+  - deploy
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  AWS_REGION: "us-east-1"
+
+cache:
+  paths:
+    - .cache/pip/
+
+# AI 서비스 배포
+deploy:
+  stage: deploy
+  image: python:3.10
+  before_script:
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install bedrock-agentcore-starter-toolkit
+  script:
+    - source venv/bin/activate
+    - cd service/ai-service
+    - pip install -e .
+    - agentcore deploy
+  environment:
+    name: production
+  only:
+    - new_ai
+  when: manual

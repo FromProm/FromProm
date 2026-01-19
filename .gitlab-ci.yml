@@ -15,10 +15,10 @@ build-frontend:
   stage: build
   image: node:20-alpine
   script:
-    - echo "📂 Moving to Frontend Directory..."
+    - echo "Moving to Frontend Directory..."
     - cd $FRONT_ROOT
     
-    - echo "🏗️ Installing Dependencies & Building..."
+    - echo "Installing Dependencies & Building..."
     - npm ci
     - npm run build
   artifacts:

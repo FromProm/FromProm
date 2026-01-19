@@ -18,7 +18,7 @@ spec:
       serviceAccountName: auth-service-sa
       containers:
       - name: auth-service
-        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:56bfb78c
+        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:19f6cf15
         ports:
         # [수정] 컨테이너 내부 실제 포트인 8080으로 변경
         - containerPort: 8080 

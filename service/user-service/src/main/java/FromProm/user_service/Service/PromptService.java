@@ -23,7 +23,7 @@ public class PromptService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
     private final DynamoDbClient dynamoDbClient;
-    private final String SNS_TOPIC_ARN = "arn:aws:sns:ap-northeast-2:261595668962:testest";
+    private final String SNS_TOPIC_ARN = "arn:aws:sns:ap-northeast-2:261595668962:fromprom_sns";
     private final String TABLE_NAME = "FromProm_Table";
 
     public String createInitialPrompt(String userId, PromptSaveRequest dto) {
@@ -40,7 +40,7 @@ public class PromptService {
         fullPayload.put("type", "PROMPT");
         fullPayload.put("create_user", "USER#" + userId);
         fullPayload.put("title", dto.getTitle());
-        fullPayload.put("content", dto.getContent());
+        fullPayload.put("prompt_content", dto.getContent());
         fullPayload.put("prompt_description", dto.getDescription());
         fullPayload.put("price", dto.getPrice());
         fullPayload.put("prompt_type", dto.getPromptType().name());
@@ -56,9 +56,9 @@ public class PromptService {
 
                 Map<String, Object> exMap = new LinkedHashMap<>();
                 exMap.put("index", i);
-                exMap.put("input", Map.of(
-                        "content", jsonInputStr,
-                        "input_type", "text"
+                exMap.put("topic", Map.of(
+                        "input_type", "text",
+                        "content", jsonInputStr
                 ));
                 exMap.put("output", ""); // 요구사항: 출력값은 빈칸으로 고정
                 structuredExamples.add(exMap);

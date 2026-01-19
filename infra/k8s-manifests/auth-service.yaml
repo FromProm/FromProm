@@ -20,6 +20,29 @@ spec:
         image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:1
         ports:
         - containerPort: 33000
+        env:
+        - name: AWS_REGION
+          value: "ap-northeast-2"
+        - name: AWS_COGNITO_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: auth-service-secrets
+              key: cognito-client-id
+        - name: AWS_COGNITO_USER_POOL_ID
+          valueFrom:
+            secretKeyRef:
+              name: auth-service-secrets
+              key: cognito-user-pool-id
+        - name: AWS_SNS_TOPIC_ARN
+          valueFrom:
+            secretKeyRef:
+              name: auth-service-secrets
+              key: sns-topic-arn
+        - name: AWS_DYNAMODB_TABLE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: auth-service-config
+              key: dynamodb-table-name
         resources:
           requests:
             memory: "512Mi"

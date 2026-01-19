@@ -211,7 +211,7 @@ update-manifest-auth:
       - "service/auth-service/**/*"
 
 # ==========================================
-# 7. Update K8s Manifest - Search Service
+# 7. Update K8s Manifest - Search Service 
 # ==========================================
 update-manifest-search:
   stage: update-manifest

@@ -7,8 +7,8 @@ stages:
 variables:
   FRONT_ROOT: "service/front"
   FRONT_BUILD_OUTPUT: "dist"
-  AUTH_SERVICE_ROOT: "service/auth-service"
-  SEARCH_SERVICE_ROOT: "service/search-service"
+  #AUTH_SERVICE_ROOT: "service/auth-service"
+  #SEARCH_SERVICE_ROOT: "service/search-service"
   ECR_REPO_AUTH: "fromprom/auth"
   ECR_REPO_SEARCH: "fromprom/search"
 

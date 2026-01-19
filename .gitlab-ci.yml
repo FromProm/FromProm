@@ -7,10 +7,12 @@ stages:
 variables:
   FRONT_ROOT: "service/front"
   FRONT_BUILD_OUTPUT: "dist"
+  # 요청하신 대로 주석 유지
   #AUTH_SERVICE_ROOT: "service/auth-service"
   #SEARCH_SERVICE_ROOT: "service/search-service"
   ECR_REPO_AUTH: "fromprom/auth"
   ECR_REPO_SEARCH: "fromprom/search"
+  ECR_REGISTRY: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
 # ==========================================
 # 1. Frontend Build
@@ -21,7 +23,6 @@ build-frontend:
   script:
     - echo "📂 Moving to Frontend Directory..."
     - cd $FRONT_ROOT
-    
     - echo "🏗️ Installing Dependencies & Building..."
     - npm ci
     - npm run build
@@ -34,7 +35,7 @@ build-frontend:
       - main
       - gitlab-runner-backend-test
     changes:
-      - "$FRONT_ROOT/**/*"
+      - "service/front/**/*"
 
 # ==========================================
 # 2. Infrastructure Test
@@ -45,14 +46,12 @@ test-infra-connection:
     name: amazon/aws-cli:latest
     entrypoint: [""]
   script:
-    - echo "🔍 Checking AWS Connection (IAM Role)..."
+    - echo "🔍 Checking AWS Connection..."
     - aws sts get-caller-identity
-    
     - echo "🔍 Checking EKS Connection..."
     - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
     - chmod +x ./kubectl
     - mv ./kubectl /usr/local/bin/kubectl
-    
     - aws eks update-kubeconfig --region $AWS_REGION --name fromprom-cluster
     - kubectl get nodes
   only:
@@ -70,19 +69,14 @@ build-auth-service:
   variables:
     DOCKER_TLS_CERTDIR: "/certs"
   before_script:
-    - apk add --no-cache aws-cli git
-    # ECR_REGISTRY 환경변수 구성
-    - export ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    - apk add --no-cache aws-cli
     - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
   script:
     - echo "🏗️ Building Auth Service Docker Image..."
-    - cd $AUTH_SERVICE_ROOT
+    - cd service/auth-service
     
-    # ECR_REGISTRY 환경변수 구성
-    - export ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    
-    # Generate image tag (commit short SHA)
-    - export IMAGE_TAG=$(git rev-parse --short HEAD)
+    # Git 에러 방지를 위해 GitLab 내장 변수 사용
+    - export IMAGE_TAG=$CI_COMMIT_SHORT_SHA
     - export IMAGE_NAME="$ECR_REGISTRY/$ECR_REPO_AUTH:$IMAGE_TAG"
     
     - echo "📦 Building image $IMAGE_NAME"
@@ -93,11 +87,10 @@ build-auth-service:
     - docker push $IMAGE_NAME
     - docker push $ECR_REGISTRY/$ECR_REPO_AUTH:latest
     
-    # Save image tag for manifest update
-    - echo $IMAGE_TAG > ../image_tag.txt
+    - echo $IMAGE_TAG > ../auth_image_tag.txt
   artifacts:
     paths:
-      - service/image_tag.txt
+      - service/auth_image_tag.txt
     expire_in: 1 hour
   only:
     refs:
@@ -117,19 +110,13 @@ build-search-service:
   variables:
     DOCKER_TLS_CERTDIR: "/certs"
   before_script:
-    - apk add --no-cache aws-cli git
-    # ECR_REGISTRY 환경변수 구성
-    - export ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    - apk add --no-cache aws-cli
     - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
   script:
     - echo "🏗️ Building Search Service Docker Image..."
-    - cd $SEARCH_SERVICE_ROOT
+    - cd service/search-service
     
-    # ECR_REGISTRY 환경변수 구성
-    - export ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    
-    # Generate image tag (commit short SHA)
-    - export IMAGE_TAG=$(git rev-parse --short HEAD)
+    - export IMAGE_TAG=$CI_COMMIT_SHORT_SHA
     - export IMAGE_NAME="$ECR_REGISTRY/$ECR_REPO_SEARCH:$IMAGE_TAG"
     
     - echo "📦 Building image $IMAGE_NAME"
@@ -140,7 +127,6 @@ build-search-service:
     - docker push $IMAGE_NAME
     - docker push $ECR_REGISTRY/$ECR_REPO_SEARCH:latest
     
-    # Save image tag for manifest update
     - echo $IMAGE_TAG > ../search_image_tag.txt
   artifacts:
     paths:
@@ -165,7 +151,6 @@ deploy-frontend:
   script:
     - echo "🚀 Deploying Frontend to S3..."
     - aws s3 sync $FRONT_ROOT/$FRONT_BUILD_OUTPUT/ s3://$S3_FRONT_BUCKET_NAME --delete
-    
     - echo "🔄 Invalidating CloudFront Cache..."
     - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*"
   only:
@@ -173,7 +158,7 @@ deploy-frontend:
       - main
       - gitlab-runner-backend-test
     changes:
-      - "$FRONT_ROOT/**/*"
+      - "service/front/**/*"
 
 # ==========================================
 # 6. Update K8s Manifest - Auth Service
@@ -186,26 +171,15 @@ update-manifest-auth:
     - apk add --no-cache git
     - git config --global user.email "gitlab-ci@fromprom.cloud"
     - git config --global user.name "GitLab CI"
-    # Clone the repository to get full git history
     - git clone https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git repo
     - cd repo
     - git checkout ${CI_COMMIT_REF_NAME}
   script:
     - echo "📝 Updating Auth Service Manifest..."
-    
-    # ECR_REGISTRY 환경변수 구성
-    - export ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    
-    # Read the image tag from artifact
-    - export IMAGE_TAG=$(cat ../service/image_tag.txt)
-    - 'echo "New image tag: $IMAGE_TAG"'
-    
-    # Update the manifest file
+    - export IMAGE_TAG=$(cat ../service/auth_image_tag.txt)
     - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml'
-    
-    # Commit and push changes
     - git add infra/k8s-manifests/auth-service.yaml
-    - 'git commit -m "chore: update auth-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"'
+    - 'git commit -m "chore: update auth-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes"'
     - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
   only:
     refs:
@@ -225,26 +199,15 @@ update-manifest-search:
     - apk add --no-cache git
     - git config --global user.email "gitlab-ci@fromprom.cloud"
     - git config --global user.name "GitLab CI"
-    # Clone the repository to get full git history
     - git clone https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git repo
     - cd repo
     - git checkout ${CI_COMMIT_REF_NAME}
   script:
     - echo "📝 Updating Search Service Manifest..."
-    
-    # ECR_REGISTRY 환경변수 구성
-    - export ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-    
-    # Read the image tag from artifact
     - export IMAGE_TAG=$(cat ../service/search_image_tag.txt)
-    - 'echo "New image tag: $IMAGE_TAG"'
-    
-    # Update the manifest file
     - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:${IMAGE_TAG}|g" infra/k8s-manifests/search-service.yaml'
-    
-    # Commit and push changes
     - git add infra/k8s-manifests/search-service.yaml
-    - 'git commit -m "chore: update search-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"'
+    - 'git commit -m "chore: update search-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes"'
     - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
   only:
     refs:

@@ -57,10 +57,24 @@ class BedrockRunner(BaseRunner):
     
     def _sync_invoke(self, model: str, prompt: str, input_type: str, kwargs: dict) -> Dict[str, Any]:
         """동기 Bedrock 호출 (스레드에서 실행)"""
+        import time
+        
         try:
+            logger.debug(f"    🔷 [Bedrock LLM] 호출 시작")
+            logger.debug(f"       모델 ID: {model}")
+            logger.debug(f"       프롬프트 길이: {len(prompt)} 문자")
+            
+            start_time = time.time()
+            
             # inference profile ARN인 경우 converse API 사용
             if model.startswith("arn:aws:bedrock"):
-                return self._invoke_with_converse(model, prompt, **kwargs)
+                result = self._invoke_with_converse(model, prompt, **kwargs)
+                elapsed = time.time() - start_time
+                logger.debug(f"    ✅ [Bedrock LLM] Converse API 호출 성공")
+                logger.debug(f"       응답 시간: {elapsed:.2f}초")
+                logger.debug(f"       입력 토큰: {result['token_usage']['input_tokens']}")
+                logger.debug(f"       출력 토큰: {result['token_usage']['output_tokens']}")
+                return result
             
             # 모델별 요청 형식 구성
             if "anthropic.claude" in model:
@@ -88,24 +102,35 @@ class BedrockRunner(BaseRunner):
                 contentType='application/json'
             )
             
+            elapsed = time.time() - start_time
+            
             # 응답 파싱
             response_body = json.loads(response['body'].read())
             
             # 모델별 응답 파싱
             if "anthropic.claude" in model:
-                return self._parse_claude_response(response_body)
+                result = self._parse_claude_response(response_body)
             elif "openai.gpt" in model:
-                return self._parse_openai_response(response_body)
+                result = self._parse_openai_response(response_body)
             elif "amazon.titan" in model:
                 if "image" in model:
-                    return self._parse_titan_image_response(response_body)
+                    result = self._parse_titan_image_response(response_body)
                 else:
-                    return self._parse_titan_response(response_body)
+                    result = self._parse_titan_response(response_body)
             elif "amazon.nova" in model:
-                return self._parse_nova_response(response_body, model)
+                result = self._parse_nova_response(response_body, model)
+            
+            logger.debug(f"    ✅ [Bedrock LLM] 호출 성공")
+            logger.debug(f"       응답 시간: {elapsed:.2f}초")
+            logger.debug(f"       입력 토큰: {result['token_usage']['input_tokens']}")
+            logger.debug(f"       출력 토큰: {result['token_usage']['output_tokens']}")
+            
+            return result
             
         except Exception as e:
-            logger.error(f"Model invocation failed: {str(e)}")
+            logger.error(f"    ❌ [Bedrock LLM] 호출 실패")
+            logger.error(f"       모델: {model}")
+            logger.error(f"       에러: {str(e)}")
             raise ModelInvocationError(f"Failed to invoke {model}: {str(e)}")
     
     def _invoke_with_converse(self, model_arn: str, prompt: str, **kwargs) -> Dict[str, Any]:

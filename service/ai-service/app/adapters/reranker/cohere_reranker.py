@@ -54,12 +54,12 @@ class CohereReranker:
                 doc_text = f"{evidence.get('title', '')}\n{evidence.get('content', '')}"
                 documents.append(doc_text)
             
-            # Cohere Rerank API 호출
+            # Cohere Rerank API 호출 (Bedrock 형식)
             request_body = {
                 "query": claim,
                 "documents": documents,
                 "top_n": min(top_k, len(documents)),
-                "return_documents": False
+                "api_version": "1"
             }
             
             response = bedrock.invoke_model(

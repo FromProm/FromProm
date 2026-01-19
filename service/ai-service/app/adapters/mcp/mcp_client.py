@@ -138,35 +138,54 @@ class MCPClient:
         Returns:
             검색된 근거 리스트
         """
+        import time
+        
         try:
             # 서버 타입별 쿼리 전처리
             processed_query = query
             if server_type == MCPServerType.WIKIPEDIA:
                 processed_query = self._preprocess_query_for_wikipedia(query)
-                logger.info(f"Wikipedia query preprocessed: '{query[:50]}...' -> '{processed_query}'")
+                logger.debug(f"    🔷 [MCP] Wikipedia 쿼리 전처리: '{query[:30]}...' -> '{processed_query}'")
             elif server_type == MCPServerType.ACADEMIC_SEARCH:
                 processed_query = self._preprocess_query_for_academic(query)
-                logger.info(f"Academic query preprocessed: '{query[:50]}...' -> '{processed_query}'")
+                logger.debug(f"    🔷 [MCP] Academic 쿼리 전처리: '{query[:30]}...' -> '{processed_query}'")
             
-            logger.info(f"Searching evidence using {server_type.value} for: {processed_query[:50]}...")
+            logger.debug(f"    🔷 [MCP Tool] 호출 시작")
+            logger.debug(f"       도구명: {server_type.value}")
+            logger.debug(f"       검색어: {processed_query[:50]}...")
+            logger.debug(f"       결과 제한: {limit}개")
+            
+            start_time = time.time()
             
             # 서버 타입별 검색 실행
             if server_type == MCPServerType.BRAVE_SEARCH:
-                return await self._search_brave(processed_query, limit)
+                results = await self._search_brave(processed_query, limit)
             elif server_type == MCPServerType.TAVILY_SEARCH:
-                return await self._search_tavily(processed_query, limit)
+                results = await self._search_tavily(processed_query, limit)
             elif server_type == MCPServerType.WIKIPEDIA:
-                return await self._search_wikipedia(processed_query, limit)
+                results = await self._search_wikipedia(processed_query, limit)
             elif server_type == MCPServerType.ACADEMIC_SEARCH:
-                return await self._search_academic(processed_query, limit)
+                results = await self._search_academic(processed_query, limit)
             elif server_type == MCPServerType.GOOGLE_SEARCH:
-                return await self._search_google(processed_query, limit)
+                results = await self._search_google(processed_query, limit)
             else:
                 logger.error(f"Unsupported MCP server type: {server_type}")
                 return []
+            
+            elapsed = time.time() - start_time
+            
+            logger.debug(f"    ✅ [MCP Tool] 호출 성공")
+            logger.debug(f"       실행 시간: {elapsed:.2f}초")
+            logger.debug(f"       검색 결과: {len(results)}개")
+            if results:
+                logger.debug(f"       상위 결과: {results[0].get('title', '')[:50]}...")
+            
+            return results
                 
         except Exception as e:
-            logger.error(f"MCP search failed for {server_type}: {str(e)}")
+            logger.error(f"    ❌ [MCP Tool] 호출 실패")
+            logger.error(f"       도구: {server_type.value}")
+            logger.error(f"       에러: {str(e)}")
             return []
     
     async def _search_brave(self, query: str, limit: int) -> List[Dict[str, Any]]:

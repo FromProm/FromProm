@@ -165,7 +165,7 @@ const LandingPage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.5 }}
                 >
-                  수치로 증명합니당근
+                  수치로 증명합니당근당근근
                 </motion.span>
               </h1>
             </motion.div>

@@ -1,4 +1,4 @@
-# Multi-stage build for search-service
+# Multi-stage build for auth-service
 FROM gradle:8.5-jdk17 AS builder
 
 WORKDIR /app
@@ -22,7 +22,7 @@ WORKDIR /app
 COPY --from=builder /app/build/libs/*.jar app.jar
 
 # Expose port
-EXPOSE 34000
+EXPOSE 33000
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]

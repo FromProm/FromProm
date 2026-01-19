@@ -1,0 +1,8 @@
+aws:
+  region: ap-northeast-2
+  credentials:
+    accessKey: AKIATZ2CREHRAG5MUEXV
+    secretKey: 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
+  cognito:
+    userPoolId: ap-northeast-2_xZ41YDjBW
+    clientId: 1gs7b8o6avfuj2j65nv966r7o4

@@ -198,7 +198,7 @@ update-manifest-auth:
     
     # Read the image tag from artifact
     - export IMAGE_TAG=$(cat ../service/image_tag.txt)
-    - echo "New image tag: $IMAGE_TAG"
+    - 'echo "New image tag: $IMAGE_TAG"'
     
     # Update the manifest file
     - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml'
@@ -237,7 +237,7 @@ update-manifest-search:
     
     # Read the image tag from artifact
     - export IMAGE_TAG=$(cat ../service/search_image_tag.txt)
-    - echo "New image tag: $IMAGE_TAG"
+    - 'echo "New image tag: $IMAGE_TAG"'
     
     # Update the manifest file
     - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:${IMAGE_TAG}|g" infra/k8s-manifests/search-service.yaml'

@@ -104,7 +104,7 @@ build-auth-service:
       - main
       - gitlab-runner-backend-test
     changes:
-      - "$AUTH_SERVICE_ROOT/**/*"
+      - "service/auth-service/**/*"
 
 # ==========================================
 # 4. Backend Build - Search Service
@@ -151,7 +151,7 @@ build-search-service:
       - main
       - gitlab-runner-backend-test
     changes:
-      - "$SEARCH_SERVICE_ROOT/**/*"
+      - "service/search-service/**/*"
 
 # ==========================================
 # 5. Frontend Deploy
@@ -212,7 +212,7 @@ update-manifest-auth:
       - main
       - gitlab-runner-backend-test
     changes:
-      - "$AUTH_SERVICE_ROOT/**/*"
+      - "service/auth-service/**/*"
 
 # ==========================================
 # 7. Update K8s Manifest - Search Service
@@ -251,4 +251,4 @@ update-manifest-search:
       - main
       - gitlab-runner-backend-test
     changes:
-      - "$SEARCH_SERVICE_ROOT/**/*"
+      - "service/search-service/**/*"

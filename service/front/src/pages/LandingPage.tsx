@@ -165,14 +165,14 @@ const LandingPage = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.5 }}
                 >
-                  수치로 증명합니당근당근근
+                  수치로 증명합니다
                 </motion.span>
               </h1>
             </motion.div>
 
             <div className="text-xl md:text-1xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed font-medium">
               <SplitText
-                text="데이터 기반 성능 검증을 통해 검증된 프롬프트를 제공합니다. 토큰 효율성과 정확도를 동시에 확보하세요구르트트."
+                text="데이터 기반 성능 검증을 통해 검증된 프롬프트를 제공합니다. 토큰 효율성과 정확도를 동시에 확보하세요."
                 className="text-xl md:text-1xl text-gray-300 leading-relaxed font-medium"
                 delay={30}
                 duration={0.6}

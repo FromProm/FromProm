@@ -23,7 +23,7 @@ interface MyPrompt {
 
 const MyprofilePage = () => {
   const navigate = useNavigate();
-  const [nickname, setNickname] = useState<string>('');
+  const [nickname: _nickname, setNickname] = useState<string>('');
   const [bio, setBio] = useState<string>('');
   const [credit, setCredit] = useState<number>(0);
   const [isEditingBio, setIsEditingBio] = useState(false);
@@ -118,7 +118,7 @@ const MyprofilePage = () => {
       : {}
   };
   
-  const mostUsedCategory = Object.keys(stats.favoriteCategory).length > 0
+  const _mostUsedCategory = Object.keys(stats.favoriteCategory).length > 0
     ? Object.entries(stats.favoriteCategory).sort(([,a], [,b]) => b - a)[0][0]
     : '없음';
 

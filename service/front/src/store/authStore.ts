@@ -27,7 +27,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     set({ isAuthenticated: !!token });
   },
 
-  login: async (email: string, password: string) => {
+  login: async (email: string, _password: string) => {
     set({ isLoading: true });
     try {
       // TODO: 실제 API 호출로 대체
@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     set({ user: null, isAuthenticated: false });
   },
 
-  register: async (email: string, password: string, name: string, role: 'buyer' | 'seller') => {
+  register: async (email: string, _password: string, name: string, role: 'buyer' | 'seller') => {
     set({ isLoading: true });
     try {
       // TODO: 실제 API 호출로 대체

@@ -17,7 +17,7 @@ spec:
       serviceAccountName: auth-service-sa
       containers:
       - name: auth-service
-        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:560daf8c
+        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:a1c02468
         ports:
         - containerPort: 33000
         env:

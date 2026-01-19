@@ -7,9 +7,6 @@ stages:
 variables:
   FRONT_ROOT: "service/front"
   FRONT_BUILD_OUTPUT: "dist"
-  # 요청하신 대로 주석 유지
-  #AUTH_SERVICE_ROOT: "service/auth-service"
-  #SEARCH_SERVICE_ROOT: "service/search-service"
   ECR_REPO_AUTH: "fromprom/auth"
   ECR_REPO_SEARCH: "fromprom/search"
   ECR_REGISTRY: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
@@ -170,44 +167,41 @@ update-manifest-auth:
     entrypoint: [""]
   needs: ["build-auth-service"]
   before_script:
-    # [수정] amazon-linux 기반이므로 yum 사용 (git은 보통 설치되어 있음)
     - yum install -y git tar gzip
-    - echo "🔧 Installing kubectl..."
     - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
     - chmod +x ./kubectl
     - mv ./kubectl /usr/local/bin/kubectl
     - aws eks update-kubeconfig --region $AWS_REGION --name fromprom-cluster
   script:
-    - echo "🔐 Creating/Updating Secrets and ConfigMaps..."
+    - echo "🔐 Syncing all GitLab Variables to K8s Secrets..."
     
-    # Secret 및 ConfigMap 생성 (기존과 동일)
+    # 1. 모든 보안 변수를 하나의 Secret으로 생성
     - |
       kubectl create secret generic auth-service-secrets \
-        --from-literal=cognito-client-id="$COGNITO_CLIENT_ID" \
-        --from-literal=cognito-user-pool-id="$COGNITO_USER_POOL_ID" \
-        --from-literal=sns-topic-arn="$SNS_TOPIC_ARN" \
+        --from-literal=access-key="$AWS_ACCESS_KEY_ID" \
+        --from-literal=secret-key="$AWS_SECRET_ACCESS_KEY" \
+        --from-literal=cognito-client-id="$AWS_COGNITO_CLIENT_ID" \
+        --from-literal=cognito-user-pool-id="$AWS_COGNITO_USER_POOL_ID" \
+        --from-literal=sns-topic-arn="$AWS_SNS_TOPIC_ARN" \
         --dry-run=client -o yaml | kubectl apply -f -
 
+    # 2. 일반 설정 변수를 ConfigMap으로 생성
     - |
       kubectl create configmap auth-service-config \
-        --from-literal=dynamodb-table-name="$DYNAMODB_TABLE_NAME" \
+        --from-literal=dynamodb-table-name="$AWS_DYNAMODB_TABLE_NAME" \
+        --from-literal=aws-region="$AWS_REGION" \
         --dry-run=client -o yaml | kubectl apply -f -
 
-    - echo "📝 Updating Auth Service Manifest Tag..."
+    - echo "📝 Updating Manifest Image Tag..."
     - git config --global user.email "gitlab-ci@fromprom.cloud"
     - git config --global user.name "GitLab CI"
-    
-    # [주의] 아티팩트 위치 확인 (이전 빌드 단계에서 생성된 파일)
     - export IMAGE_TAG=$(cat service/auth_image_tag.txt)
-    
     - git clone https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git repo
     - cd repo
     - git checkout ${CI_COMMIT_REF_NAME}
-    
-    - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml'
-    
+    - sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml
     - git add infra/k8s-manifests/auth-service.yaml
-    - 'git commit -m "chore: update auth-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes"'
+    - git commit -m "chore: update auth-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes"
     - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
   only:
     refs:

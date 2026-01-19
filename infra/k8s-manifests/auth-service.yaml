@@ -17,9 +17,10 @@ spec:
       serviceAccountName: auth-service-sa
       containers:
       - name: auth-service
-        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:560daf8c
+        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:1
         ports:
-        - containerPort: 33000
+        # [수정] 컨테이너 내부 실제 포트인 8080으로 변경
+        - containerPort: 8080 
         env:
         - name: AWS_REGION
           value: "ap-northeast-2"
@@ -53,13 +54,15 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthy
-            port: 33000
+            # [수정] 앱이 떠 있는 8080 포트로 헬스체크 수행
+            port: 8080 
           initialDelaySeconds: 60
           periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /healthy
-            port: 33000
+            # [수정] 앱이 떠 있는 8080 포트로 준비상태 확인
+            port: 8080 
           initialDelaySeconds: 30
           periodSeconds: 5
 ---
@@ -71,6 +74,7 @@ spec:
   selector:
     app: auth-service
   ports:
-  - port: 33000
-    targetPort: 33000
+  - port: 33000          # 외부/다른 서비스에서 접속할 포트 (유지)
+    # [수정] 서비스가 받은 신호를 전달할 실제 타겟 포트 (8080으로 변경)
+    targetPort: 8080 
   type: ClusterIP

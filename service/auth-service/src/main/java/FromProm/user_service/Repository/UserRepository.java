@@ -1,6 +1,7 @@
 package FromProm.user_service.Repository;
 
 import FromProm.user_service.Entity.User;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
@@ -19,11 +20,15 @@ import java.util.Optional;
 public class UserRepository {
     private final DynamoDbTable<User> userTable;
     private final DynamoDbClient dynamoDbClient;
-    private final String TABLE_NAME = "FromProm_Table";
+    
+    @Value("${aws.dynamodb.table.name}")
+    private String TABLE_NAME;
 
     // FromProm_Table : DynamoDB의 table명이랑 동일해야 함
-    public UserRepository(DynamoDbEnhancedClient enhancedClient, DynamoDbClient dynamoDbClient) {
-        this.userTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(User.class));
+    public UserRepository(DynamoDbEnhancedClient enhancedClient, DynamoDbClient dynamoDbClient, 
+                          @Value("${aws.dynamodb.table.name}") String tableName) {
+        this.TABLE_NAME = tableName;
+        this.userTable = enhancedClient.table(tableName, TableSchema.fromBean(User.class));
         this.dynamoDbClient = dynamoDbClient;
     }
 

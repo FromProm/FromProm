@@ -20,10 +20,12 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // OPTIONS 요청(Preflight)은 토큰 확인 없이 무조건 허용 (CORS 해결 핵심)
-                        // .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // 필요시 주석 해제
-                        .anyRequest().permitAll() // 모든 요청 허용
-                );
+                        .requestMatchers("/healthy").permitAll()
+                        .anyRequest().permitAll()
+                )
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable());
+
         return http.build();
     }
 
@@ -38,7 +40,7 @@ public class SecurityConfig {
             "https://www.fromprom.cloud",
             "https://www.fromprom.cloud/",
             "https://fromprom.cloud",
-            "https://fromprom.cloud/"// 혹시 몰라 슬래시 포함 버전도 추가
+            "https://fromprom.cloud/"
         ));
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));

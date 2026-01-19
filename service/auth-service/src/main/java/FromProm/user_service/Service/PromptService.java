@@ -4,6 +4,7 @@ import FromProm.user_service.DTO.PromptSaveRequest;
 import FromProm.user_service.DTO.PromptType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
@@ -23,8 +24,12 @@ public class PromptService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
     private final DynamoDbClient dynamoDbClient;
-    private final String SNS_TOPIC_ARN = "arn:aws:sns:ap-northeast-2:261595668962:fromprom_sns";
-    private final String TABLE_NAME = "FromProm_Table";
+    
+    @Value("${aws.sns.topic.arn}")
+    private String SNS_TOPIC_ARN;
+    
+    @Value("${aws.dynamodb.table.name}")
+    private String TABLE_NAME;
 
     public String createInitialPrompt(String userId, PromptSaveRequest dto) {
         String promptUuid = UUID.randomUUID().toString();
@@ -40,7 +45,7 @@ public class PromptService {
         fullPayload.put("type", "PROMPT");
         fullPayload.put("create_user", "USER#" + userId);
         fullPayload.put("title", dto.getTitle());
-        fullPayload.put("prompt_content", dto.getContent());
+        fullPayload.put("content", dto.getContent());
         fullPayload.put("prompt_description", dto.getDescription());
         fullPayload.put("price", dto.getPrice());
         fullPayload.put("prompt_type", dto.getPromptType().name());
@@ -56,9 +61,9 @@ public class PromptService {
 
                 Map<String, Object> exMap = new LinkedHashMap<>();
                 exMap.put("index", i);
-                exMap.put("topic", Map.of(
-                        "input_type", "text",
-                        "content", jsonInputStr
+                exMap.put("input", Map.of(
+                        "content", jsonInputStr,
+                        "input_type", "text"
                 ));
                 exMap.put("output", ""); // 요구사항: 출력값은 빈칸으로 고정
                 structuredExamples.add(exMap);

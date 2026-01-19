@@ -1,6 +1,7 @@
 package FromProm.user_service.Service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
@@ -21,8 +22,10 @@ import java.util.UUID;
 public class InteractionService {
     private final DynamoDbEnhancedClient enhancedClient;
     private final DynamoDbClient dynamoDbClient; // 일반 클라이언트 추가
-    private final String TABLE_NAME = "FromProm_Table"; // 실제 테이블명으로 변경
     private final CognitoIdentityProviderClient cognitoClient;
+    
+    @Value("${aws.dynamodb.table.name}")
+    private String TABLE_NAME;
 
     public void addLike(String userId, String promptId) {
         String now = OffsetDateTime.now(ZoneOffset.UTC)

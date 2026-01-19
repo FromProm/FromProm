@@ -5,17 +5,11 @@ stages:
   - update-manifest
 
 variables:
-  # 경로 변수들 (script 내부에서만 사용 가능)
   FRONT_ROOT: "service/front"
   FRONT_BUILD_OUTPUT: "dist"
-  AUTH_SERVICE_ROOT: "service/auth-service"
-  SEARCH_SERVICE_ROOT: "service/search-service"
-  
-  # AWS / ECR 설정
-  ECR_REGISTRY: "261595668962.dkr.ecr.ap-northeast-2.amazonaws.com"
   ECR_REPO_AUTH: "fromprom/auth"
   ECR_REPO_SEARCH: "fromprom/search"
-  AWS_DEFAULT_REGION: "ap-northeast-2"
+  ECR_REGISTRY: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
 # ==========================================
 # 1. Frontend Build
@@ -26,7 +20,6 @@ build-frontend:
   script:
     - echo "📂 Moving to Frontend Directory..."
     - cd $FRONT_ROOT
-    
     - echo "🏗️ Installing Dependencies & Building..."
     - npm ci
     - npm run build
@@ -37,9 +30,8 @@ build-frontend:
   only:
     refs:
       - main
-      - GitLab-Runner-Test 
+      - gitlab-runner-backend-test
     changes:
-      # [수정] 변수($FRONT_ROOT) 사용 불가 -> 실제 경로 입력
       - "service/front/**/*"
 
 # ==========================================
@@ -51,19 +43,17 @@ test-infra-connection:
     name: amazon/aws-cli:latest
     entrypoint: [""]
   script:
-    - echo "🔍 Checking AWS Connection (IAM Role)..."
+    - echo "🔍 Checking AWS Connection..."
     - aws sts get-caller-identity
-    
     - echo "🔍 Checking EKS Connection..."
     - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
     - chmod +x ./kubectl
     - mv ./kubectl /usr/local/bin/kubectl
-    
     - aws eks update-kubeconfig --region $AWS_REGION --name fromprom-cluster
     - kubectl get nodes
   only:
     - main
-    - GitLab-Runner-Test
+    - gitlab-runner-backend-test
 
 # ==========================================
 # 3. Backend Build - Auth Service
@@ -76,14 +66,14 @@ build-auth-service:
   variables:
     DOCKER_TLS_CERTDIR: "/certs"
   before_script:
-    - apk add --no-cache aws-cli git
-    - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+    - apk add --no-cache aws-cli
+    - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
   script:
     - echo "🏗️ Building Auth Service Docker Image..."
-    - cd $AUTH_SERVICE_ROOT
+    - cd service/auth-service
     
-    # Generate image tag (commit short SHA)
-    - export IMAGE_TAG=$(git rev-parse --short HEAD)
+    # Git 에러 방지를 위해 GitLab 내장 변수 사용
+    - export IMAGE_TAG=$CI_COMMIT_SHORT_SHA
     - export IMAGE_NAME="$ECR_REGISTRY/$ECR_REPO_AUTH:$IMAGE_TAG"
     
     - echo "📦 Building image $IMAGE_NAME"
@@ -94,18 +84,16 @@ build-auth-service:
     - docker push $IMAGE_NAME
     - docker push $ECR_REGISTRY/$ECR_REPO_AUTH:latest
     
-    # Save image tag for manifest update
-    - echo $IMAGE_TAG > ../image_tag.txt
+    - echo $IMAGE_TAG > ../auth_image_tag.txt
   artifacts:
     paths:
-      - service/image_tag.txt
+      - service/auth_image_tag.txt
     expire_in: 1 hour
   only:
     refs:
       - main
-      - GitLab-Runner-Test
+      - gitlab-runner-backend-test
     changes:
-      # [수정] 변수($AUTH_SERVICE_ROOT) 사용 불가 -> 실제 경로 입력
       - "service/auth-service/**/*"
 
 # ==========================================
@@ -119,14 +107,13 @@ build-search-service:
   variables:
     DOCKER_TLS_CERTDIR: "/certs"
   before_script:
-    - apk add --no-cache aws-cli git
-    - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+    - apk add --no-cache aws-cli
+    - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
   script:
     - echo "🏗️ Building Search Service Docker Image..."
-    - cd $SEARCH_SERVICE_ROOT
+    - cd service/search-service
     
-    # Generate image tag (commit short SHA)
-    - export IMAGE_TAG=$(git rev-parse --short HEAD)
+    - export IMAGE_TAG=$CI_COMMIT_SHORT_SHA
     - export IMAGE_NAME="$ECR_REGISTRY/$ECR_REPO_SEARCH:$IMAGE_TAG"
     
     - echo "📦 Building image $IMAGE_NAME"
@@ -137,7 +124,6 @@ build-search-service:
     - docker push $IMAGE_NAME
     - docker push $ECR_REGISTRY/$ECR_REPO_SEARCH:latest
     
-    # Save image tag for manifest update
     - echo $IMAGE_TAG > ../search_image_tag.txt
   artifacts:
     paths:
@@ -146,9 +132,8 @@ build-search-service:
   only:
     refs:
       - main
-      - GitLab-Runner-Test
+      - gitlab-runner-backend-test
     changes:
-      # [수정] 변수($SEARCH_SERVICE_ROOT) 사용 불가 -> 실제 경로 입력
       - "service/search-service/**/*"
 
 # ==========================================
@@ -162,56 +147,71 @@ deploy-frontend:
   needs: ["build-frontend"]
   script:
     - echo "🚀 Deploying Frontend to S3..."
-    # [수정] 변수명 오타 수정 ($BUILD_OUTPUT -> $FRONT_BUILD_OUTPUT)
     - aws s3 sync $FRONT_ROOT/$FRONT_BUILD_OUTPUT/ s3://$S3_FRONT_BUCKET_NAME --delete
-    
     - echo "🔄 Invalidating CloudFront Cache..."
     - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*"
   only:
     refs:
       - main
-      - GitLab-Runner-Test
+      - gitlab-runner-backend-test
     changes:
-      # [수정] 변수($FRONT_ROOT) 사용 불가 -> 실제 경로 입력
       - "service/front/**/*"
 
 # ==========================================
-# 6. Update K8s Manifest - Auth Service
+# 6. Update K8s Manifest & Secrets - Auth Service
 # ==========================================
 update-manifest-auth:
   stage: update-manifest
-  image: alpine:latest
+  image: 
+    name: amazon/aws-cli:latest
+    entrypoint: [""]
   needs: ["build-auth-service"]
   before_script:
-    - apk add --no-cache git
+    - yum install -y git tar gzip
+    - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl"
+    - chmod +x ./kubectl
+    - mv ./kubectl /usr/local/bin/kubectl
+    - aws eks update-kubeconfig --region $AWS_REGION --name fromprom-cluster
+  script:
+    - echo "🔐 Syncing all GitLab Variables to K8s Secrets..."
+    
+    # 1. 모든 보안 변수를 하나의 Secret으로 생성
+    - |
+      kubectl create secret generic auth-service-secrets \
+        --from-literal=access-key="$AWS_ACCESS_KEY_ID" \
+        --from-literal=secret-key="$AWS_SECRET_ACCESS_KEY" \
+        --from-literal=cognito-client-id="$AWS_COGNITO_CLIENT_ID" \
+        --from-literal=cognito-user-pool-id="$AWS_COGNITO_USER_POOL_ID" \
+        --from-literal=sns-topic-arn="$AWS_SNS_TOPIC_ARN" \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+    # 2. 일반 설정 변수를 ConfigMap으로 생성
+    - |
+      kubectl create configmap auth-service-config \
+        --from-literal=dynamodb-table-name="$AWS_DYNAMODB_TABLE_NAME" \
+        --from-literal=aws-region="$AWS_REGION" \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+    - echo "📝 Updating Manifest Image Tag..."
     - git config --global user.email "gitlab-ci@fromprom.cloud"
     - git config --global user.name "GitLab CI"
-  script:
-    - echo "📝 Updating Auth Service Manifest..."
-    
-    # Read the image tag
-    - export IMAGE_TAG=$(cat service/image_tag.txt)
-    - 'echo "New image tag: $IMAGE_TAG"'
-    
-    # Update the manifest file
+    - export IMAGE_TAG=$(cat service/auth_image_tag.txt)
+    - git clone https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git repo
+    - cd repo
+    - git checkout ${CI_COMMIT_REF_NAME}
     - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_AUTH}:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml'
-    
-    # Commit and push changes
     - git add infra/k8s-manifests/auth-service.yaml
-    - 'git commit -m "chore: update auth-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"'
-    
-    # [중요] GITLAB_TOKEN 변수가 CI/CD Settings에 등록되어 있어야 합니다.
+    - 'git commit -m "chore: update auth-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes"'
     - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
   only:
     refs:
       - main
-      - GitLab-Runner-Test
+      - gitlab-runner-backend-test
     changes:
-      # [수정] 변수($AUTH_SERVICE_ROOT) 사용 불가 -> 실제 경로 입력
       - "service/auth-service/**/*"
 
 # ==========================================
-# 7. Update K8s Manifest - Search Service
+# 7. Update K8s Manifest - Search Service 
 # ==========================================
 update-manifest-search:
   stage: update-manifest
@@ -221,24 +221,19 @@ update-manifest-search:
     - apk add --no-cache git
     - git config --global user.email "gitlab-ci@fromprom.cloud"
     - git config --global user.name "GitLab CI"
+    - git clone https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git repo
+    - cd repo
+    - git checkout ${CI_COMMIT_REF_NAME}
   script:
     - echo "📝 Updating Search Service Manifest..."
-    
-    # Read the image tag
-    - export IMAGE_TAG=$(cat service/search_image_tag.txt)
-    - 'echo "New image tag: $IMAGE_TAG"'
-    
-    # Update the manifest file
+    - export IMAGE_TAG=$(cat ../service/search_image_tag.txt)
     - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:.*|image: ${ECR_REGISTRY}/${ECR_REPO_SEARCH}:${IMAGE_TAG}|g" infra/k8s-manifests/search-service.yaml'
-    
-    # Commit and push changes
     - git add infra/k8s-manifests/search-service.yaml
-    - 'git commit -m "chore: update search-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes to commit"'
+    - 'git commit -m "chore: update search-service image to ${IMAGE_TAG} [skip ci]" || echo "No changes"'
     - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
   only:
     refs:
       - main
-      - GitLab-Runner-Test
+      - gitlab-runner-backend-test
     changes:
-      # [수정] 변수($SEARCH_SERVICE_ROOT) 사용 불가 -> 실제 경로 입력
       - "service/search-service/**/*"

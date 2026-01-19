@@ -2,6 +2,7 @@ package FromProm.user_service.Repository;
 
 import FromProm.user_service.Entity.Like;
 import FromProm.user_service.Entity.Prompt;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.*;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
@@ -15,13 +16,17 @@ public class PromptRepository {
     private final DynamoDbTable<Prompt> promptTable;
     private final DynamoDbEnhancedClient enhancedClient;
     private final DynamoDbClient dynamoDbClient;
-    private final String TABLE_NAME = "FromProm_Table";
+    
+    @Value("${aws.dynamodb.table.name}")
+    private String TABLE_NAME;
 
-    public PromptRepository(DynamoDbEnhancedClient enhancedClient, DynamoDbClient dynamoDbClient) {
+    public PromptRepository(DynamoDbEnhancedClient enhancedClient, DynamoDbClient dynamoDbClient,
+                            @Value("${aws.dynamodb.table.name}") String tableName) {
+        this.TABLE_NAME = tableName;
         this.enhancedClient = enhancedClient;
         this.dynamoDbClient = dynamoDbClient;
-        this.likeTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Like.class));
-        this.promptTable = enhancedClient.table(TABLE_NAME, TableSchema.fromBean(Prompt.class));
+        this.likeTable = enhancedClient.table(tableName, TableSchema.fromBean(Like.class));
+        this.promptTable = enhancedClient.table(tableName, TableSchema.fromBean(Prompt.class));
     }
 
     public void addLikeTransaction(Like like) {

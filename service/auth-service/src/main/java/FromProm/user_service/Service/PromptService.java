@@ -4,6 +4,7 @@ import FromProm.user_service.DTO.PromptSaveRequest;
 import FromProm.user_service.DTO.PromptType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
@@ -23,8 +24,12 @@ public class PromptService {
     private final SnsClient snsClient;
     private final ObjectMapper objectMapper;
     private final DynamoDbClient dynamoDbClient;
-    private final String SNS_TOPIC_ARN = "arn:aws:sns:ap-northeast-2:261595668962:testest";
-    private final String TABLE_NAME = "FromProm_Table";
+    
+    @Value("${aws.sns.topic.arn}")
+    private String SNS_TOPIC_ARN;
+    
+    @Value("${aws.dynamodb.table.name}")
+    private String TABLE_NAME;
 
     public String createInitialPrompt(String userId, PromptSaveRequest dto) {
         String promptUuid = UUID.randomUUID().toString();

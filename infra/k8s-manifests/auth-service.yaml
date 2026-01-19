@@ -30,22 +30,25 @@ spec:
             secretKeyRef:
               name: auth-service-secrets
               key: aws-secret-key
-        - name: AWS_COGNITO_CLIENT_ID
+# 2. Cognito (에러 발생 중인 부분 수정)
+        - name: AWS_COGNITO_CLIENTID  # AWS_COGNITO_CLIENT_ID에서 언더바 제거
           valueFrom:
             secretKeyRef:
               name: auth-service-secrets
               key: cognito-client-id
-        - name: AWS_COGNITO_USER_POOL_ID
+        - name: AWS_COGNITO_USERPOOLID # AWS_COGNITO_USER_POOL_ID에서 언더바 제거
           valueFrom:
             secretKeyRef:
               name: auth-service-secrets
               key: cognito-user-pool-id
-        - name: AWS_SNS_TOPIC_ARN
+
+        # 3. SNS & DynamoDB & Region
+        - name: AWS_SNS_TOPICARN # 언더바 제거
           valueFrom:
             secretKeyRef:
               name: auth-service-secrets
               key: sns-topic-arn
-        - name: AWS_DYNAMODB_TABLE_NAME
+        - name: AWS_DYNAMODB_TABLENAME # 언더바 제거
           valueFrom:
             configMapKeyRef:
               name: auth-service-config

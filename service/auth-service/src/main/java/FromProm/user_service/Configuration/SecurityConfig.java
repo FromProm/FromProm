@@ -18,7 +18,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable()) // POST, PATCH 테스트를 위해 필수ㅋ~
+                .csrf(csrf -> csrf.disable()) // POST, PATCH 테스트를 위해 필수ㅋ~11
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/healthy").permitAll()
                         .anyRequest().permitAll()

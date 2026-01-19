@@ -15,7 +15,7 @@ spec:
       serviceAccountName: auth-service-sa
       containers:
       - name: auth-service
-        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:52453acf
+        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:7efd7936
         ports:
         - containerPort: 8080 # 스프링 기본 포트
         env:

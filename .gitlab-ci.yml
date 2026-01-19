@@ -16,8 +16,8 @@ deploy:
     - docker:24-dind
   
   before_script:
-    # Python 설치
-    - apk add --no-cache python3 py3-pip
+    # Python 및 빌드 도구 설치
+    - apk add --no-cache python3 py3-pip gcc g++ musl-dev python3-dev
     
     # AgentCore toolkit 설치 (AWS SDK 포함됨)
     - pip install --break-system-packages bedrock-agentcore-starter-toolkit

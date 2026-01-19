@@ -6,7 +6,7 @@ plugins {
 
 group = 'FromProm'
 version = '0.0.1-SNAPSHOT'
-description = 'user-service'
+description = 'auth-service'
 
 java {
 	toolchain {

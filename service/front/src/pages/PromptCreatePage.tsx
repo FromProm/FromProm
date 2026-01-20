@@ -265,12 +265,14 @@ const PromptCreatePage = () => {
                     name="price"
                     required
                     min="1"
+                    max="100000000"
                     step="1"
                     value={formData.price}
                     onChange={handleChange}
                     placeholder="299"
                     className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
+                  <p className="text-xs text-gray-500 mt-1">최소 1P ~ 최대 1억P</p>
                 </div>
 
                 <div className="md:col-span-2">

@@ -109,27 +109,36 @@ const PromptCreatePage = () => {
     setIsSubmitting(true);
 
     try {
-      // 예시 입력을 새로운 구조로 변환
-      const examples = exampleInputs
-        .filter(example => {
-          // 변수가 있으면 모든 변수에 값이 있는지 확인
-          if (extractedVariables.length > 0) {
-            return extractedVariables.every(varName => example[varName]?.trim());
-          }
-          return false;
-        })
-        .map(example => ({
-          inputValues: extractedVariables.map(varName => ({
-            key: varName,
-            value: example[varName] || ''
-          }))
-        }));
+      let examples: Array<{ inputValues: Array<{ key: string; value: string }> }>;
+      let inputs: Array<{ key: string; value: string }>;
 
-      // inputs 필드: 추출된 변수들을 입력 필드로 정의
-      const inputs = extractedVariables.map(varName => ({
-        key: varName,
-        value: '' // 기본값은 빈 문자열
-      }));
+      if (extractedVariables.length > 0) {
+        // 변수가 있을 때: 변수별 값으로 예시 구성
+        examples = exampleInputs
+          .filter(example => {
+            return extractedVariables.every(varName => example[varName]?.trim());
+          })
+          .map(example => ({
+            inputValues: extractedVariables.map(varName => ({
+              key: varName,
+              value: example[varName] || ''
+            }))
+          }));
+
+        inputs = extractedVariables.map(varName => ({
+          key: varName,
+          value: ''
+        }));
+      } else {
+        // 변수가 없을 때: 일반 텍스트 입력
+        examples = exampleInputs
+          .filter(example => example['input']?.trim())
+          .map(example => ({
+            inputValues: [{ key: 'input', value: example['input'] || '' }]
+          }));
+
+        inputs = [];
+      }
 
       const response = await promptApi.create({
         title: formData.title,
@@ -306,6 +315,11 @@ const PromptCreatePage = () => {
             <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
             <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">프롬프트 내용</h2>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-700">
+                  💡 예시 입력은 AI 성능 검증에 사용되며, 검증 완료 후 마켓플레이스에서 구매자들에게 공개됩니다.
+                </p>
+              </div>
               {formData.category === '이미지 창작 및 생성' && (
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
                   <p className="text-sm text-orange-700 font-medium">
@@ -317,7 +331,7 @@ const PromptCreatePage = () => {
               <div className="space-y-6">
                 <div>
                   <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                    전체 프롬프트 (비공개) *
+                    전체 프롬프트
                   </label>
                   <textarea
                     id="content"
@@ -330,7 +344,7 @@ const PromptCreatePage = () => {
                     className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none font-mono"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    구매 후에만 공개되는 완전한 프롬프트입니다. <span className="text-blue-600 font-medium">{'{{변수명}}'}</span> 형식으로 변수를 지정하면 예시 입력란에서 값을 입력할 수 있습니다.
+                    구매 후에만 공개되는 프롬프트입니다.
                   </p>
                   
                   {/* 추출된 변수 표시 */}
@@ -355,20 +369,39 @@ const PromptCreatePage = () => {
             <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
             <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">예시 입력</h2>
-              <p className="text-sm text-gray-600 mb-6">
+              <p className="text-sm text-gray-600 mb-4">
                 프롬프트 성능 검증을 위해 3개의 예시 입력을 제공해주세요.
                 {extractedVariables.length > 0 && (
                   <span className="text-blue-600"> 각 변수에 대한 값을 입력하세요.</span>
                 )}
               </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-700">
+                  💡 예시 입력은 AI 성능 검증에 사용되며, 검증 완료 후 마켓플레이스에서 구매자들에게 공개됩니다.
+                </p>
+              </div>
 
               {extractedVariables.length === 0 ? (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-yellow-700">
-                    ⚠️ 프롬프트에 변수가 없습니다. 프롬프트 내용에 <span className="font-mono font-medium">{'{{변수명}}'}</span> 형식으로 변수를 추가하면 예시 입력란이 자동으로 생성됩니다.
-                  </p>
+                /* 변수가 없을 때: 일반 텍스트 입력 */
+                <div className="space-y-6">
+                  {exampleInputs.map((example, index) => (
+                    <div key={index}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        예시 입력 {index + 1} *
+                      </label>
+                      <textarea
+                        rows={4}
+                        required
+                        value={example['input'] || ''}
+                        onChange={(e) => handleExampleInputChange(index, 'input', e.target.value)}
+                        placeholder={`예시 입력 ${index + 1}을 작성하세요...`}
+                        className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none"
+                      />
+                    </div>
+                  ))}
                 </div>
               ) : (
+                /* 변수가 있을 때: 변수별 입력 필드 */
                 <div className="space-y-8">
                   {exampleInputs.map((example, exampleIndex) => (
                     <div key={exampleIndex} className="bg-white border border-gray-200 rounded-lg p-6">

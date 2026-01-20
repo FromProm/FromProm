@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-service
+  labels:
+    app: search-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: search-service
+  template:
+    metadata:
+      labels:
+        app: search-service
+    spec:
+      serviceAccountName: search-service-sa
+      containers:
+      - name: search-service
+        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/search:8b2fb815
+        ports:
+        - containerPort: 8080
+        env:
+        - name: AWS_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: search-service-config
+              key: aws-region
+        - name: AWS_DYNAMODB_TABLE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: search-service-config
+              key: dynamodb-table-name
+        - name: OPENSEARCH_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: search-service-config
+              key: opensearch-host
+        - name: OPENSEARCH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: search-service-secrets
+              key: opensearch-username
+        - name: OPENSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: search-service-secrets
+              key: opensearch-password
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /healthy
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthy
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: search-service
+spec:
+  selector:
+    app: search-service
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  type: ClusterIP

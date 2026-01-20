@@ -38,15 +38,27 @@ class ConsistencyStage:
                     elif 'titan_embedding' in emb and emb['titan_embedding'] is not None:
                         valid_embeddings.append(emb)
                 
-                if len(valid_embeddings) < 3:
-                    # 3개 미만이면 centroid 방식 사용 불가
-                    logger.warning(f"Input {input_index}: Not enough valid outputs for centroid ({len(valid_embeddings)})")
+                if len(valid_embeddings) < 2:
+                    # 2개 미만이면 일관성 계산 불가
+                    logger.warning(f"Input {input_index}: Not enough valid outputs for consistency ({len(valid_embeddings)})")
                     all_consistency_scores.append(0.0)
                     details['per_input_scores'].append({
                         'input_index': input_index,
                         'score': 0.0,
                         'valid_outputs': len(valid_embeddings),
                         'reason': 'insufficient_outputs'
+                    })
+                    continue
+                elif len(valid_embeddings) == 2:
+                    # 2개면 단순 유사도 계산
+                    logger.info(f"Input {input_index}: Using pairwise similarity for 2 outputs")
+                    similarity_score = self._calculate_pairwise_similarity(valid_embeddings)
+                    all_consistency_scores.append(similarity_score)
+                    details['per_input_scores'].append({
+                        'input_index': input_index,
+                        'score': similarity_score,
+                        'valid_outputs': len(valid_embeddings),
+                        'method': 'pairwise_similarity'
                     })
                     continue
                 
@@ -125,3 +137,56 @@ class ConsistencyStage:
         consistency_score = max(0.0, min(1.0, consistency)) * 100
         
         return consistency_score
+    
+    def _calculate_pairwise_similarity(self, valid_embeddings: List[Dict[str, Any]]) -> float:
+        """2개 출력의 쌍별 유사도 계산"""
+        if len(valid_embeddings) != 2:
+            return 0.0
+        
+        emb1 = valid_embeddings[0]
+        emb2 = valid_embeddings[1]
+        
+        # 첫 번째 모델 임베딩 비교
+        first_sim = 0.0
+        if ((emb1.get('nova_embedding') and emb2.get('nova_embedding')) or 
+            (emb1.get('titan_embedding') and emb2.get('titan_embedding'))):
+            
+            vec1 = emb1.get('nova_embedding') or emb1.get('titan_embedding')
+            vec2 = emb2.get('nova_embedding') or emb2.get('titan_embedding')
+            
+            if vec1 and vec2:
+                first_sim = self._cosine_similarity(vec1, vec2)
+        
+        # Cohere 임베딩 비교
+        cohere_sim = 0.0
+        if emb1.get('cohere_embedding') and emb2.get('cohere_embedding'):
+            cohere_sim = self._cosine_similarity(
+                emb1['cohere_embedding'], 
+                emb2['cohere_embedding']
+            )
+        
+        # 앙상블 평균
+        valid_sims = [s for s in [first_sim, cohere_sim] if s > 0]
+        avg_similarity = sum(valid_sims) / len(valid_sims) if valid_sims else 0.0
+        
+        # 유사도를 일관성 점수로 변환 (100점 만점)
+        return avg_similarity * 100
+    
+    def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
+        """코사인 유사도 계산"""
+        try:
+            vec1 = np.array(vec1)
+            vec2 = np.array(vec2)
+            
+            # 정규화
+            vec1_norm = vec1 / np.linalg.norm(vec1)
+            vec2_norm = vec2 / np.linalg.norm(vec2)
+            
+            # 코사인 유사도
+            similarity = np.dot(vec1_norm, vec2_norm)
+            
+            return max(0.0, min(1.0, similarity))
+            
+        except Exception as e:
+            logger.error(f"Cosine similarity calculation failed: {str(e)}")
+            return 0.0

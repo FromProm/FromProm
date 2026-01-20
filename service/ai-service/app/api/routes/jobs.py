@@ -8,8 +8,10 @@ from app.core.schemas import (
 )
 from app.orchestrator.context import ExecutionContext
 from app.orchestrator.pipeline import Orchestrator
+from app.agents.agent_pipeline import AgentPipeline
 from app.core.errors import PromptEvalError, ErrorCategory
 from app.core.logging import get_structured_logger
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 structured_logger = get_structured_logger(__name__)
@@ -234,15 +236,35 @@ async def run_evaluation(job_id: str, request: JobCreateRequest, retry_count: in
             metadata={"prompt_type": request.prompt_type.value}
         )
         
-        # 파이프라인 실행
-        orchestrator = Orchestrator(context)
-        result = await orchestrator.run(request)
+        # 파이프라인 실행 - 설정에 따라 Agent 또는 기존 Orchestrator 사용
+        if settings.use_agent_pipeline:
+            structured_logger.info(
+                "Using Agent pipeline",
+                request_id=job_id,
+                stage="pipeline_selection"
+            )
+            pipeline = AgentPipeline(context)
+            result = await pipeline.run(request)
+        else:
+            structured_logger.info(
+                "Using traditional Orchestrator pipeline",
+                request_id=job_id,
+                stage="pipeline_selection"
+            )
+            orchestrator = Orchestrator(context)
+            result = await orchestrator.run(request)
         
         # 상태 업데이트: COMPLETED (결과 + 실행 결과 모두 저장)
+        execution_results = None
+        if hasattr(result, 'execution_results'):
+            execution_results = result.execution_results
+        elif not settings.use_agent_pipeline and hasattr(orchestrator, '_last_execution_results'):
+            execution_results = orchestrator._last_execution_results
+            
         await storage.update_job(job_id, {
             'status': JobStatus.COMPLETED,
             'result': result,
-            'execution_results': getattr(orchestrator, '_last_execution_results', None)
+            'execution_results': execution_results
         })
         
         structured_logger.info(

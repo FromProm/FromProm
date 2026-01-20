@@ -139,28 +139,66 @@ class VarianceStage:
                 
                 # 선택된 모델의 임베딩
                 if recommended_model in valid_embeddings:
-                    main_embedding = valid_embeddings[recommended_model]
+                    main_emb_dict = valid_embeddings[recommended_model]
                     
                     for comp_model in comparison_models:
                         if comp_model in valid_embeddings:
-                            comp_embedding = valid_embeddings[comp_model]
-                            similarity = self._cosine_similarity(main_embedding, comp_embedding)
+                            comp_emb_dict = valid_embeddings[comp_model]
+                            
+                            # 앙상블: 첫 번째 모델 + Cohere 평균
+                            first_sim = 0.0
+                            cohere_sim = 0.0
+                            valid_sims = []
+                            
+                            # 첫 번째 모델 (Titan/Nova) 유사도
+                            if main_emb_dict.get('first_embedding') is not None and comp_emb_dict.get('first_embedding') is not None:
+                                first_sim = self._cosine_similarity(
+                                    main_emb_dict['first_embedding'], 
+                                    comp_emb_dict['first_embedding']
+                                )
+                                valid_sims.append(first_sim)
+                            
+                            # Cohere 유사도
+                            if main_emb_dict.get('cohere_embedding') is not None and comp_emb_dict.get('cohere_embedding') is not None:
+                                cohere_sim = self._cosine_similarity(
+                                    main_emb_dict['cohere_embedding'], 
+                                    comp_emb_dict['cohere_embedding']
+                                )
+                                valid_sims.append(cohere_sim)
+                            
+                            # 앙상블 평균
+                            similarity = sum(valid_sims) / len(valid_sims) if valid_sims else 0.0
+                            
                             pairwise_scores.append({
                                 'model_pair': f"{self._get_model_short_name(recommended_model)} vs {self._get_model_short_name(comp_model)}",
                                 'main_model': recommended_model,
                                 'comparison_model': comp_model,
                                 'similarity': similarity,
-                                'score': similarity * 100
+                                'score': similarity * 100,
+                                'first_model_similarity': first_sim,
+                                'cohere_similarity': cohere_sim
                             })
                 
-                # 전체 유사도도 계산 (기존 로직)
+                # 전체 유사도도 계산 (기존 로직) - 앙상블
                 all_similarities = []
-                embedding_list = list(valid_embeddings.values())
                 
-                for i_emb in range(len(embedding_list)):
-                    for j_emb in range(i_emb + 1, len(embedding_list)):
-                        similarity = self._cosine_similarity(embedding_list[i_emb], embedding_list[j_emb])
-                        all_similarities.append(similarity)
+                # 첫 번째 모델 (Titan/Nova) 유사도
+                first_embeddings = [emb_dict.get('first_embedding') for emb_dict in valid_embeddings.values() 
+                                   if emb_dict.get('first_embedding') is not None]
+                if len(first_embeddings) >= 2:
+                    for i_emb in range(len(first_embeddings)):
+                        for j_emb in range(i_emb + 1, len(first_embeddings)):
+                            similarity = self._cosine_similarity(first_embeddings[i_emb], first_embeddings[j_emb])
+                            all_similarities.append(similarity)
+                
+                # Cohere 유사도
+                cohere_embeddings = [emb_dict.get('cohere_embedding') for emb_dict in valid_embeddings.values() 
+                                    if emb_dict.get('cohere_embedding') is not None]
+                if len(cohere_embeddings) >= 2:
+                    for i_emb in range(len(cohere_embeddings)):
+                        for j_emb in range(i_emb + 1, len(cohere_embeddings)):
+                            similarity = self._cosine_similarity(cohere_embeddings[i_emb], cohere_embeddings[j_emb])
+                            all_similarities.append(similarity)
                 
                 if all_similarities:
                     avg_similarity = sum(all_similarities) / len(all_similarities)
@@ -203,8 +241,17 @@ class VarianceStage:
                     'sample_count': len(scores)
                 })
             
+            # 최종 점수: 페어별 평균의 평균 (모든 페어를 동등하게 고려)
+            if pairwise_averages:
+                final_score = sum(p['average_score'] for p in pairwise_averages) / len(pairwise_averages)
+            else:
+                # 페어별 점수가 없으면 전체 평균 사용
+                valid_scores = [result['score'] for result in input_results if result['score'] > 0]
+                final_score = sum(valid_scores) / len(valid_scores) if valid_scores else 0.0
+            
             details['per_input_scores'] = input_results
             details['pairwise_comparison'] = pairwise_averages
+            details['note'] = 'Pairwise model comparison scores (1:1 comparisons) using ensemble embeddings (Titan/Nova + Cohere)'
             
             logger.info(f"Model variance score: {final_score:.3f}")
             logger.info(f"Pairwise scores: {pairwise_averages}")
@@ -215,14 +262,30 @@ class VarianceStage:
             return MetricScore(score=0.0, details={'error': str(e)})
     
     async def _embed_single_output(self, embedder, output: str, prompt_type: PromptType):
-        """단일 출력에 대한 임베딩 생성"""
+        """단일 출력에 대한 임베딩 생성 - 앙상블 (Titan + Cohere)"""
         try:
             if prompt_type == PromptType.TYPE_B_IMAGE:
-                # 이미지 타입의 경우 텍스트 임베딩 사용
-                return await embedder.embed_text(output)  # 단일 문자열 전달
+                # 이미지 타입: Nova + Cohere 병렬 처리
+                nova_task = embedder.embed_multimodal(output)
+                cohere_task = embedder.embed_cohere_v4(output)
+                
+                nova_emb, cohere_emb = await asyncio.gather(nova_task, cohere_task, return_exceptions=True)
+                
+                return {
+                    'first_embedding': nova_emb if not isinstance(nova_emb, Exception) else None,
+                    'cohere_embedding': cohere_emb if not isinstance(cohere_emb, Exception) else None
+                }
             else:
-                # 텍스트 타입
-                return await embedder.embed_text(output)  # 단일 문자열 전달
+                # 텍스트 타입: Titan + Cohere 병렬 처리
+                titan_task = embedder.embed_text(output)
+                cohere_task = embedder.embed_multilingual(output)
+                
+                titan_emb, cohere_emb = await asyncio.gather(titan_task, cohere_task, return_exceptions=True)
+                
+                return {
+                    'first_embedding': titan_emb if not isinstance(titan_emb, Exception) else None,
+                    'cohere_embedding': cohere_emb if not isinstance(cohere_emb, Exception) else None
+                }
         except Exception as e:
             logger.error(f"Embedding failed for output: {str(e)}")
             raise e

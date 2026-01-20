@@ -57,10 +57,24 @@ class BedrockRunner(BaseRunner):
     
     def _sync_invoke(self, model: str, prompt: str, input_type: str, kwargs: dict) -> Dict[str, Any]:
         """동기 Bedrock 호출 (스레드에서 실행)"""
+        import time
+        
         try:
+            logger.debug(f"    🔷 [Bedrock LLM] 호출 시작")
+            logger.debug(f"       모델 ID: {model}")
+            logger.debug(f"       프롬프트 길이: {len(prompt)} 문자")
+            
+            start_time = time.time()
+            
             # inference profile ARN인 경우 converse API 사용
             if model.startswith("arn:aws:bedrock"):
-                return self._invoke_with_converse(model, prompt, **kwargs)
+                result = self._invoke_with_converse(model, prompt, **kwargs)
+                elapsed = time.time() - start_time
+                logger.debug(f"    ✅ [Bedrock LLM] Converse API 호출 성공")
+                logger.debug(f"       응답 시간: {elapsed:.2f}초")
+                logger.debug(f"       입력 토큰: {result['token_usage']['input_tokens']}")
+                logger.debug(f"       출력 토큰: {result['token_usage']['output_tokens']}")
+                return result
             
             # 모델별 요청 형식 구성
             if "anthropic.claude" in model:
@@ -88,24 +102,35 @@ class BedrockRunner(BaseRunner):
                 contentType='application/json'
             )
             
+            elapsed = time.time() - start_time
+            
             # 응답 파싱
             response_body = json.loads(response['body'].read())
             
             # 모델별 응답 파싱
             if "anthropic.claude" in model:
-                return self._parse_claude_response(response_body)
+                result = self._parse_claude_response(response_body)
             elif "openai.gpt" in model:
-                return self._parse_openai_response(response_body)
+                result = self._parse_openai_response(response_body)
             elif "amazon.titan" in model:
                 if "image" in model:
-                    return self._parse_titan_image_response(response_body)
+                    result = self._parse_titan_image_response(response_body)
                 else:
-                    return self._parse_titan_response(response_body)
+                    result = self._parse_titan_response(response_body)
             elif "amazon.nova" in model:
-                return self._parse_nova_response(response_body, model)
+                result = self._parse_nova_response(response_body, model)
+            
+            logger.debug(f"    ✅ [Bedrock LLM] 호출 성공")
+            logger.debug(f"       응답 시간: {elapsed:.2f}초")
+            logger.debug(f"       입력 토큰: {result['token_usage']['input_tokens']}")
+            logger.debug(f"       출력 토큰: {result['token_usage']['output_tokens']}")
+            
+            return result
             
         except Exception as e:
-            logger.error(f"Model invocation failed: {str(e)}")
+            logger.error(f"    ❌ [Bedrock LLM] 호출 실패")
+            logger.error(f"       모델: {model}")
+            logger.error(f"       에러: {str(e)}")
             raise ModelInvocationError(f"Failed to invoke {model}: {str(e)}")
     
     def _invoke_with_converse(self, model_arn: str, prompt: str, **kwargs) -> Dict[str, Any]:
@@ -293,42 +318,18 @@ class BedrockRunner(BaseRunner):
             images = response.get('images', [])
             
             if images:
-                # 이미지를 파일로 저장
-                import base64
-                import os
-                from datetime import datetime
-                
-                # outputs 디렉토리 생성
-                output_dir = "outputs/images"
-                os.makedirs(output_dir, exist_ok=True)
-                
-                image_paths = []
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                
-                for i, image_data in enumerate(images):
-                    # base64 디코딩
-                    image_bytes = base64.b64decode(image_data)
-                    
-                    # 파일명 생성
-                    filename = f"nova_canvas_{timestamp}_{i+1}.png"
-                    filepath = os.path.join(output_dir, filename)
-                    
-                    # 파일 저장
-                    with open(filepath, 'wb') as f:
-                        f.write(image_bytes)
-                    
-                    image_paths.append(filepath)
-                    logger.info(f"Image saved: {filepath}")
-                
-                output_text = f"Generated {len(images)} image(s): {', '.join(image_paths)}"
+                # 첫 번째 이미지의 base64 데이터를 반환
+                output_text = images[0]  # base64 문자열 그대로 반환
+                logger.info(f"Nova Canvas generated {len(images)} image(s)")
             else:
-                output_text = "No images generated"
+                output_text = ""
+                logger.warning("No images generated by Nova Canvas")
         else:
             output_text = "Unknown Nova model response"
         
         # 토큰 사용량 (Nova는 직접 제공하지 않으므로 근사치)
         input_tokens = 50  # 기본값
-        output_tokens = len(output_text.split()) * 0.75
+        output_tokens = 100  # 이미지 생성은 고정값
         
         token_usage = {
             'input_tokens': int(input_tokens),
@@ -345,40 +346,16 @@ class BedrockRunner(BaseRunner):
         images = response.get('images', [])
         
         if images:
-            # 이미지를 파일로 저장
-            import base64
-            import os
-            from datetime import datetime
-            
-            # outputs 디렉토리 생성
-            output_dir = "outputs/images"
-            os.makedirs(output_dir, exist_ok=True)
-            
-            image_paths = []
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            
-            for i, image_data in enumerate(images):
-                # base64 디코딩
-                image_bytes = base64.b64decode(image_data)
-                
-                # 파일명 생성
-                filename = f"titan_image_{timestamp}_{i+1}.png"
-                filepath = os.path.join(output_dir, filename)
-                
-                # 파일 저장
-                with open(filepath, 'wb') as f:
-                    f.write(image_bytes)
-                
-                image_paths.append(filepath)
-                logger.info(f"Image saved: {filepath}")
-            
-            output_text = f"Generated {len(images)} image(s): {', '.join(image_paths)}"
+            # 첫 번째 이미지의 base64 데이터를 반환
+            output_text = images[0]  # base64 문자열 그대로 반환
+            logger.info(f"Titan Image generated {len(images)} image(s)")
         else:
-            output_text = "No images generated"
+            output_text = ""
+            logger.warning("No images generated by Titan Image")
         
         # 토큰 사용량 (Titan Image는 직접 제공하지 않으므로 근사치)
         input_tokens = 50  # 기본값
-        output_tokens = len(output_text.split()) * 0.75
+        output_tokens = 100  # 이미지 생성은 고정값
         
         token_usage = {
             'input_tokens': int(input_tokens),

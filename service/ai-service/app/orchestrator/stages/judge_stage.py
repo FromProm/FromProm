@@ -151,7 +151,7 @@ class JudgeStage:
                 logger.info(f"Parallel hallucination detection completed: {final_score:.3f} "
                           f"(unique claims: {len(unique_claims)}, average verification: {average_score:.1f})")
             else:
-                final_score = 100.0  # 검증할 claim이 없으면 환각 없음
+                final_score = 0.0  # 검증할 claim이 없으면 환각 없음 (0점 = 좋음)
                 average_score = 100.0
             
             # 상세 정보 구성

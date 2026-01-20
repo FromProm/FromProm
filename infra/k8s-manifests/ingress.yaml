@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fromprom-ingress
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-northeast-2:261595668962:certificate/8c477709-6f32-424c-8c69-791880cc745a
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/healthcheck-path: /healthy
+    alb.ingress.kubernetes.io/healthcheck-port: traffic-port
+spec:
+  rules:
+    - http:
+        paths:
+          # ai-service는 배포 후 활성화
+          # - path: /api/ai
+          #   pathType: Prefix
+          #   backend:
+          #     service:
+          #       name: ai-service
+          #       port:
+          #         number: 8080
+          - path: /api/search
+            pathType: Prefix
+            backend:
+              service:
+                name: search-service
+                port:
+                  number: 8080
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 8080

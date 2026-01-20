@@ -1,55 +1,34 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
-import { usePurchaseStore } from '../store/purchaseStore';
-import { userApi } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 
 const Header = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [nickname, setNickname] = useState<string>('');
-  const { getItemCount, clearCart } = useCartStore();
-  const { clearPurchases } = usePurchaseStore();
+  const { getItemCount } = useCartStore();
+  const { isAuthenticated, userInfo, fetchUserInfo, logout, checkAuth } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
   const cartItemCount = getItemCount();
 
   // 로그인 상태 확인 및 사용자 정보 가져오기
   useEffect(() => {
+    checkAuth();
     const token = localStorage.getItem('accessToken');
-    setIsAuthenticated(!!token);
-    
     if (token) {
-      userApi.getMe()
-        .then((response) => {
-          setNickname(response.data.nickname || '');
-        })
-        .catch((error) => {
-          console.error('Failed to fetch user info:', error);
-        });
+      fetchUserInfo();
     }
-  }, []);
+  }, [checkAuth, fetchUserInfo]);
 
-  const handleLogout = async () => {
-    try {
-      await userApi.logout();
-    } catch (error) {
-      console.error('Logout API error:', error);
-    } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('idToken');
-      clearCart();
-      clearPurchases();
-      setIsAuthenticated(false);
-      setShowMenu(false);
-      
-      // 현재 페이지가 마켓플레이스면 마켓플레이스에 머무르고, 아니면 랜딩페이지로
-      if (location.pathname === '/marketplace' || location.pathname.startsWith('/prompt/')) {
-        navigate('/marketplace');
-      } else {
-        navigate('/');
-      }
+  const handleLogout = () => {
+    logout();
+    setShowMenu(false);
+    
+    // 현재 페이지가 마켓플레이스면 마켓플레이스에 머무르고, 아니면 랜딩페이지로
+    if (location.pathname === '/marketplace' || location.pathname.startsWith('/prompt/')) {
+      navigate('/marketplace');
+    } else {
+      navigate('/');
     }
   };
 
@@ -83,9 +62,9 @@ const Header = () => {
           <div className="flex items-center space-x-4">
             {isAuthenticated ? (
               <>
-                {nickname && (
+                {userInfo?.nickname && (
                   <span className="text-sm text-gray-700">
-                    환영합니다. {nickname}님!
+                    환영합니다. {userInfo.nickname}님!
                   </span>
                 )}
                 <div className="relative">

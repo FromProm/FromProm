@@ -3,3 +3,7 @@ dist/
 .env
 .vscode/
 venv/
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup

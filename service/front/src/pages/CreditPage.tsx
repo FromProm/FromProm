@@ -31,11 +31,11 @@ const CreditPage = () => {
 
   // 미리 정의된 충전 금액 옵션
   const creditPackages = [
-    { credits: 500, price: 4.99, bonus: 0, popular: false },
-    { credits: 1000, price: 9.99, bonus: 50, popular: true },
-    { credits: 2500, price: 24.99, bonus: 200, popular: false },
-    { credits: 5000, price: 49.99, bonus: 500, popular: false },
-    { credits: 10000, price: 99.99, bonus: 1500, popular: false },
+    { credits: 500, price: 500, bonus: 0, popular: false },
+    { credits: 1000, price: 1000, bonus: 50, popular: true },
+    { credits: 2500, price: 2500, bonus: 200, popular: false },
+    { credits: 5000, price: 5000, bonus: 500, popular: false },
+    { credits: 10000, price: 10000, bonus: 1500, popular: false },
   ];
 
   const handlePurchase = async () => {
@@ -72,7 +72,7 @@ const CreditPage = () => {
 
   const getPrice = (credits: number) => {
     const pkg = creditPackages.find(p => p.credits === credits);
-    return pkg ? pkg.price : (credits * 0.01).toFixed(2);
+    return pkg ? pkg.price : credits;
   };
 
   const getBonus = (credits: number) => {
@@ -180,7 +180,7 @@ const CreditPage = () => {
                           )}
                         </div>
                         <div className="text-right">
-                          <div className="text-lg font-bold text-blue-600">${pkg.price}</div>
+                          <div className="text-lg font-bold text-blue-600">₩{pkg.price.toLocaleString()}</div>
                           {pkg.bonus > 0 && (
                             <div className="text-xs text-gray-500">총 {(pkg.credits + pkg.bonus).toLocaleString()}P</div>
                           )}
@@ -220,7 +220,7 @@ const CreditPage = () => {
                         <span className="text-gray-700">P</span>
                         <span className="text-gray-500">=</span>
                         <span className="text-blue-600 font-medium">
-                          ${customAmount ? (parseInt(customAmount) * 0.01).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00'}
+                          ₩{customAmount ? parseInt(customAmount).toLocaleString() : '0'}
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">최소 100P ~ 최대 1억P (보유 가능 최대 크레딧: 1억P)</p>
@@ -254,9 +254,9 @@ const CreditPage = () => {
                   <div className="border-t border-gray-200 pt-3 flex justify-between text-lg font-bold">
                     <span>총 결제금액</span>
                     <span className="text-blue-600">
-                      ${selectedAmount === 0 
-                        ? (customAmount ? (parseInt(customAmount) * 0.01).toFixed(2) : '0.00')
-                        : getPrice(selectedAmount)
+                      ₩{selectedAmount === 0 
+                        ? (customAmount ? parseInt(customAmount).toLocaleString() : '0')
+                        : getPrice(selectedAmount).toLocaleString()
                       }
                     </span>
                   </div>
@@ -337,7 +337,7 @@ const CreditPage = () => {
           <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 크레딧 사용 안내</h3>
             <ul className="space-y-2 text-sm text-blue-800">
-              <li>• 1P = $0.01 USD 환율로 충전됩니다</li>
+              <li>• 1P = ₩1 환율로 충전됩니다</li>
               <li>• 충전된 크레딧은 프롬프트 구매에 사용할 수 있습니다</li>
               <li>• 보너스 크레딧은 일정 금액 이상 충전 시 제공됩니다</li>
               <li>• 크레딧은 환불되지 않으니 신중하게 충전해주세요</li>

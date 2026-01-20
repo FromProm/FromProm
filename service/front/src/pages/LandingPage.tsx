@@ -145,7 +145,7 @@ const LandingPage = () => {
               <h1 className="text-6xl md:text-8xl lg:text-[5.5rem] font-bold mb-8 tracking-tight">
                 <span className="block text-white mb-4 drop-shadow-2xl">
                   <SplitText
-                    text="프롬프트의 가치1231124를"
+                    text="프롬프트의 가치123를"
                     className="text-6xl md:text-8xl lg:text-[5.5rem] font-bold text-white drop-shadow-2xl"
                     delay={50}
                     duration={0.8}

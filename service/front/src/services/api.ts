@@ -128,7 +128,7 @@ export const creditApi = {
 
 // Prompt API
 export const promptApi = {
-  // 프롬프트 등록
+  // 프롬프트 등록 (auth-service - 인증 필요)
   create: (data: {
     title: string;
     description: string;
@@ -149,25 +149,25 @@ export const promptApi = {
     examples: data.examples,
   }),
 
-  // 모든 프롬프트 목록 조회 (마켓플레이스용)
-  getAllPrompts: (limit: number = 50) => api.get(`/api/test/prompts/all?limit=${limit}&_t=${Date.now()}`),
+  // 모든 프롬프트 목록 조회 (search-service - 인증 불필요)
+  getAllPrompts: (limit: number = 50) => api.get(`/api/search/prompts/all?limit=${limit}&_t=${Date.now()}`),
 
-  // 내가 등록한 프롬프트 목록 조회
+  // 내가 등록한 프롬프트 목록 조회 (auth-service - 인증 필요)
   getMyPrompts: () => api.get('/api/prompts/my'),
 
-  // 프롬프트 상세 정보 조회
-  getPromptDetail: (promptId: string) => api.get(`/api/prompts/${promptId}`),
+  // 프롬프트 상세 정보 조회 (search-service - 인증 불필요)
+  getPromptDetail: (promptId: string) => api.get(`/api/search/prompts/${promptId}`),
 
-  // 프롬프트 상세 + 댓글 목록 통합 조회
-  getPromptDetailWithComments: (promptId: string) => api.get(`/api/prompts/${promptId}/detail`),
+  // 프롬프트 상세 + 댓글 목록 통합 조회 (search-service - 인증 불필요)
+  getPromptDetailWithComments: (promptId: string) => api.get(`/api/search/prompts/${promptId}/detail`),
 
-  // 프롬프트 통계 조회 (좋아요/북마크/댓글 개수)
-  getPromptStats: (promptId: string) => api.get(`/api/prompts/${promptId}/stats`),
+  // 프롬프트 통계 조회 (search-service - 인증 불필요)
+  getPromptStats: (promptId: string) => api.get(`/api/search/prompts/${promptId}/stats`),
 
-  // 프롬프트 댓글 목록 조회
-  getPromptComments: (promptId: string) => api.get(`/api/prompts/${promptId}/comments`),
+  // 프롬프트 댓글 목록 조회 (search-service - 인증 불필요)
+  getPromptComments: (promptId: string) => api.get(`/api/search/prompts/${promptId}/comments`),
 
-  // 프롬프트 삭제
+  // 프롬프트 삭제 (auth-service - 인증 필요)
   deletePrompt: (promptId: string) => api.delete(`/api/prompts/${promptId}`),
 };
 

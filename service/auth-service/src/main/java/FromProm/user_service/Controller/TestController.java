@@ -436,24 +436,6 @@ public class TestController {
         }
     }
 
-    // 테스트용 프롬프트 상세 조회
-    @GetMapping("/prompts/{promptId}")
-    public ResponseEntity<Map<String, Object>> testGetPromptDetail(@PathVariable String promptId) {
-        try {
-            var detail = promptService.getPromptDetail(promptId);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "prompt", detail
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
-        }
-    }
-
     // 테스트용 프롬프트 삭제 (토큰 없이)
     @DeleteMapping("/prompts/{promptId}")
     public ResponseEntity<Map<String, Object>> testDeletePrompt(
@@ -466,80 +448,6 @@ public class TestController {
                 "success", true,
                 "message", "프롬프트가 삭제되었습니다.",
                 "deletedPromptId", promptId
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
-        }
-    }
-
-    // 테스트용 프롬프트 상세 + 댓글 통합 조회
-    @GetMapping("/prompts/{promptId}/detail")
-    public ResponseEntity<Map<String, Object>> testGetPromptDetailWithComments(@PathVariable String promptId) {
-        try {
-            var result = promptService.getPromptDetailWithComments(promptId);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", result
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
-        }
-    }
-
-    // 테스트용 프롬프트 통계 조회 (좋아요/북마크/댓글 개수)
-    @GetMapping("/prompts/{promptId}/stats")
-    public ResponseEntity<Map<String, Object>> testGetPromptStats(@PathVariable String promptId) {
-        try {
-            var stats = promptService.getPromptStats(promptId);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "stats", stats
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
-        }
-    }
-
-    // 테스트용 프롬프트 댓글 목록 조회
-    @GetMapping("/prompts/{promptId}/comments")
-    public ResponseEntity<Map<String, Object>> testGetPromptComments(@PathVariable String promptId) {
-        try {
-            var comments = promptService.getPromptComments(promptId);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "comments", comments,
-                "count", comments.size()
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
-        }
-    }
-
-    // 테스트용 - DB에 저장된 모든 프롬프트 목록 조회 (최대 10개)
-    @GetMapping("/prompts/all")
-    public ResponseEntity<Map<String, Object>> testGetAllPrompts() {
-        try {
-            var prompts = promptService.getAllPrompts(20);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "prompts", prompts,
-                "count", prompts.size()
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(

@@ -1,0 +1,21 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: search-service
+
+# AWS 설정
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  dynamodb:
+    table:
+      name: ${AWS_DYNAMODB_TABLE_NAME:FromProm_Table}
+
+# OpenSearch 설정
+opensearch:
+  host: ${OPENSEARCH_HOST:localhost}
+  port: ${OPENSEARCH_PORT:443}
+  protocol: ${OPENSEARCH_PROTOCOL:https}
+  username: ${OPENSEARCH_USERNAME:admin}
+  password: ${OPENSEARCH_PASSWORD:admin}

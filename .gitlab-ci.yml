@@ -49,7 +49,7 @@ sonarqube:
   script:
     - sonar-scanner
       -Dsonar.host.url=$SONAR_HOST_URL
-      -Dsonar.token=$SONAR_AI_TOKEN
+      -Dsonar.token=$SONAR_TOKEN
   allow_failure: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'

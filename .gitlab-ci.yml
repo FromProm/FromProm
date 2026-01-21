@@ -1,20 +1,74 @@
 stages:
   - test
+  - validate
+  - deploy
 
-runner-eks-test:
-  stage: test
-  image: 
-    name: amazon/aws-cli:latest
-    entrypoint: [""]
+variables:
+  # EKS 설정
+  EKS_REGION: "ap-northeast-2"
+  EKS_CLUSTER_NAME: "fromprom-cluster"
+  
+  # AgentCore 설정
+  AWS_REGION: "us-west-2"
+  AGENTCORE_REGION: "us-west-2"
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip/
+
+# EKS 연결 테스트 (주석 처리 - 필요시 활성화)
+# runner-eks-test:
+#   stage: test
+#   image:
+#     name: amazon/aws-cli:latest
+#     entrypoint: [""]
+#   before_script:
+#     - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+#     - chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
+#     - aws eks update-kubeconfig --region $EKS_REGION --name $EKS_CLUSTER_NAME
+#   script:
+#     - kubectl get nodes
+#     - kubectl get pods -A
+#   rules:
+#     - if: '$CI_COMMIT_BRANCH == "dev"'
+
+# 코드 검증
+validate:
+  stage: validate
+  image: python:3.11-slim
+  before_script:
+    - cd service/ai-service
+    - pip install --no-cache-dir -e .
   script:
-    # 1. kubectl 설치
-    - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-    - chmod +x ./kubectl
-    - mv ./kubectl /usr/local/bin/kubectl
-    
-    # 2. EKS 클러스터 연결 설정
-    - aws eks update-kubeconfig --region ap-northeast-2 --name fromprom-cluster
-    
-    # 3. 클러스터 상태 확인 명령
-    - kubectl get nodes
-    - kubectl get pods -A
+    - echo "🔍 Validating Python syntax..."
+    - python3 -m py_compile app/**/*.py
+    - echo "📦 Checking dependencies..."
+    - pip check
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+
+# AgentCore 배포
+deploy-agentcore:
+  stage: deploy
+  image: python:3.11-slim
+  before_script:
+    - apt-get update && apt-get install -y --no-install-recommends git curl jq
+    - pip install --no-cache-dir awscli bedrock-agentcore-starter-toolkit
+    - echo "🔐 AWS 인증 확인..."
+    - aws sts get-caller-identity || exit 1
+    - cd service/ai-service
+    - pip install --no-cache-dir -e .
+    - agentcore --version
+  script:
+    - echo "🚀 AgentCore 배포 중..."
+    - agentcore deploy || exit 1
+    - echo "✅ AgentCore 배포 완료"
+    - agentcore status
+  artifacts:
+    paths:
+      - service/ai-service/.bedrock_agentcore.yaml
+    expire_in: 30 days
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+      when: manual

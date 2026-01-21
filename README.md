@@ -5,7 +5,7 @@ AWS Cloud School 11기 3조 최종프로젝트
 
 - Node.js 18+
 - Java 17+
-- AWS 자격 증명 설정 (Cognito, DynamoDB 사용)
+- AWS 자격 증명 설정 (Cognito, DynamoDB 사용).
 
 ### Frontend (service/front)
 

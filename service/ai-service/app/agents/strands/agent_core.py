@@ -47,14 +47,39 @@ class StrandsAgentCore:
         """모든 Agent 가져오기"""
         return self.agents.copy()
     
+    async def execute_single_agent(
+        self,
+        agent_name: str,
+        input_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """단일 Agent 실행"""
+        try:
+            agent = self.get_agent(agent_name)
+            if not agent:
+                logger.warning(f"Agent not found: {agent_name}")
+                return {
+                    "success": False,
+                    "error": f"Agent not found: {agent_name}"
+                }
+
+            result = await agent.execute(input_data)
+            return result
+
+        except Exception as e:
+            logger.error(f"Agent {agent_name} execution failed: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
     async def execute_agents_parallel(
-        self, 
-        agent_names: List[str], 
+        self,
+        agent_names: List[str],
         input_data: Dict[str, Any]
     ) -> Dict[str, Any]:
         """선택된 Agent들을 병렬 실행"""
         import asyncio
-        
+
         try:
             # 선택된 Agent들 가져오기
             selected_agents = []
@@ -64,19 +89,19 @@ class StrandsAgentCore:
                     selected_agents.append((agent_name, agent))
                 else:
                     logger.warning(f"Agent not found: {agent_name}")
-            
+
             logger.info(f"Executing {len(selected_agents)} agents in parallel...")
-            
+
             # 병렬 실행
             tasks = []
             for agent_name, agent in selected_agents:
                 task = agent.execute(input_data)
                 tasks.append((agent_name, task))
-            
+
             # 결과 수집
             agent_results = {}
             results = await asyncio.gather(*[t[1] for t in tasks], return_exceptions=True)
-            
+
             for i, (agent_name, _) in enumerate(tasks):
                 result = results[i]
                 if isinstance(result, Exception):
@@ -87,13 +112,13 @@ class StrandsAgentCore:
                     }
                 else:
                     agent_results[agent_name] = result
-            
+
             return {
                 "success": True,
                 "results": agent_results,
                 "agents_executed": len(selected_agents)
             }
-            
+
         except Exception as e:
             logger.error(f"Parallel agent execution failed: {str(e)}")
             return {

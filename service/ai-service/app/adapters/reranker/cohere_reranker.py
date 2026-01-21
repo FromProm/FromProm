@@ -59,7 +59,7 @@ class CohereReranker:
                 "query": claim,
                 "documents": documents,
                 "top_n": min(top_k, len(documents)),
-                "api_version": "1"
+                "api_version": 2
             }
             
             response = bedrock.invoke_model(

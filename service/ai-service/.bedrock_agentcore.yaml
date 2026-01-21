@@ -2,6 +2,8 @@ default_agent: ai_service
 agents:
   ai_service:
     name: ai_service
+    language: python
+    node_version: null
     entrypoint: ./agent.py
     deployment_type: container
     runtime_type: null

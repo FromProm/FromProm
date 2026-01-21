@@ -59,7 +59,6 @@ deploy-agentcore:
     - aws sts get-caller-identity || exit 1
     - cd service/ai-service
     - pip install --no-cache-dir -e .
-    - agentcore --version
   script:
     - echo "🚀 AgentCore 배포 중..."
     - agentcore deploy || exit 1

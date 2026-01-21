@@ -1,5 +1,6 @@
 stages:
   - test
+  - sast
   - validate
   - deploy
 
@@ -12,6 +13,13 @@ variables:
   AWS_REGION: "us-west-2"
   AGENTCORE_REGION: "us-west-2"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  
+  # SonarQube 설정
+  SONAR_HOST_URL: "http://sonarqube-sonarqube.sonarqube.svc.cluster.local:9000"
+  
+  # Python 최적화
+  PYTHONDONTWRITEBYTECODE: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
 
 cache:
   paths:
@@ -33,6 +41,22 @@ cache:
 #   rules:
 #     - if: '$CI_COMMIT_BRANCH == "dev"'
 
+# SonarQube 보안 검사
+sonarqube:
+  stage: sast
+  image:
+    name: sonarsource/sonar-scanner-cli:latest
+    entrypoint: [""]
+  before_script:
+    - cd service/ai-service
+  script:
+    - sonar-scanner
+      -Dsonar.host.url=$SONAR_HOST_URL
+      -Dsonar.token=$SONAR_AI_TOKEN
+  allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+
 # 코드 검증
 validate:
   stage: validate
@@ -42,7 +66,7 @@ validate:
     - pip install --no-cache-dir -e .
   script:
     - echo "🔍 Validating Python syntax..."
-    - python3 -m py_compile app/**/*.py
+    - find app -name "*.py" -exec python3 -m py_compile {} +
     - echo "📦 Checking dependencies..."
     - pip check
   rules:

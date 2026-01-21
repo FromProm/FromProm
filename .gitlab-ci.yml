@@ -14,9 +14,6 @@ variables:
   AGENTCORE_REGION: "us-west-2"
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   
-  # SonarQube 설정
-  SONAR_HOST_URL: "http://sonarqube-sonarqube.sonarqube.svc.cluster.local:9000"
-  
   # Python 최적화
   PYTHONDONTWRITEBYTECODE: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"

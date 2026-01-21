@@ -715,8 +715,7 @@ resource "aws_lambda_function" "sqs_core" {
   lifecycle {
     ignore_changes = [
       filename,
-      source_code_hash,
-      last_modified
+      source_code_hash
     ]
   }
   

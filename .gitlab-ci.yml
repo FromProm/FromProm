@@ -71,4 +71,3 @@ deploy-agentcore:
     expire_in: 30 days
   rules:
     - if: '$CI_COMMIT_BRANCH == "dev"'
-      when: manual

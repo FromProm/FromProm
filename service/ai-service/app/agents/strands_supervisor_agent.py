@@ -4,11 +4,16 @@ Strands Framework 기반 Supervisor Agent
 
 import asyncio
 import logging
+import time
+import uuid
 from typing import Dict, Any, List, Optional
 
 from app.core.schemas import JobCreateRequest, EvaluationResult, PromptType, MetricScore, TokenMetricScore
 from app.orchestrator.context import ExecutionContext
 from app.agents.strands.agent_core import create_agent_core
+from app.core.logging import format_duration
+from app.adapters.user.user_repository import UserRepository
+from app.adapters.notification.ses_notifier import SESNotifier
 
 logger = logging.getLogger(__name__)
 
@@ -16,10 +21,12 @@ class StrandsSupervisorAgent:
     """
     Strands Framework 기반 Supervisor Agent
     """
-    
+
     def __init__(self, context: ExecutionContext):
         self.context = context
         self.strands_core = None
+        self.user_repo = UserRepository()  # User Repository 추가
+        self.ses_notifier = SESNotifier()  # SES Notifier 추가
         self._initialize()
     
     def _initialize(self):
@@ -35,36 +42,55 @@ class StrandsSupervisorAgent:
         """
         Strands 기반 프롬프트 평가
         """
-        logger.info(f"🎯 Strands Supervisor starting evaluation for: {job_request.prompt_type}")
+        # 실행 ID 생성 (각 실행을 구분하기 위함)
+        execution_id = str(uuid.uuid4())[:8]
         
+        supervisor_start = time.time()
+        logger.info(f"[{execution_id}] 🎯 Strands Supervisor starting evaluation for: {job_request.prompt_type}")
+
         try:
             if not self.strands_core or not self.strands_core.is_available():
                 raise Exception("Strands Agent Core not available")
-            
+
             # 1. 기본 데이터 준비
-            logger.info("📋 Step 1: Preparing execution data...")
+            step1_start = time.time()
+            logger.info(f"[{execution_id}] 📋 Step 1: Preparing execution data...")
             execution_data = await self._prepare_execution_data(job_request)
-            
+            step1_duration = time.time() - step1_start
+            logger.info(f"[{execution_id}] 📋 Step 1 Complete (AI 모델 실행 및 임베딩 생성) - {format_duration(step1_duration)}")
+
             # 2. Agent 선택
-            logger.info("🤖 Step 2: Selecting agents...")
+            step2_start = time.time()
+            logger.info(f"[{execution_id}] 🤖 Step 2: Selecting agents...")
             agent_types = self._select_agents(job_request.prompt_type)
-            
+            step2_duration = time.time() - step2_start
+            logger.info(f"[{execution_id}] 🤖 Step 2 Complete (프롬프트 타입별 평가 지표 선택) - {format_duration(step2_duration)}")
+
             # 3. Workflow 실행
-            logger.info("⚡ Step 3: Executing workflow...")
+            step3_start = time.time()
+            logger.info(f"[{execution_id}] ⚡ Step 3: Dispatching workers (sending requests to metric calculators)...")
             workflow_results = await self._execute_workflow(
-                agent_types, job_request, execution_data
+                agent_types, job_request, execution_data, execution_id
             )
-            
+            step3_duration = time.time() - step3_start
+            logger.info(f"[{execution_id}] ⚡ Step 3 Complete (6개 지표 병렬 계산 완료) - {format_duration(step3_duration)}")
+
             # 4. 결과 통합
-            logger.info("📊 Step 4: Integrating results...")
+            step4_start = time.time()
+            logger.info(f"[{execution_id}] 📊 Step 4: Integrating results...")
             final_score, weighted_scores, metrics = await self._integrate_results(
                 workflow_results, job_request.prompt_type
             )
-            
+            step4_duration = time.time() - step4_start
+            logger.info(f"[{execution_id}] 📊 Step 4 Complete (가중치 적용 및 최종 점수 계산) - {format_duration(step4_duration)}")
+
             # 5. 피드백 생성
-            logger.info("💬 Step 5: Generating feedback...")
+            step5_start = time.time()
+            logger.info(f"[{execution_id}] 💬 Step 5: Generating feedback...")
             feedback = await self._generate_feedback(job_request, metrics, final_score)
-            
+            step5_duration = time.time() - step5_start
+            logger.info(f"[{execution_id}] 💬 Step 5 Complete (AI 피드백 및 개선 제안 생성) - {format_duration(step5_duration)}")
+
             evaluation_result = EvaluationResult(
                 final_score=final_score,
                 weighted_scores=weighted_scores,
@@ -72,12 +98,22 @@ class StrandsSupervisorAgent:
                 feedback=feedback,
                 **metrics
             )
-            
-            logger.info(f"✅ Strands Supervisor completed - Final Score: {final_score}")
+
+            total_duration = time.time() - supervisor_start
+            logger.info(f"[{execution_id}] ✅ Supervisor completed - Final Score: {final_score} - Total: {format_duration(total_duration)}")
+
+            # ✨ 이메일 발송 (PK가 있는 경우)
+            if job_request.PK:
+                await self._send_completion_email(
+                    job_request=job_request,
+                    final_score=final_score,
+                    execution_id=execution_id
+                )
+
             return evaluation_result
-            
+
         except Exception as e:
-            logger.error(f"❌ Strands Supervisor failed: {str(e)}")
+            logger.error(f"[{execution_id}] ❌ Strands Supervisor failed: {str(e)}")
             raise
     
     def _select_agents(self, prompt_type: PromptType) -> List[str]:
@@ -97,10 +133,11 @@ class StrandsSupervisorAgent:
         self,
         agent_types: List[str],
         job_request: JobCreateRequest,
-        execution_data: Dict[str, Any]
+        execution_data: Dict[str, Any],
+        execution_id: str
     ) -> Dict[str, Any]:
-        """Workflow 실행"""
-        
+        """Workflow 실행 및 각 Worker 타이밍 로깅"""
+
         try:
             workflow_input = {
                 "prompt": job_request.prompt,
@@ -110,22 +147,70 @@ class StrandsSupervisorAgent:
                 "embeddings": execution_data.get("embeddings", {}),
                 "recommended_model": job_request.recommended_model.value if job_request.recommended_model else ""
             }
-            
-            logger.info(f"   Executing {len(agent_types)} agents in parallel...")
-            workflow_results = await self.strands_core.execute_agents_parallel(
-                agent_types, 
-                workflow_input
-            )
-            
-            if workflow_results.get("success"):
-                logger.info("   ✅ Workflow completed successfully")
-                return workflow_results["results"]
-            else:
-                logger.error(f"   ❌ Workflow failed: {workflow_results.get('error')}")
-                return {}
-                
+
+            logger.info(f"[{execution_id}]    Executing {len(agent_types)} workers in parallel...")
+
+            # 각 워커별 개별 타이밍 측정
+            worker_timings = {}
+
+            # 메트릭 번호 매핑 (순서대로 1-6)
+            metric_numbers = {
+                "token_usage": 1,
+                "information_density": 2,
+                "consistency": 3,
+                "model_variance": 4,
+                "hallucination": 5,
+                "relevance": 6
+            }
+
+            # 메트릭 한국어 이름
+            metric_names_kr = {
+                "token_usage": "토큰 사용량",
+                "information_density": "정보 밀도",
+                "consistency": "일관성",
+                "model_variance": "모델 분산도",
+                "hallucination": "환각 탐지",
+                "relevance": "관련성"
+            }
+
+            async def execute_single_agent(agent_type: str) -> tuple[str, Any]:
+                """단일 에이전트 실행 및 타이밍 로깅"""
+                metric_num = metric_numbers.get(agent_type, 0)
+                metric_name_kr = metric_names_kr.get(agent_type, agent_type)
+                worker_start = time.time()
+                logger.info(f"[{execution_id}]    🚀 Step 3-{metric_num}: [{agent_type}] ({metric_name_kr}) started")
+
+                try:
+                    result = await self.strands_core.execute_single_agent(agent_type, workflow_input)
+                    worker_duration = time.time() - worker_start
+                    worker_timings[agent_type] = worker_duration
+
+                    score = result.get("score", 0.0) if result and result.get("success") else 0.0
+                    logger.info(f"[{execution_id}]    ✅ Step 3-{metric_num} Complete: [{agent_type}] ({metric_name_kr}) - Score: {score:.2f} - {format_duration(worker_duration)}")
+
+                    return agent_type, result
+                except Exception as e:
+                    worker_duration = time.time() - worker_start
+                    logger.error(f"[{execution_id}]    ❌ Step 3-{metric_num} Failed: [{agent_type}] ({metric_name_kr}) - {format_duration(worker_duration)} - Error: {str(e)}")
+                    return agent_type, None
+
+            # 모든 워커를 병렬로 실행
+            results = await asyncio.gather(*[execute_single_agent(agent_type) for agent_type in agent_types])
+
+            # 결과를 딕셔너리로 변환
+            workflow_results = {agent_type: result for agent_type, result in results}
+
+            # 전체 워커 통계
+            total_workers = len(agent_types)
+            successful_workers = sum(1 for r in workflow_results.values() if r and r.get("success"))
+            avg_duration = sum(worker_timings.values()) / len(worker_timings) if worker_timings else 0
+
+            logger.info(f"[{execution_id}]    📊 Workers Summary: {successful_workers}/{total_workers} succeeded - Avg: {format_duration(avg_duration)}")
+
+            return workflow_results
+
         except Exception as e:
-            logger.error(f"Workflow execution failed: {str(e)}")
+            logger.error(f"[{execution_id}] Workflow execution failed: {str(e)}")
             return {}
     
     async def _integrate_results(
@@ -242,3 +327,52 @@ class StrandsSupervisorAgent:
             "execution_results": execution_results,
             "embeddings": embeddings
         }
+
+    async def _send_completion_email(
+        self,
+        job_request: JobCreateRequest,
+        final_score: float,
+        execution_id: str
+    ):
+        """평가 완료 이메일 발송"""
+        try:
+            # PK에서 UUID 추출 (PROMPT#uuid -> uuid)
+            pk = job_request.PK
+            if not pk or not pk.startswith("PROMPT#"):
+                logger.warning(f"[{execution_id}] ⚠️ Invalid PK format: {pk}")
+                return
+
+            user_id = pk.replace("PROMPT#", "")
+            logger.info(f"[{execution_id}] 📧 Preparing to send completion email for user_id: {user_id}")
+
+            # 1. User ID로 이메일 조회
+            user_email = await self.user_repo.get_user_email(user_id)
+
+            if not user_email:
+                logger.warning(f"[{execution_id}] ⚠️ User email not found for user_id: {user_id}")
+                return
+
+            logger.info(f"[{execution_id}] 📧 Sending completion email to {user_email}")
+
+            # 2. S3 URL 생성 (필요시)
+            s3_result_url = None
+            # TODO: S3에 결과 저장했다면 URL 생성
+            # s3_result_url = f"https://your-bucket.s3.amazonaws.com/results/{job_id}.json"
+
+            # 3. 이메일 발송
+            result = await self.ses_notifier.send_evaluation_complete_email(
+                recipient_email=user_email,
+                job_id=user_id,  # PK에서 추출한 UUID 사용
+                final_score=final_score,
+                prompt_type=job_request.prompt_type.value,
+                s3_result_url=s3_result_url
+            )
+
+            if result.get("success"):
+                logger.info(f"[{execution_id}] ✅ Email sent successfully - MessageId: {result.get('message_id')}")
+            else:
+                logger.warning(f"[{execution_id}] ⚠️ Email send failed: {result.get('error')}")
+
+        except Exception as e:
+            # 이메일 발송 실패해도 평가 결과는 반환 (non-critical)
+            logger.error(f"[{execution_id}] Email notification failed (non-critical): {str(e)}")

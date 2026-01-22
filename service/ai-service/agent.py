@@ -278,7 +278,8 @@ async def evaluate_from_dynamodb_format(request: dict) -> dict:
             prompt_type=prompt_type_enum,
             example_inputs=example_inputs,
             recommended_model=model,
-            repeat_count=5
+            repeat_count=5,
+            PK=request.get("PK")  # 이메일 발송용 PK 전달
         )
         
         # 파이프라인 실행

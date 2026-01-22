@@ -2,9 +2,11 @@ node_modules/
 dist/
 .env
 .vscode/
-
-# Python Virtual Environment
 venv/
 env/
 ENV/
 .venv/
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup

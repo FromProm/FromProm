@@ -1,6 +1,7 @@
 """
 MCP (Model Context Protocol) 클라이언트
 다양한 MCP 서버들과 통신하여 근거 수집
+세마포어로 Google Search API rate limit 관리
 """
 
 import asyncio
@@ -10,6 +11,19 @@ from typing import List, Dict, Any, Optional
 from enum import Enum
 
 logger = logging.getLogger(__name__)
+
+# Google Search API 동시 요청 제한 (싱글톤 세마포어)
+_google_search_semaphore: Optional[asyncio.Semaphore] = None
+GOOGLE_SEARCH_MAX_CONCURRENT = 3  # 동시 최대 3개 요청
+
+
+def get_google_semaphore() -> asyncio.Semaphore:
+    """Google Search 세마포어 싱글톤 반환"""
+    global _google_search_semaphore
+    if _google_search_semaphore is None:
+        _google_search_semaphore = asyncio.Semaphore(GOOGLE_SEARCH_MAX_CONCURRENT)
+        logger.info(f"Google Search semaphore initialized (max concurrent: {GOOGLE_SEARCH_MAX_CONCURRENT})")
+    return _google_search_semaphore
 
 class MCPServerType(str, Enum):
     """지원하는 MCP 서버 타입들"""
@@ -400,50 +414,62 @@ class MCPClient:
                     raise RuntimeError(error_msg)
     
     async def _search_google(self, query: str, limit: int) -> List[Dict[str, Any]]:
-        """Google Custom Search API 호출 - 실제 구현"""
+        """Google Custom Search API 호출 - 세마포어로 rate limit 관리"""
         import aiohttp
         import os
-        
+
         api_key = os.getenv("GOOGLE_SEARCH_API_KEY")
         search_engine_id = os.getenv("GOOGLE_SEARCH_ENGINE_ID")
-        
+
         if not api_key or not search_engine_id:
             logger.error("GOOGLE_SEARCH_API_KEY or GOOGLE_SEARCH_ENGINE_ID not found - cannot perform search")
             raise ValueError("GOOGLE_SEARCH_API_KEY and GOOGLE_SEARCH_ENGINE_ID environment variables are required")
-        
-        # Google Custom Search API
-        url = "https://www.googleapis.com/customsearch/v1"
-        params = {
-            "key": api_key,
-            "cx": search_engine_id,
-            "q": query,
-            "num": min(limit, 10),
-            "lr": "lang_ko",  # 한국어 우선
-            "safe": "medium"
-        }
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    results = []
-                    
-                    for item in data.get("items", [])[:limit]:
-                        results.append({
-                            'title': item.get('title', ''),
-                            'content': item.get('snippet', ''),
-                            'url': item.get('link', ''),
-                            'source': 'google_search',
-                            'relevance_score': 0.9,
-                            'display_link': item.get('displayLink', ''),
-                            'formatted_url': item.get('formattedUrl', ''),
-                            'cache_id': item.get('cacheId', '')
-                        })
-                    
-                    logger.info(f"Google Search returned {len(results)} results")
-                    return results
-                else:
-                    error_msg = f"Google Search API error: {response.status}"
-                    logger.error(error_msg)
-                    raise RuntimeError(error_msg)
+
+        # 세마포어로 동시 요청 제한 (429 에러 방지)
+        semaphore = get_google_semaphore()
+
+        async with semaphore:
+            logger.debug(f"🔒 Google Search semaphore acquired for: {query[:30]}...")
+
+            # Google Custom Search API
+            url = "https://www.googleapis.com/customsearch/v1"
+            params = {
+                "key": api_key,
+                "cx": search_engine_id,
+                "q": query,
+                "num": min(limit, 10),
+                "lr": "lang_ko",  # 한국어 우선
+                "safe": "medium"
+            }
+
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        results = []
+
+                        for item in data.get("items", [])[:limit]:
+                            results.append({
+                                'title': item.get('title', ''),
+                                'content': item.get('snippet', ''),
+                                'url': item.get('link', ''),
+                                'source': 'google_search',
+                                'relevance_score': 0.9,
+                                'display_link': item.get('displayLink', ''),
+                                'formatted_url': item.get('formattedUrl', ''),
+                                'cache_id': item.get('cacheId', '')
+                            })
+
+                        logger.info(f"Google Search returned {len(results)} results")
+                        return results
+                    elif response.status == 429:
+                        # Rate limit - 잠시 대기 후 에러 반환
+                        logger.warning(f"⚠️ Google Search rate limited (429) for: {query[:30]}... - waiting 2s")
+                        await asyncio.sleep(2)
+                        error_msg = f"Google Search API rate limited: {response.status}"
+                        raise RuntimeError(error_msg)
+                    else:
+                        error_msg = f"Google Search API error: {response.status}"
+                        logger.error(error_msg)
+                        raise RuntimeError(error_msg)
     

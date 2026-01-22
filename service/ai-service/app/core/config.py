@@ -138,6 +138,10 @@ class Settings(BaseSettings):
     # Cache Settings
     cache_enabled: bool = True
     cache_ttl: int = 3600  # 1 hour
+
+    # Grounding Cache Settings
+    grounding_cache_enabled: bool = True
+    grounding_cache_ttl: int = 604800  # 7일 (초)
     
     # Mock Mode (테스트용)
     mock_mode: bool = False  # AWS 없이 테스트할 때 True

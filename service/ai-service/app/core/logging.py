@@ -1,6 +1,7 @@
 import logging
 import sys
 import json
+import time
 from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 
@@ -103,6 +104,20 @@ def setup_logging():
 def get_structured_logger(name: str) -> StructuredLogger:
     """구조화된 로거 인스턴스 반환"""
     return StructuredLogger(name)
+
+
+def format_duration(duration_seconds: float) -> str:
+    """
+    소요 시간을 읽기 쉬운 포맷으로 변환
+
+    Args:
+        duration_seconds: 소요 시간 (초 단위)
+
+    Returns:
+        "⏱️ 2.33s (2330ms)" 형식의 문자열
+    """
+    duration_ms = duration_seconds * 1000
+    return f"⏱️ {duration_seconds:.2f}s ({duration_ms:.0f}ms)"
 
 
 logger = logging.getLogger(__name__)

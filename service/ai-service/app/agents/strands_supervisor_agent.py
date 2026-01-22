@@ -53,14 +53,14 @@ class StrandsSupervisorAgent:
             logger.info("📋 Step 1: Preparing execution data...")
             execution_data = await self._prepare_execution_data(job_request)
             step1_duration = time.time() - step1_start
-            logger.info(f"📋 Step 1 Complete - {format_duration(step1_duration)}")
+            logger.info(f"📋 Step 1 Complete (AI 모델 실행 및 임베딩 생성) - {format_duration(step1_duration)}")
 
             # 2. Agent 선택
             step2_start = time.time()
             logger.info("🤖 Step 2: Selecting agents...")
             agent_types = self._select_agents(job_request.prompt_type)
             step2_duration = time.time() - step2_start
-            logger.info(f"🤖 Step 2 Complete - {format_duration(step2_duration)}")
+            logger.info(f"🤖 Step 2 Complete (프롬프트 타입별 평가 지표 선택) - {format_duration(step2_duration)}")
 
             # 3. Workflow 실행
             step3_start = time.time()
@@ -69,7 +69,7 @@ class StrandsSupervisorAgent:
                 agent_types, job_request, execution_data
             )
             step3_duration = time.time() - step3_start
-            logger.info(f"⚡ Step 3 Complete - {format_duration(step3_duration)}")
+            logger.info(f"⚡ Step 3 Complete (6개 지표 병렬 계산 완료) - {format_duration(step3_duration)}")
 
             # 4. 결과 통합
             step4_start = time.time()
@@ -78,14 +78,14 @@ class StrandsSupervisorAgent:
                 workflow_results, job_request.prompt_type
             )
             step4_duration = time.time() - step4_start
-            logger.info(f"📊 Step 4 Complete - {format_duration(step4_duration)}")
+            logger.info(f"📊 Step 4 Complete (가중치 적용 및 최종 점수 계산) - {format_duration(step4_duration)}")
 
             # 5. 피드백 생성
             step5_start = time.time()
             logger.info("💬 Step 5: Generating feedback...")
             feedback = await self._generate_feedback(job_request, metrics, final_score)
             step5_duration = time.time() - step5_start
-            logger.info(f"💬 Step 5 Complete - {format_duration(step5_duration)}")
+            logger.info(f"💬 Step 5 Complete (AI 피드백 및 개선 제안 생성) - {format_duration(step5_duration)}")
 
             evaluation_result = EvaluationResult(
                 final_score=final_score,

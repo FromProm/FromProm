@@ -19,7 +19,7 @@ public class PromptService {
     private String TABLE_NAME;
 
     /**
-     * 프롬프트 상세 정보 조회
+     * 프롬프트 상세 정보 조회 123
      */
     public Map<String, Object> getPromptDetail(String promptId) {
         String promptPK = "PROMPT#" + promptId;

@@ -49,23 +49,23 @@ public class UserController {
         return ResponseEntity.ok("인증 코드가 재전송되었습니다.");
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
-        try {
-            AuthenticationResultType result = userService.login(request);
+    // @PostMapping("/login")
+    // public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
+    //     try {
+    //         AuthenticationResultType result = userService.login(request);
 
-            // 중요: 객체를 직접 던지지 말고 Map에 담아서 JSON 응답이 잘 생성되게 합니다.
-            Map<String, String> tokens = new HashMap<>();
-            tokens.put("accessToken", result.accessToken());
-            tokens.put("idToken", result.idToken());
-            tokens.put("refreshToken", result.refreshToken());
-            tokens.put("expiresIn", result.expiresIn().toString());
+    //         // 중요: 객체를 직접 던지지 말고 Map에 담아서 JSON 응답이 잘 생성되게 합니다.
+    //         Map<String, String> tokens = new HashMap<>();
+    //         tokens.put("accessToken", result.accessToken());
+    //         tokens.put("idToken", result.idToken());
+    //         tokens.put("refreshToken", result.refreshToken());
+    //         tokens.put("expiresIn", result.expiresIn().toString());
 
-            return ResponseEntity.ok(tokens);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인 실패: " + e.getMessage());
-        }
-    }
+    //         return ResponseEntity.ok(tokens);
+    //     } catch (Exception e) {
+    //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인 실패: " + e.getMessage());
+    //     }
+    // }
 
     // 토큰 재발급
     @PostMapping("/refresh")

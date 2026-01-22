@@ -49,6 +49,7 @@ public class UserController {
         return ResponseEntity.ok("인증 코드가 재전송되었습니다.");
     }
 
+    //로그인
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
         try {
@@ -188,24 +189,24 @@ public class UserController {
         }
     }
 
-    // // 회원 탈퇴
-    // @DeleteMapping("/withdraw")
-    // public ResponseEntity<String> withdraw(@RequestHeader("Authorization") String bearerToken) {
-    //     try {
-    //         // 1. "Bearer " 제거 및 공백 제거
-    //         String cleanToken = bearerToken.replace("Bearer ", "").trim();
+    // 회원 탈퇴
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<String> withdraw(@RequestHeader("Authorization") String bearerToken) {
+        try {
+            // 1. "Bearer " 제거 및 공백 제거
+            String cleanToken = bearerToken.replace("Bearer ", "").trim();
 
-    //         // 2. [중요] 정규식 패턴(A-Z, a-z, 0-9, -, _, ., =)에 맞지 않는 모든 유령 문자 제거
-    //         cleanToken = cleanToken.replaceAll("[^A-Za-z0-9\\-_\\.=]", "");
+            // 2. [중요] 정규식 패턴(A-Z, a-z, 0-9, -, _, ., =)에 맞지 않는 모든 유령 문자 제거
+            cleanToken = cleanToken.replaceAll("[^A-Za-z0-9\\-_\\.=]", "");
 
-    //         // 3. 로그로 깨끗해진 토큰 길이 확인
-    //         System.out.println("DEBUG: Cleaned Token Length -> " + cleanToken.length());
+            // 3. 로그로 깨끗해진 토큰 길이 확인
+            System.out.println("DEBUG: Cleaned Token Length -> " + cleanToken.length());
 
-    //         userService.withdrawWithToken(cleanToken);
-    //         return ResponseEntity.ok("회원 탈퇴가 완료되었습니다.");
-    //     } catch (Exception e) {
-    //         e.printStackTrace();
-    //         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("회원 탈퇴 실패: " + e.getMessage());
-    //     }
-    // }
+            userService.withdrawWithToken(cleanToken);
+            return ResponseEntity.ok("회원 탈퇴가 완료되었습니다.");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("회원 탈퇴 실패: " + e.getMessage());
+        }
+    }
 }

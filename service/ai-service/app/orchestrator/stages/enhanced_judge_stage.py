@@ -1,6 +1,7 @@
 """
 향상된 환각 탐지 단계
 Claude 기반 Claim 분석 + MCP 선택 + Cohere Rerank + 판단 LLM
+Grounding Cache로 중복 검증 최소화
 """
 
 import logging
@@ -10,6 +11,8 @@ from enum import Enum
 
 from app.orchestrator.context import ExecutionContext
 from app.core.schemas import MetricScore, ExampleInput
+from app.core.config import settings
+from app.cache.grounding_cache import get_grounding_cache
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +35,20 @@ class MCPSource(str, Enum):
 
 class EnhancedJudgeStage:
     """향상된 환각 탐지 단계"""
-    
+
     def __init__(self, context: ExecutionContext):
         self.context = context
-        
+
+        # Grounding Cache 초기화
+        self.grounding_cache = get_grounding_cache() if settings.grounding_cache_enabled else None
+        self._cache_hits = 0
+        self._cache_misses = 0
+
+        if self.grounding_cache:
+            logger.info("EnhancedJudgeStage: Grounding Cache enabled")
+        else:
+            logger.info("EnhancedJudgeStage: Grounding Cache disabled")
+
         # MCP 매핑 - Google Search와 Tavily Search를 주로 사용
         self.domain_to_mcp = {
             ClaimDomain.CURRENT_EVENTS: [MCPSource.GOOGLE_SEARCH, MCPSource.TAVILY_SEARCH],
@@ -101,15 +114,20 @@ class EnhancedJudgeStage:
             
             # 최종 점수 계산
             final_score = self._calculate_final_score(claim_scores)
-            
+
+            # 캐시 통계
+            cache_stats = self._get_cache_stats()
+
             details = {
                 'claims_processed': len(classified_claims),
                 'claim_scores': claim_scores,
                 'average_score': final_score,
-                'methodology': 'Enhanced MCP-based fact verification with Cohere reranking'
+                'methodology': 'Enhanced MCP-based fact verification with Cohere reranking',
+                'grounding_cache': cache_stats
             }
-            
+
             logger.info(f"Enhanced hallucination detection completed: {final_score:.3f}")
+            logger.info(f"📊 [GroundingCache] Stats - Hits: {cache_stats['cache_hits']}, Misses: {cache_stats['cache_misses']}, Hit Rate: {cache_stats['hit_rate']}")
             return MetricScore(score=final_score, details=details)
             
         except Exception as e:
@@ -589,23 +607,49 @@ class EnhancedJudgeStage:
         return scored_results
     
     async def _score_single_claim(
-        self, 
-        judge, 
+        self,
+        judge,
         evidence_data: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """단일 Claim에 대한 점수 계산 - 재정렬된 근거 기반"""
-        
+        """단일 Claim에 대한 점수 계산 - 재정렬된 근거 기반 (Grounding Cache 적용)"""
+
         claim_text = evidence_data['claim']
         evidence_list = evidence_data.get('evidence', [])
         keywords = evidence_data.get('keywords', [])
-        
+
+        # 1. 캐시 조회 (활성화된 경우)
+        if self.grounding_cache:
+            cached = await self.grounding_cache.get(claim_text)
+            if cached:
+                self._cache_hits += 1
+                logger.info(f"🎯 [GroundingCache] HIT - Skipping LLM scoring for: {claim_text[:40]}...")
+                return {
+                    **evidence_data,
+                    'score': 100.0 if cached['is_verified'] else 30.0,
+                    'reasoning': f"[CACHED] {cached['evidence']}",
+                    'cache_hit': True,
+                    'cached_at': cached.get('created_at', '')
+                }
+            self._cache_misses += 1
+            logger.debug(f"❌ [GroundingCache] MISS - Scoring claim: {claim_text[:40]}...")
+
         if not evidence_list:
             # 근거가 없으면 낮은 점수 (검증 불가)
-            return {
+            result = {
                 **evidence_data,
                 'score': 30.0,
                 'reasoning': 'No evidence available for verification - likely hallucination'
             }
+            # 캐시에 저장 (근거 없음도 캐싱)
+            if self.grounding_cache:
+                await self.grounding_cache.set(
+                    claim_text,
+                    is_verified=False,
+                    evidence="근거 없음 - 검증 불가",
+                    mcp_sources=[],
+                    confidence=0.3
+                )
+            return result
         
         # 근거들을 텍스트로 구성 (rerank_score 순서대로 이미 정렬됨)
         evidence_text = "\n\n".join([
@@ -664,24 +708,52 @@ class EnhancedJudgeStage:
                 reasoning = "Failed to parse score from LLM response"
             
             logger.info(f"Claim scored: {score:.1f} - {claim_text[:50]}...")
-            
+
+            final_score = max(0.0, min(100.0, score))
+
+            # 캐시에 저장 (점수 70 이상이면 verified로 간주)
+            if self.grounding_cache:
+                is_verified = final_score >= 70.0
+                mcp_sources = [{'source': ev.get('source', ''), 'title': ev.get('title', '')} for ev in evidence_list[:3]]
+                await self.grounding_cache.set(
+                    claim_text,
+                    is_verified=is_verified,
+                    evidence=reasoning[:500],
+                    mcp_sources=mcp_sources,
+                    confidence=final_score / 100.0
+                )
+                logger.info(f"💾 [GroundingCache] SET - {claim_text[:40]}... (score: {final_score:.1f})")
+
             return {
                 **evidence_data,
-                'score': max(0.0, min(100.0, score)),
+                'score': final_score,
                 'reasoning': reasoning,
                 'llm_response': result[:500],
-                'evidence_count': len(evidence_list)
+                'evidence_count': len(evidence_list),
+                'cache_hit': False
             }
-            
+
         except Exception as e:
             logger.error(f"Claim scoring failed: {str(e)}")
             return {
                 **evidence_data,
                 'score': 50.0,
                 'reasoning': f'Scoring failed: {str(e)}',
-                'evidence_count': len(evidence_list)
+                'evidence_count': len(evidence_list),
+                'cache_hit': False
             }
     
+    def _get_cache_stats(self) -> Dict[str, Any]:
+        """캐시 통계 반환"""
+        total = self._cache_hits + self._cache_misses
+        hit_rate = (self._cache_hits / total * 100) if total > 0 else 0
+        return {
+            "cache_hits": self._cache_hits,
+            "cache_misses": self._cache_misses,
+            "hit_rate": f"{hit_rate:.1f}%",
+            "total_claims": total
+        }
+
     def _calculate_final_score(self, claim_scores: List[Dict[str, Any]]) -> float:
         """최종 점수 계산"""
         

@@ -1,6 +1,7 @@
 """
 Hallucination Agent - MCP 기반 환각 탐지 전문 AI
 Google Search + Brave Search를 사용한 팩트체크
+Grounding Cache로 중복 검증 최소화
 """
 
 import logging
@@ -8,7 +9,9 @@ import asyncio
 from typing import Dict, Any, List
 
 from app.core.schemas import MetricScore, ExampleInput
+from app.core.config import settings
 from app.adapters.mcp.mcp_client import MCPClient, MCPServerType
+from app.cache.grounding_cache import get_grounding_cache
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +29,9 @@ class HallucinationAgent:
     def __init__(self):
         self.agent_name = "HallucinationAgent"
         self.mcp_client = MCPClient()
+        self.grounding_cache = get_grounding_cache() if settings.grounding_cache_enabled else None
+        self._cache_hits = 0
+        self._cache_misses = 0
     
     async def analyze_hallucination(
         self,
@@ -95,8 +101,11 @@ class HallucinationAgent:
             else:
                 score = 100.0
             
+            # 캐시 통계 로깅
+            cache_stats = self.get_cache_stats()
             logger.info(f"✅ {self.agent_name} completed - Score: {score:.2f}, Claims: {total_claims}, Verified: {verified_claims}")
-            
+            logger.info(f"📊 [GroundingCache] Stats - Hits: {cache_stats['cache_hits']}, Misses: {cache_stats['cache_misses']}, Hit Rate: {cache_stats['hit_rate']}")
+
             return MetricScore(
                 score=score,
                 details={
@@ -106,7 +115,8 @@ class HallucinationAgent:
                     "total_claims": total_claims,
                     "verified_claims": verified_claims,
                     "hallucination_count": len(hallucination_details),
-                    "hallucinations": hallucination_details[:5]
+                    "hallucinations": hallucination_details[:5],
+                    "grounding_cache": cache_stats
                 }
             )
             
@@ -168,9 +178,21 @@ JSON 배열로 응답:
             return []
     
     async def _verify_claim_with_mcp(self, claim: str) -> tuple[bool, str]:
-        """MCP (Google + Brave)로 주장 검증"""
-        
+        """MCP (Google + Brave)로 주장 검증 (Grounding Cache 적용)"""
+
         try:
+            # 1. 캐시 조회 (활성화된 경우)
+            if self.grounding_cache:
+                cached = await self.grounding_cache.get(claim)
+                if cached:
+                    self._cache_hits += 1
+                    logger.info(f"🎯 [GroundingCache] HIT - Saved MCP calls for: {claim[:30]}...")
+                    return cached['is_verified'], cached['evidence']
+                self._cache_misses += 1
+
+            # 2. 캐시 미스 - MCP로 실제 검증
+            logger.debug(f"❌ [GroundingCache] MISS - Executing MCP verification for: {claim[:30]}...")
+
             # Google Search와 Brave Search 병렬 실행
             google_task = self.mcp_client.search_evidence(
                 MCPServerType.GOOGLE_SEARCH, claim, limit=3
@@ -178,48 +200,75 @@ JSON 배열로 응답:
             brave_task = self.mcp_client.search_evidence(
                 MCPServerType.BRAVE_SEARCH, claim, limit=3
             )
-            
+
             google_results, brave_results = await asyncio.gather(
                 google_task, brave_task, return_exceptions=True
             )
-            
+
             # 결과 합치기
             all_results = []
+            mcp_sources = []
             if not isinstance(google_results, Exception):
                 all_results.extend(google_results)
+                mcp_sources.extend([{'source': 'google', 'title': r.get('title', '')} for r in google_results[:2]])
             if not isinstance(brave_results, Exception):
                 all_results.extend(brave_results)
-            
+                mcp_sources.extend([{'source': 'brave', 'title': r.get('title', '')} for r in brave_results[:2]])
+
             if not all_results:
-                return False, "검색 결과 없음"
-            
+                is_verified, evidence = False, "검색 결과 없음"
+                # 캐시에 저장 (검색 결과 없음도 캐싱)
+                if self.grounding_cache:
+                    await self.grounding_cache.set(claim, is_verified, evidence, mcp_sources, confidence=0.5)
+                return is_verified, evidence
+
             # 검증 로직: 검색 결과에서 주장과 관련된 내용 확인
             supporting_evidence = []
-            contradicting_evidence = []
-            
+
             for result in all_results:
                 content = result.get('content', '').lower()
                 title = result.get('title', '').lower()
                 claim_lower = claim.lower()
-                
+
                 # 간단한 키워드 매칭으로 관련성 확인
                 claim_keywords = [w for w in claim_lower.split() if len(w) > 2]
                 matches = sum(1 for kw in claim_keywords if kw in content or kw in title)
-                
+
                 if matches >= len(claim_keywords) * 0.3:  # 30% 이상 키워드 매칭
                     supporting_evidence.append({
                         'title': result.get('title', ''),
                         'url': result.get('url', ''),
                         'source': result.get('source', '')
                     })
-            
+
             # 지지 근거가 있으면 검증됨
             if supporting_evidence:
-                evidence_summary = f"지지 근거 {len(supporting_evidence)}개 발견: {supporting_evidence[0].get('title', '')}"
-                return True, evidence_summary
+                is_verified = True
+                evidence = f"지지 근거 {len(supporting_evidence)}개 발견: {supporting_evidence[0].get('title', '')}"
+                confidence = min(1.0, 0.5 + len(supporting_evidence) * 0.1)
             else:
-                return False, "관련 근거를 찾지 못함"
-            
+                is_verified = False
+                evidence = "관련 근거를 찾지 못함"
+                confidence = 0.6
+
+            # 3. 캐시에 결과 저장
+            if self.grounding_cache:
+                await self.grounding_cache.set(claim, is_verified, evidence, mcp_sources, confidence)
+                logger.debug(f"💾 [GroundingCache] SET - {claim[:30]}... (verified: {is_verified})")
+
+            return is_verified, evidence
+
         except Exception as e:
             logger.error(f"MCP verification failed: {str(e)}")
             return False, f"검증 실패: {str(e)}"
+
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """캐시 통계 반환"""
+        total = self._cache_hits + self._cache_misses
+        hit_rate = (self._cache_hits / total * 100) if total > 0 else 0
+        return {
+            "cache_hits": self._cache_hits,
+            "cache_misses": self._cache_misses,
+            "hit_rate": f"{hit_rate:.1f}%",
+            "total_claims": total
+        }

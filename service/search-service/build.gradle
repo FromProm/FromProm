@@ -30,9 +30,15 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
+    // OpenSearch
     implementation 'org.opensearch.client:opensearch-java:2.19.0'
     implementation 'jakarta.json:jakarta.json-api'
     implementation 'org.apache.httpcomponents.client5:httpclient5'
+
+    // AWS SDK for DynamoDB (프롬프트 조회용)
+    implementation 'software.amazon.awssdk:dynamodb:2.20.0'
+    implementation 'software.amazon.awssdk:dynamodb-enhanced:2.20.0'
+    implementation 'software.amazon.awssdk:sts:2.20.0'
 
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

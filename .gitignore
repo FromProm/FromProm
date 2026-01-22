@@ -3,6 +3,9 @@ dist/
 .env
 .vscode/
 venv/
+env/
+ENV/
+.venv/
 # Terraform
 .terraform/
 *.tfstate

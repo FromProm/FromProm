@@ -31,7 +31,20 @@ export interface Prompt {
   llmVersion?: string; // LLM 모델 버전
 }
 
-// 성능 지표 타입
+// AI 평가 지표 타입 (DynamoDB evaluation_metrics)
+export interface EvaluationMetrics {
+  consistency: number;        // 응답 일관성 (0-100)
+  hallucination: number;      // 환각 탐지 점수 (0-100, 높을수록 환각 적음)
+  information_density: number; // 정보 밀도 (0-100)
+  model_variance: number;     // 모델 변이성 (0-100, 낮을수록 안정적)
+  relevance: number;          // 관련성 (0-100)
+  token_usage: number;        // 토큰 사용량 점수 (0-100)
+  final_score: number;        // 최종 점수 (0-100)
+  overall_feedback?: string;  // AI 피드백 텍스트
+  prompt_type?: string;       // 프롬프트 타입
+}
+
+// 성능 지표 타입 (레거시 호환용)
 export interface PerformanceMetrics {
   accuracy: number; // 정확도 (0-100)
   responseTime: number; // 응답 시간 (ms)

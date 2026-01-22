@@ -24,12 +24,27 @@ FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
+# ADOT Java Agent 다운로드
+ARG ADOT_AGENT_VERSION=1.32.0
+ADD https://github.com/aws-observability/aws-otel-java-instrumentation/releases/download/v${ADOT_AGENT_VERSION}/aws-opentelemetry-agent.jar /opt/aws-opentelemetry-agent.jar
+
 # builder 스테이지에서 생성된 jar 파일만 복사
-# [팁] 명확하게 build/libs 폴더 아래의 jar를 지정
 COPY --from=builder /app/build/libs/*.jar app.jar
 
 # 포트 설정
-EXPOSE 34000
+EXPOSE 8080
 
-# 실행
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# OTEL 환경변수 기본값 설정
+ENV OTEL_SERVICE_NAME=search-service
+ENV OTEL_TRACES_EXPORTER=otlp
+ENV OTEL_METRICS_EXPORTER=otlp
+ENV OTEL_LOGS_EXPORTER=none
+ENV OTEL_PROPAGATORS=xray,tracecontext,baggage
+ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+ENV OTEL_RESOURCE_ATTRIBUTES=service.namespace=fromprom
+
+# ADOT Agent 활성화 여부 (기본: 비활성화, K8s에서 환경변수로 활성화)
+ENV ENABLE_OTEL_AGENT=false
+
+# 실행 (ENABLE_OTEL_AGENT에 따라 Agent 적용 여부 결정)
+ENTRYPOINT ["sh", "-c", "if [ \"$ENABLE_OTEL_AGENT\" = \"true\" ]; then exec java -javaagent:/opt/aws-opentelemetry-agent.jar -jar app.jar; else exec java -jar app.jar; fi"]

@@ -15,21 +15,21 @@ spec:
   rules:
     - http:
         paths:
-          # ai-service와 search-service는 배포 후 활성화
+          # ai-service는 배포 후 활성화
           # - path: /api/ai
           #   pathType: Prefix
           #   backend:
           #     service:
           #       name: ai-service
           #       port:
-          #         number: 31000
-          # - path: /api/search
-          #   pathType: Prefix
-          #   backend:
-          #     service:
-          #       name: search-service
-          #       port:
-          #         number: 32000
+          #         number: 8080
+          - path: /api/search
+            pathType: Prefix
+            backend:
+              service:
+                name: search-service
+                port:
+                  number: 8080
           - path: /api
             pathType: Prefix
             backend:

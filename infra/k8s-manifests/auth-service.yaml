@@ -17,13 +17,20 @@ spec:
       serviceAccountName: auth-service-sa
       containers:
       - name: auth-service
-        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:af95edc9
+        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/auth:8b2fb815
         ports:
         - containerPort: 8080
         env:
         # Spring Boot 프로파일 활성화
         - name: SPRING_PROFILES_ACTIVE
           value: "aws"
+        # ADOT Agent 활성화
+        - name: ENABLE_OTEL_AGENT
+          value: "true"
+        - name: OTEL_SERVICE_NAME
+          value: "auth-service"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://adot-collector.opentelemetry-operator-system:4317"
         # IRSA 사용 - Access Key 불필요 (DefaultCredentialsProvider가 Web Identity Token 사용)
         # Cognito
         - name: AWS_COGNITO_CLIENTID

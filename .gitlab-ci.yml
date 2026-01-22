@@ -33,14 +33,15 @@ cache:
 # ==========================================
 .build_backend_template:
   stage: build
-  image: docker:24-dind
+  image: docker:24-cli
   services:
-    - docker:24-dind
+    - name: docker:24-dind
+      alias: docker
+      variables:
+        DOCKER_TLS_CERTDIR: ""
   variables:
-    DOCKER_TLS_CERTDIR: "/certs"
-    DOCKER_HOST: "tcp://docker:2376"
-    DOCKER_TLS_VERIFY: "1"
-    DOCKER_CERT_PATH: "/certs/client"
+    DOCKER_HOST: "tcp://docker:2375"
+    DOCKER_TLS_CERTDIR: ""
   cache: {} # 전역 캐시 비활성화
   before_script:
     - apk add --no-cache aws-cli

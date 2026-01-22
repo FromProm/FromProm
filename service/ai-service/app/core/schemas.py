@@ -53,9 +53,20 @@ class ExampleInput(BaseModel):
     content: str
     input_type: Literal["text", "image"] = "text"
 
+class DynamoDBExampleInput(BaseModel):
+    """DynamoDB에서 오는 예시 입력 형식"""
+    index: int
+    input: Dict[str, Any]
+    output: Optional[str] = ""
+
+
 class JobCreateRequest(BaseModel):
-    prompt: str = Field(..., description="평가할 프롬프트")
-    example_inputs: List[ExampleInput] = Field(..., description="예시 입력들 (개수 제한 없음)")
+    model_config = ConfigDict(populate_by_name=True)
+
+    # prompt 또는 prompt_content 둘 다 지원
+    prompt: str = Field(..., description="평가할 프롬프트", alias="prompt_content")
+    # example_inputs 또는 examples 둘 다 지원
+    example_inputs: List[ExampleInput] = Field(default=[], description="예시 입력들 (개수 제한 없음)")
     prompt_type: PromptType = Field(..., description="프롬프트 타입")
     recommended_model: Optional[RecommendedModel] = Field(None, description="권장 모델 (Claude: 글 타입, Nova: 이미지 타입)")
     repeat_count: int = Field(5, ge=1, le=10, description="반복 실행 횟수")
@@ -63,6 +74,24 @@ class JobCreateRequest(BaseModel):
     title: Optional[str] = Field(None, description="프롬프트 제목 (WAS 전달용)")
     description: Optional[str] = Field(None, description="프롬프트 설명 (WAS 전달용)")
     user_id: Optional[str] = Field(None, description="사용자 ID (SB에서 전달)")
+    # DynamoDB PK 필드 (이메일 조회용)
+    PK: Optional[str] = Field(None, description="DynamoDB PK (PROMPT#uuid 형식)")
+    # DynamoDB examples 필드 (변환용)
+    examples: Optional[List[DynamoDBExampleInput]] = Field(None, description="DynamoDB 예시 형식")
+
+    def __init__(self, **data):
+        # examples가 있고 example_inputs가 없으면 변환
+        if 'examples' in data and data['examples'] and not data.get('example_inputs'):
+            converted = []
+            for ex in data['examples']:
+                if isinstance(ex, dict) and 'input' in ex:
+                    input_data = ex['input']
+                    converted.append(ExampleInput(
+                        content=input_data.get('content', ''),
+                        input_type=input_data.get('input_type', 'text')
+                    ))
+            data['example_inputs'] = converted
+        super().__init__(**data)
 
 class CompareRequest(BaseModel):
     model_config = ConfigDict(protected_namespaces=())

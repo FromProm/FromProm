@@ -98,8 +98,8 @@ class StrandsSupervisorAgent:
             total_duration = time.time() - supervisor_start
             logger.info(f"✅ Strands Supervisor completed - Final Score: {final_score} - Total: {format_duration(total_duration)}")
 
-            # ✨ 이메일 발송 (user_id가 있는 경우)
-            if job_request.user_id:
+            # ✨ 이메일 발송 (PK가 있는 경우)
+            if job_request.PK:
                 await self._send_completion_email(
                     job_request=job_request,
                     final_score=final_score
@@ -318,13 +318,20 @@ class StrandsSupervisorAgent:
     ):
         """평가 완료 이메일 발송"""
         try:
-            logger.info(f"📧 Preparing to send completion email for user_id: {job_request.user_id}")
+            # PK에서 UUID 추출 (PROMPT#uuid -> uuid)
+            pk = job_request.PK
+            if not pk or not pk.startswith("PROMPT#"):
+                logger.warning(f"⚠️ Invalid PK format: {pk}")
+                return
+
+            user_id = pk.replace("PROMPT#", "")
+            logger.info(f"📧 Preparing to send completion email for user_id: {user_id}")
 
             # 1. User ID로 이메일 조회
-            user_email = await self.user_repo.get_user_email(job_request.user_id)
+            user_email = await self.user_repo.get_user_email(user_id)
 
             if not user_email:
-                logger.warning(f"⚠️ User email not found for user_id: {job_request.user_id}")
+                logger.warning(f"⚠️ User email not found for user_id: {user_id}")
                 return
 
             logger.info(f"📧 Sending completion email to {user_email}")
@@ -337,7 +344,7 @@ class StrandsSupervisorAgent:
             # 3. 이메일 발송
             result = await self.ses_notifier.send_evaluation_complete_email(
                 recipient_email=user_email,
-                job_id=getattr(job_request, 'job_id', 'unknown'),
+                job_id=user_id,  # PK에서 추출한 UUID 사용
                 final_score=final_score,
                 prompt_type=job_request.prompt_type.value,
                 s3_result_url=s3_result_url

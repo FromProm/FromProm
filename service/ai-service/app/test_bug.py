@@ -3,24 +3,28 @@
 def test_function():
     """SonarQube Bug 감지 테스트"""
     
-    # Bug 1: Division by zero
-    result = 10 / 0
+    # Bug 1: 잘못된 비교 연산자
+    x = 5
+    if x = 10:  # = 대신 == (Syntax Error)
+        print("Bug")
     
-    # Bug 2: Unreachable code
-    print("This will never execute")
-    
-    return result
+    return None
 
 
 def another_bug():
     """또 다른 Bug"""
     
-    # Bug 3: Null pointer dereference
-    data = None
-    return data.get("key")  # AttributeError
-
-
-# Bug 4: Infinite loop
-def infinite_loop():
-    while True:
+    # Bug 2: 너무 광범위한 except
+    try:
+        data = {}
+    except:  # Bug: bare except
         pass
+    
+    return data
+
+
+def type_bug() -> int:
+    """타입 힌트 Bug"""
+    # Bug 3: 타입 불일치
+    return "string"  # int 반환해야 하는데 str 반환
+

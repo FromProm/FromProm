@@ -49,7 +49,7 @@ public class UserController {
         return ResponseEntity.ok("인증 코드가 재전송되었습니다.");
     }
 
-    //로그인
+    //로그인123
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserLoginRequest request) {
         try {

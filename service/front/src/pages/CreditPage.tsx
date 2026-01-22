@@ -337,7 +337,7 @@ const CreditPage = () => {
           <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 크레딧 사용 안내</h3>
             <ul className="space-y-2 text-sm text-blue-800">
-              <li>• 1P = ₩1 환율로 충전됩니다</li>
+              <li>• 1P = $0.01 USD 환율로 충전됩니다</li>
               <li>• 충전된 크레딧은 프롬프트 구매에 사용할 수 있습니다</li>
               <li>• 보너스 크레딧은 일정 금액 이상 충전 시 제공됩니다</li>
               <li>• 크레딧은 환불되지 않으니 신중하게 충전해주세요</li>

@@ -1,10 +1,29 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { categories, getCategoryModels } from '../services/dummyData';
 import { promptApi } from '../services/api';
 import AnimatedContent from '../components/AnimatedContent';
 import SplitText from '../components/SplitText';
+
+// 변수 추출 함수: {{변수명}} 패턴에서 변수명 추출
+const extractVariables = (content: string): string[] => {
+  const regex = /\{\{([^}]+)\}\}/g;
+  const variables: string[] = [];
+  let match;
+  while ((match = regex.exec(content)) !== null) {
+    const varName = match[1].trim();
+    if (varName && !variables.includes(varName)) {
+      variables.push(varName);
+    }
+  }
+  return variables;
+};
+
+// 예시 입력 타입
+interface ExampleInput {
+  [key: string]: string;
+}
 
 const PromptCreatePage = () => {
   const navigate = useNavigate();
@@ -25,8 +44,26 @@ const PromptCreatePage = () => {
   });
 
   const [availableModels, setAvailableModels] = useState<string[]>(defaultModels);
-  const [exampleInputs, setExampleInputs] = useState(['', '', '']);
+  const [exampleInputs, setExampleInputs] = useState<ExampleInput[]>([{}, {}, {}]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 프롬프트 내용에서 변수 추출
+  const extractedVariables = useMemo(() => {
+    return extractVariables(formData.content);
+  }, [formData.content]);
+
+  // 변수가 변경되면 예시 입력 초기화
+  useEffect(() => {
+    if (extractedVariables.length > 0) {
+      setExampleInputs(prev => prev.map(example => {
+        const newExample: ExampleInput = {};
+        extractedVariables.forEach(varName => {
+          newExample[varName] = example[varName] || '';
+        });
+        return newExample;
+      }));
+    }
+  }, [extractedVariables]);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -61,8 +98,10 @@ const PromptCreatePage = () => {
     }
   };
 
-  const handleExampleInputChange = (index: number, value: string) => {
-    setExampleInputs(prev => prev.map((input, i) => i === index ? value : input));
+  const handleExampleInputChange = (exampleIndex: number, varName: string, value: string) => {
+    setExampleInputs(prev => prev.map((example, i) => 
+      i === exampleIndex ? { ...example, [varName]: value } : example
+    ));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,12 +109,36 @@ const PromptCreatePage = () => {
     setIsSubmitting(true);
 
     try {
-      // 예시 입력을 새로운 구조로 변환
-      const examples = exampleInputs
-        .filter(input => input.trim() !== '')
-        .map(input => ({
-          inputValues: [{ key: 'input', value: input }]
+      let examples: Array<{ inputValues: Array<{ key: string; value: string }> }>;
+      let inputs: Array<{ key: string; value: string }>;
+
+      if (extractedVariables.length > 0) {
+        // 변수가 있을 때: 변수별 값으로 예시 구성
+        examples = exampleInputs
+          .filter(example => {
+            return extractedVariables.every(varName => example[varName]?.trim());
+          })
+          .map(example => ({
+            inputValues: extractedVariables.map(varName => ({
+              key: varName,
+              value: example[varName] || ''
+            }))
+          }));
+
+        inputs = extractedVariables.map(varName => ({
+          key: varName,
+          value: ''
         }));
+      } else {
+        // 변수가 없을 때: 일반 텍스트 입력
+        examples = exampleInputs
+          .filter(example => example['input']?.trim())
+          .map(example => ({
+            inputValues: [{ key: 'input', value: example['input'] || '' }]
+          }));
+
+        inputs = [];
+      }
 
       const response = await promptApi.create({
         title: formData.title,
@@ -84,7 +147,7 @@ const PromptCreatePage = () => {
         price: parseInt(formData.price),
         content: formData.content,
         model: formData.model,
-        inputs: [],  // 입력 필드 정의 (필요시 추가)
+        inputs: inputs,
         examples: examples,
       });
       
@@ -202,12 +265,14 @@ const PromptCreatePage = () => {
                     name="price"
                     required
                     min="1"
+                    max="100000000"
                     step="1"
                     value={formData.price}
                     onChange={handleChange}
                     placeholder="299"
                     className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                   />
+                  <p className="text-xs text-gray-500 mt-1">최소 1P ~ 최대 1억P</p>
                 </div>
 
                 <div className="md:col-span-2">
@@ -252,6 +317,11 @@ const PromptCreatePage = () => {
             <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
             <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">프롬프트 내용</h2>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-700">
+                  💡 예시 입력은 AI 성능 검증에 사용되며, 검증 완료 후 마켓플레이스에서 구매자들에게 공개됩니다.
+                </p>
+              </div>
               {formData.category === '이미지 창작 및 생성' && (
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
                   <p className="text-sm text-orange-700 font-medium">
@@ -263,7 +333,7 @@ const PromptCreatePage = () => {
               <div className="space-y-6">
                 <div>
                   <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
-                    전체 프롬프트 (비공개) *
+                    전체 프롬프트
                   </label>
                   <textarea
                     id="content"
@@ -272,10 +342,26 @@ const PromptCreatePage = () => {
                     rows={8}
                     value={formData.content}
                     onChange={handleChange}
-                    placeholder={"구매 후 제공될 완전한 프롬프트를 작성하세요..."}
-                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none"
+                    placeholder={"프롬프트를 작성하세요. 변수는 {{변수명}} 형식으로 입력하세요.\n\n예시:\n{{주제}}에 대해 {{형식}}으로 설명해주세요."}
+                    className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none font-mono"
                   />
-                  <p className="text-xs text-gray-500 mt-1">구매 후에만 공개되는 완전한 프롬프트입니다</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    구매 후에만 공개되는 프롬프트입니다.
+                  </p>
+                  
+                  {/* 추출된 변수 표시 */}
+                  {extractedVariables.length > 0 && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-800 font-medium mb-2">📌 감지된 변수:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {extractedVariables.map((varName, idx) => (
+                          <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                            {`{{${varName}}}`}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -285,25 +371,81 @@ const PromptCreatePage = () => {
             <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
             <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">예시 입력</h2>
-              <p className="text-sm text-gray-600 mb-6">프롬프트 성능 검증을 위해 3개의 예시 입력을 제공해주세요.</p>
-
-              <div className="space-y-6">
-                {exampleInputs.map((input, index) => (
-                  <div key={index}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      예시 입력 {index + 1} *
-                    </label>
-                    <textarea
-                      rows={4}
-                      required
-                      value={input}
-                      onChange={(e) => handleExampleInputChange(index, e.target.value)}
-                      placeholder={`예시 입력 ${index + 1}을 작성하세요...`}
-                      className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none"
-                    />
-                  </div>
-                ))}
+              <p className="text-sm text-gray-600 mb-4">
+                프롬프트 성능 검증을 위해 3개의 예시 입력을 제공해주세요.
+                {extractedVariables.length > 0 && (
+                  <span className="text-blue-600"> 각 변수에 대한 값을 입력하세요.</span>
+                )}
+              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-700">
+                  💡 예시 입력은 AI 성능 검증에 사용되며, 검증 완료 후 마켓플레이스에서 구매자들에게 공개됩니다.
+                </p>
               </div>
+
+              {extractedVariables.length === 0 ? (
+                /* 변수가 없을 때: 일반 텍스트 입력 */
+                <div className="space-y-6">
+                  {exampleInputs.map((example, index) => (
+                    <div key={index}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        예시 입력 {index + 1} *
+                      </label>
+                      <textarea
+                        rows={4}
+                        required
+                        value={example['input'] || ''}
+                        onChange={(e) => handleExampleInputChange(index, 'input', e.target.value)}
+                        placeholder={`예시 입력 ${index + 1}을 작성하세요...`}
+                        className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* 변수가 있을 때: 변수별 입력 필드 */
+                <div className="space-y-8">
+                  {exampleInputs.map((example, exampleIndex) => (
+                    <div key={exampleIndex} className="bg-white border border-gray-200 rounded-lg p-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-100">
+                        예시 {exampleIndex + 1}
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {extractedVariables.map((varName, varIndex) => (
+                          <div key={varIndex}>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              <span className="text-blue-600 font-mono">{`{{${varName}}}`}</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={example[varName] || ''}
+                              onChange={(e) => handleExampleInputChange(exampleIndex, varName, e.target.value)}
+                              placeholder={`${varName} 값을 입력하세요`}
+                              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* 미리보기 */}
+                      {Object.values(example).some(v => v) && (
+                        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <p className="text-xs text-gray-500 mb-2 font-medium">미리보기:</p>
+                          <p className="text-sm text-gray-700 font-mono whitespace-pre-wrap">
+                            {extractedVariables.reduce((content, varName) => {
+                              return content.replace(
+                                new RegExp(`\\{\\{${varName}\\}\\}`, 'g'),
+                                example[varName] ? `[${example[varName]}]` : `{{${varName}}}`
+                              );
+                            }, formData.content)}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             </AnimatedContent>
 

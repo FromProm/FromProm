@@ -1,3 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: search-service-config
+data:
+  aws-region: "ap-northeast-2"
+  dynamodb-table-name: "FromProm_Table"
+  opensearch-host: "opensearch.fromprom.com"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,6 +30,16 @@ spec:
         ports:
         - containerPort: 8080
         env:
+        # Spring Boot 프로파일 활성화
+        - name: SPRING_PROFILES_ACTIVE
+          value: "aws"
+        # ADOT Agent 활성화
+        - name: ENABLE_OTEL_AGENT
+          value: "true"
+        - name: OTEL_SERVICE_NAME
+          value: "search-service"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://adot-collector.opentelemetry-operator-system:4317"
         - name: AWS_REGION
           valueFrom:
             configMapKeyRef:

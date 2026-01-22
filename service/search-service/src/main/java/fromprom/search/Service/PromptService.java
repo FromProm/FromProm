@@ -188,12 +188,62 @@ public class PromptService {
         }
         
         if (item.containsKey("evaluation_metrics") && item.get("evaluation_metrics").m() != null) {
-            Map<String, String> metrics = new LinkedHashMap<>();
-            item.get("evaluation_metrics").m().forEach((k, v) -> metrics.put(k, v.s() != null ? v.s() : ""));
-            detail.put("evaluationMetrics", metrics);
+            detail.put("evaluationMetrics", convertEvaluationMetrics(item.get("evaluation_metrics").m()));
         }
         
         return detail;
+    }
+
+    /**
+     * evaluation_metrics 중첩 구조 파싱
+     */
+    private Map<String, Object> convertEvaluationMetrics(Map<String, AttributeValue> metricsMap) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        
+        // 최상위 레벨 지표들
+        result.put("consistency", getStringFromAttr(metricsMap.get("consistency")));
+        result.put("hallucination", getStringFromAttr(metricsMap.get("hallucination")));
+        result.put("information_density", getStringFromAttr(metricsMap.get("information_density")));
+        result.put("model_variance", getStringFromAttr(metricsMap.get("model_variance")));
+        result.put("relevance", getStringFromAttr(metricsMap.get("relevance")));
+        result.put("token_usage", getStringFromAttr(metricsMap.get("token_usage")));
+        result.put("final_score", getStringFromAttr(metricsMap.get("final_score")));
+        
+        // feedback 중첩 객체 처리
+        if (metricsMap.containsKey("feedback") && metricsMap.get("feedback").m() != null) {
+            Map<String, AttributeValue> feedbackMap = metricsMap.get("feedback").m();
+            Map<String, Object> feedback = new LinkedHashMap<>();
+            
+            feedback.put("final_score", getStringFromAttr(feedbackMap.get("final_score")));
+            feedback.put("overall_feedback", getStringFromAttr(feedbackMap.get("overall_feedback")));
+            feedback.put("prompt_type", getStringFromAttr(feedbackMap.get("prompt_type")));
+            
+            // individual_scores 중첩 객체 처리
+            if (feedbackMap.containsKey("individual_scores") && feedbackMap.get("individual_scores").m() != null) {
+                Map<String, AttributeValue> scoresMap = feedbackMap.get("individual_scores").m();
+                Map<String, String> individualScores = new LinkedHashMap<>();
+                
+                individualScores.put("consistency", getStringFromAttr(scoresMap.get("consistency")));
+                individualScores.put("hallucination", getStringFromAttr(scoresMap.get("hallucination")));
+                individualScores.put("information_density", getStringFromAttr(scoresMap.get("information_density")));
+                individualScores.put("model_variance", getStringFromAttr(scoresMap.get("model_variance")));
+                individualScores.put("relevance", getStringFromAttr(scoresMap.get("relevance")));
+                individualScores.put("token_usage", getStringFromAttr(scoresMap.get("token_usage")));
+                
+                feedback.put("individual_scores", individualScores);
+            }
+            
+            result.put("feedback", feedback);
+        }
+        
+        return result;
+    }
+
+    private String getStringFromAttr(AttributeValue attr) {
+        if (attr == null) return "";
+        if (attr.s() != null) return attr.s();
+        if (attr.n() != null) return attr.n();
+        return "";
     }
 
     private Map<String, Object> convertToComment(Map<String, AttributeValue> item) {

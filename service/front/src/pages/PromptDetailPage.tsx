@@ -29,7 +29,28 @@ interface PromptDetail {
     input: { content: string; input_type: string };
     output: string;
   }>;
-  evaluationMetrics?: Record<string, string>;
+  evaluationMetrics?: {
+    consistency?: string;
+    hallucination?: string;
+    information_density?: string;
+    model_variance?: string;
+    relevance?: string;
+    token_usage?: string;
+    final_score?: string;
+    feedback?: {
+      final_score?: string;
+      overall_feedback?: string;
+      prompt_type?: string;
+      individual_scores?: {
+        consistency?: string;
+        hallucination?: string;
+        information_density?: string;
+        model_variance?: string;
+        relevance?: string;
+        token_usage?: string;
+      };
+    };
+  };
 }
 
 const PromptDetailPage = () => {
@@ -142,17 +163,20 @@ const PromptDetailPage = () => {
 
   const category = promptTypeToCategory[prompt.promptType] || prompt.promptType;
 
-  // 성능 지표 (evaluationMetrics에서 가져오거나 기본값 사용)
+  // 성능 지표 파싱 (evaluationMetrics 중첩 구조 처리)
   const metrics = prompt.evaluationMetrics || {};
+  const feedbackData = metrics.feedback || {};
+  const individualScores = feedbackData.individual_scores || {};
+  
   const performanceMetrics = {
-    tokenUsage: parseInt(metrics.token_usage) || 0,
-    informationDensity: parseInt(metrics.information_density) || 0,
-    responseConsistency: parseInt(metrics.consistency) || 0,
-    modelPerformanceVariance: parseInt(metrics.model_variance) || 0,
-    hallucinationDetection: parseInt(metrics.hallucination) || 0,
-    relevance: parseInt(metrics.relevance) || 0,
-    finalScore: parseInt(metrics.final_score) || 0,
-    feedback: metrics.feedback || ''
+    tokenUsage: parseFloat(individualScores.token_usage || metrics.token_usage || '0'),
+    informationDensity: parseFloat(individualScores.information_density || metrics.information_density || '0'),
+    responseConsistency: parseFloat(individualScores.consistency || metrics.consistency || '0'),
+    modelPerformanceVariance: parseFloat(individualScores.model_variance || metrics.model_variance || '0'),
+    hallucinationDetection: parseFloat(individualScores.hallucination || metrics.hallucination || '0'),
+    relevance: parseFloat(individualScores.relevance || metrics.relevance || '0'),
+    finalScore: parseFloat(feedbackData.final_score || metrics.final_score || '0'),
+    feedback: feedbackData.overall_feedback || ''
   };
 
   return (
@@ -280,71 +304,95 @@ const PromptDetailPage = () => {
         <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">성능 지표</h2>
+          
+          {/* 최종 점수 강조 표시 */}
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-6 mb-6 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-medium opacity-90">AI 평가 최종 점수</h3>
+                <p className="text-sm opacity-75 mt-1">6가지 지표를 종합한 점수입니다</p>
+              </div>
+              <div className="text-5xl font-bold">{performanceMetrics.finalScore.toFixed(1)}</div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">토큰 사용량</h3>
-                <span className="text-lg font-bold text-gray-900">{performanceMetrics.tokenUsage}/100</span>
+                <h3 className="text-sm font-medium text-gray-700">토큰 효율성</h3>
+                <span className="text-lg font-bold text-gray-900">{performanceMetrics.tokenUsage.toFixed(1)}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${performanceMetrics.tokenUsage}%` }}></div>
+                <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${Math.min(performanceMetrics.tokenUsage, 100)}%` }}></div>
               </div>
+              <p className="text-xs text-gray-500 mt-2">토큰 사용 대비 정보량</p>
             </div>
 
             <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-gray-700">정보 밀도</h3>
-                <span className="text-lg font-bold text-gray-900">{performanceMetrics.informationDensity}/100</span>
+                <span className="text-lg font-bold text-gray-900">{performanceMetrics.informationDensity.toFixed(1)}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-green-600 h-2 rounded-full" style={{ width: `${performanceMetrics.informationDensity}%` }}></div>
+                <div className="bg-green-600 h-2 rounded-full" style={{ width: `${Math.min(performanceMetrics.informationDensity, 100)}%` }}></div>
               </div>
+              <p className="text-xs text-gray-500 mt-2">응답의 정보 밀집도</p>
             </div>
 
             <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-gray-700">응답 일관성</h3>
-                <span className="text-lg font-bold text-gray-900">{performanceMetrics.responseConsistency}/100</span>
+                <span className="text-lg font-bold text-gray-900">{performanceMetrics.responseConsistency.toFixed(1)}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${performanceMetrics.responseConsistency}%` }}></div>
+                <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${Math.min(performanceMetrics.responseConsistency, 100)}%` }}></div>
               </div>
+              <p className="text-xs text-gray-500 mt-2">반복 실행 시 일관성</p>
             </div>
 
             <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-gray-700">환각 탐지</h3>
-                <span className="text-lg font-bold text-gray-900">{performanceMetrics.hallucinationDetection}/100</span>
+                <span className="text-lg font-bold text-gray-900">{performanceMetrics.hallucinationDetection.toFixed(1)}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-red-600 h-2 rounded-full" style={{ width: `${performanceMetrics.hallucinationDetection}%` }}></div>
+                <div className={`h-2 rounded-full ${performanceMetrics.hallucinationDetection >= 70 ? 'bg-green-600' : performanceMetrics.hallucinationDetection >= 50 ? 'bg-yellow-500' : 'bg-red-600'}`} style={{ width: `${Math.min(performanceMetrics.hallucinationDetection, 100)}%` }}></div>
               </div>
+              <p className="text-xs text-gray-500 mt-2">높을수록 환각 적음</p>
             </div>
 
             <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-gray-700">관련성</h3>
-                <span className="text-lg font-bold text-gray-900">{performanceMetrics.relevance}/100</span>
+                <span className="text-lg font-bold text-gray-900">{performanceMetrics.relevance.toFixed(1)}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-teal-600 h-2 rounded-full" style={{ width: `${performanceMetrics.relevance}%` }}></div>
+                <div className="bg-teal-600 h-2 rounded-full" style={{ width: `${Math.min(performanceMetrics.relevance, 100)}%` }}></div>
               </div>
+              <p className="text-xs text-gray-500 mt-2">입력 대비 응답 관련성</p>
             </div>
 
             <div className="bg-white rounded-lg p-4 border border-gray-100">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700">최종 점수</h3>
-                <span className="text-lg font-bold text-gray-900">{performanceMetrics.finalScore}/100</span>
+                <h3 className="text-sm font-medium text-gray-700">모델 안정성</h3>
+                <span className="text-lg font-bold text-gray-900">{performanceMetrics.modelPerformanceVariance.toFixed(1)}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${performanceMetrics.finalScore}%` }}></div>
+                <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${Math.min(performanceMetrics.modelPerformanceVariance, 100)}%` }}></div>
               </div>
+              <p className="text-xs text-gray-500 mt-2">다양한 모델에서의 성능</p>
             </div>
           </div>
+
+          {/* AI 피드백 */}
           {performanceMetrics.feedback && (
-            <div className="mt-6 bg-white rounded-lg p-4 border border-gray-100">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">AI 피드백</h3>
-              <p className="text-gray-600">{performanceMetrics.feedback}</p>
+            <div className="mt-6 bg-white rounded-lg p-6 border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <span className="mr-2">🤖</span> AI 평가 피드백
+              </h3>
+              <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {performanceMetrics.feedback}
+              </div>
             </div>
           )}
         </div>

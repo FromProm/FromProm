@@ -24,6 +24,9 @@ public class CreditService {
     private final UserRepository userRepository;
     private final CreditRepository creditRepository;
     private final CognitoIdentityProviderClient cognitoClient;
+    
+    // 최대 보유 가능 크레딧 (1억P)
+    private static final int MAX_CREDIT_LIMIT = 100_000_000;
 
     // 토큰에서 사용자 ID 추출 (기존 프로젝트 패턴과 동일)
     private String getUserIdFromToken(String authHeader) {
@@ -55,6 +58,14 @@ public class CreditService {
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
         int newBalance = user.getCredit() + amount;
+        
+        // 최대 보유량 체크
+        if (newBalance > MAX_CREDIT_LIMIT) {
+            throw new RuntimeException("최대 보유 가능 크레딧은 " + String.format("%,d", MAX_CREDIT_LIMIT) + "P입니다. " +
+                    "현재 보유: " + String.format("%,d", user.getCredit()) + "P, " +
+                    "충전 가능: " + String.format("%,d", MAX_CREDIT_LIMIT - user.getCredit()) + "P");
+        }
+        
         user.setCredit(newBalance);
         user.setUpdated_at(LocalDateTime.now().toString());
 
@@ -174,8 +185,11 @@ public class CreditService {
         buyer.setCredit(buyerNewBalance);
         buyer.setUpdated_at(now);
 
-        // 4. 판매자 크레딧 증가
+        // 4. 판매자 크레딧 증가 (최대 보유량 체크)
         int sellerNewBalance = seller.getCredit() + promptPrice;
+        if (sellerNewBalance > MAX_CREDIT_LIMIT) {
+            sellerNewBalance = MAX_CREDIT_LIMIT; // 최대치로 제한
+        }
         seller.setCredit(sellerNewBalance);
         seller.setUpdated_at(now);
 
@@ -282,11 +296,14 @@ public class CreditService {
                         .map(CartPurchaseRequest.CartItem::getTitle)
                         .collect(java.util.stream.Collectors.toList());
                 
-                // 판매자 정보 조회 및 크레딧 증가
+                // 판매자 정보 조회 및 크레딧 증가 (최대 보유량 체크)
                 User seller = userRepository.findUser(sellerSub)
                         .orElseThrow(() -> new RuntimeException("판매자를 찾을 수 없습니다: " + sellerSub));
                 
                 int sellerNewBalance = seller.getCredit() + sellerEarnings;
+                if (sellerNewBalance > MAX_CREDIT_LIMIT) {
+                    sellerNewBalance = MAX_CREDIT_LIMIT; // 최대치로 제한
+                }
                 seller.setCredit(sellerNewBalance);
                 seller.setUpdated_at(now);
                 

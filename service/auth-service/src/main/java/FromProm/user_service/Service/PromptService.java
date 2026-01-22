@@ -45,7 +45,7 @@ public class PromptService {
         fullPayload.put("type", "PROMPT");
         fullPayload.put("create_user", "USER#" + userId);
         fullPayload.put("title", dto.getTitle());
-        fullPayload.put("content", dto.getContent());
+        fullPayload.put("prompt_content", dto.getContent());
         fullPayload.put("prompt_description", dto.getDescription());
         fullPayload.put("price", dto.getPrice());
         fullPayload.put("prompt_type", dto.getPromptType().name());

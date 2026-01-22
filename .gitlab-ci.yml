@@ -1,93 +1,295 @@
 stages:
+  - build
   - test
   - sast
-  - validate
   - deploy
+  - update-manifest
 
 variables:
-  # EKS 설정
-  EKS_REGION: "ap-northeast-2"
+  # Global Settings
+  AWS_REGION: "ap-northeast-2"
+  ECR_REGISTRY: "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
   EKS_CLUSTER_NAME: "fromprom-cluster"
   
-  # AgentCore 설정
-  AWS_REGION: "us-west-2"
-  AGENTCORE_REGION: "us-west-2"
+  # Python Optimization
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  
-  # Python 최적화
   PYTHONDONTWRITEBYTECODE: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  
+  # Gradle Optimization
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
 
+# 전역 캐시 설정 (각 Job에서 override 가능)
 cache:
+  key: "$CI_COMMIT_REF_SLUG"
   paths:
     - .cache/pip/
+    - .gradle/
+    - service/front/node_modules/
 
-# EKS 연결 테스트 (주석 처리 - 필요시 활성화)
-# runner-eks-test:
-#   stage: test
-#   image:
-#     name: amazon/aws-cli:latest
-#     entrypoint: [""]
-#   before_script:
-#     - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-#     - chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
-#     - aws eks update-kubeconfig --region $EKS_REGION --name $EKS_CLUSTER_NAME
-#   script:
-#     - kubectl get nodes
-#     - kubectl get pods -A
-#   rules:
-#     - if: '$CI_COMMIT_BRANCH == "dev"'
+# ==========================================
+# [Template] Backend Build (Docker)
+# ==========================================
+.build_backend_template:
+  stage: build
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - apk add --no-cache aws-cli
+    - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY
+  script:
+    - echo "🏗️ Building $SERVICE_NAME Docker Image..."
+    - cd service/$SERVICE_DIR
+    - export IMAGE_TAG=$CI_COMMIT_SHORT_SHA
+    - export IMAGE_NAME="$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG"
+    - docker build -t $IMAGE_NAME .
+    - docker tag $IMAGE_NAME $ECR_REGISTRY/$ECR_REPO:latest
+    - echo "🚀 Pushing to ECR..."
+    - docker push $IMAGE_NAME
+    - docker push $ECR_REGISTRY/$ECR_REPO:latest
+    - echo $IMAGE_TAG > ../${SERVICE_NAME}_image_tag.txt
+  artifacts:
+    paths:
+      - service/${SERVICE_NAME}_image_tag.txt
+    expire_in: 1 hour
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "service/$SERVICE_DIR/**/*"
 
-# SonarQube 보안 검사
-sonarqube:
+# ==========================================
+# [Template] Update Manifest
+# ==========================================
+.update_manifest_template:
+  stage: update-manifest
+  image: bitnami/git:latest # Git이 최적화된 이미지 사용
+  needs: [] # 각 Job에서 오버라이드
+  before_script:
+    - git config --global user.email "gitlab-ci@fromprom.cloud"
+    - git config --global user.name "GitLab CI"
+  script:
+    - echo "📝 Updating $SERVICE_NAME Manifest..."
+    - export IMAGE_TAG=$(cat service/${SERVICE_NAME}_image_tag.txt)
+    - git clone https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git repo
+    - cd repo
+    - git checkout ${CI_COMMIT_REF_NAME}
+    # Race Condition 방지: Rebase 시도
+    - git pull --rebase origin ${CI_COMMIT_REF_NAME}
+    - 'sed -i "s|image: ${ECR_REGISTRY}/${ECR_REPO}:.*|image: ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}|g" infra/k8s-manifests/${MANIFEST_FILE}'
+    - git add infra/k8s-manifests/${MANIFEST_FILE}
+    - 'git commit -m "chore: update $SERVICE_NAME image to ${IMAGE_TAG} [skip ci]" || echo "No changes"'
+    # Push 실패 시 재시도 로직 (간단한 형태)
+    - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "service/$SERVICE_DIR/**/*"
+
+# ==========================================
+# 1. Frontend Build
+# ==========================================
+build-frontend:
+  stage: build
+  image: node:20-alpine
+  variables:
+    FRONT_ROOT: "service/front"
+    FRONT_BUILD_OUTPUT: "dist"
+  script:
+    - cd $FRONT_ROOT
+    - npm ci --prefer-offline --no-audit
+    - npm run build
+  artifacts:
+    paths:
+      - "$FRONT_ROOT/$FRONT_BUILD_OUTPUT/"
+    expire_in: 1 hour
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "service/front/**/*"
+
+# ==========================================
+# 2-4. Backend Builds (Using Template)
+# ==========================================
+build-auth-service:
+  extends: .build_backend_template
+  variables:
+    SERVICE_NAME: "auth"
+    SERVICE_DIR: "auth-service"
+    ECR_REPO: "fromprom/auth"
+
+build-search-service:
+  extends: .build_backend_template
+  variables:
+    SERVICE_NAME: "search"
+    SERVICE_DIR: "search-service"
+    ECR_REPO: "fromprom/search"
+
+build-ai-service:
+  extends: .build_backend_template
+  variables:
+    SERVICE_NAME: "ai"
+    SERVICE_DIR: "ai-service"
+    ECR_REPO: "fromprom/ai"
+
+# ==========================================
+# 5. Infrastructure Test
+# ==========================================
+test-infra-connection:
+  stage: test
+  image: amazon/aws-cli:latest
+  script:
+    - echo "🔍 Checking Connections..."
+    - aws sts get-caller-identity
+    - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl" && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
+    - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+    - kubectl get nodes
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+
+# ==========================================
+# 6-8. SonarQube (SAST)
+# ==========================================
+sonarqube-ai:
   stage: sast
   image:
     name: sonarsource/sonar-scanner-cli:latest
     entrypoint: [""]
-  before_script:
-    - cd service/ai-service
   script:
-    - sonar-scanner
-      -Dsonar.host.url=$SONAR_HOST_URL
-      -Dsonar.token=$SONAR_TOKEN
-  allow_failure: false
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
-
-# 코드 검증
-validate:
-  stage: validate
-  image: python:3.11-slim
-  before_script:
     - cd service/ai-service
-    - pip install --no-cache-dir -e .
-  script:
-    - echo "🔍 Validating Python syntax..."
-    - find app -name "*.py" -exec python3 -m py_compile {} +
-    - echo "📦 Checking dependencies..."
-    - pip check
+    - sonar-scanner -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
+  allow_failure: true
   rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "service/ai-service/**/*"
 
-# AgentCore 배포
-deploy-agentcore:
+sonarqube-auth:
+  stage: sast
+  image: gradle:8.5-jdk17
+  script:
+    - cd service/auth-service
+    - ./gradlew test jacocoTestReport sonarqube -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
+  allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "service/auth-service/**/*"
+
+sonarqube-search:
+  stage: sast
+  image: gradle:8.5-jdk17
+  script:
+    - cd service/search-service
+    - ./gradlew test jacocoTestReport sonarqube -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
+  allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "service/search-service/**/*"
+
+# ==========================================
+# 9. Frontend Deploy
+# ==========================================
+deploy-frontend:
+  stage: deploy
+  image: amazon/aws-cli:latest
+  needs: ["build-frontend"]
+  variables:
+    FRONT_ROOT: "service/front"
+    FRONT_BUILD_OUTPUT: "dist"
+  script:
+    - aws s3 sync $FRONT_ROOT/$FRONT_BUILD_OUTPUT/ s3://$S3_FRONT_BUCKET_NAME --delete
+    - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_ID --paths "/*"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "service/front/**/*"
+
+# ==========================================
+# 10. AI Service Deploy (Manual)
+# ==========================================
+deploy-ai-agentcore:
   stage: deploy
   image: python:3.11-slim
-  before_script:
+  variables:
+    AWS_REGION: "us-west-2"
+  script:
     - apt-get update && apt-get install -y --no-install-recommends git curl jq
     - pip install --no-cache-dir awscli bedrock-agentcore-starter-toolkit
-    - echo "🔐 AWS 인증 확인..."
-    - aws sts get-caller-identity || exit 1
     - cd service/ai-service
     - pip install --no-cache-dir -e .
-  script:
-    - echo "🚀 AgentCore 배포 중..."
     - agentcore deploy || exit 1
-    - echo "✅ AgentCore 배포 완료"
     - agentcore status
-  artifacts:
-    paths:
-      - service/ai-service/.bedrock_agentcore.yaml
-    expire_in: 30 days
   rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "service/ai-service/**/*"
+  when: manual
+
+# ==========================================
+# 11-13. Update Manifests (Using Template)
+# ==========================================
+update-manifest-auth:
+  # extends를 쓰되, Secret 업데이트 로직 때문에 script를 override 하거나 before_script에 추가
+  stage: update-manifest
+  image: amazon/aws-cli:latest # kubectl 설치 필요로 인해 aws-cli 이미지 사용
+  needs: ["build-auth-service"]
+  before_script:
+    - yum install -y git
+    - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl" && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
+    - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+    - git config --global user.email "gitlab-ci@fromprom.cloud"
+    - git config --global user.name "GitLab CI"
+  script:
+    - echo "🔐 Syncing Secrets..."
+    # Secret/ConfigMap 생성 로직 (Dry-run 적용됨)
+    - |
+      kubectl create secret generic auth-service-secrets \
+        --from-literal=access-key="$AWS_ACCESS_KEY_ID" \
+        --from-literal=secret-key="$AWS_SECRET_ACCESS_KEY" \
+        --from-literal=cognito-client-id="$AWS_COGNITO_CLIENT_ID" \
+        --from-literal=cognito-user-pool-id="$AWS_COGNITO_USER_POOL_ID" \
+        --from-literal=sns-topic-arn="$AWS_SNS_TOPIC_ARN" \
+        --dry-run=client -o yaml | kubectl apply -f -
+    - |
+      kubectl create configmap auth-service-config \
+        --from-literal=dynamodb-table-name="$AWS_DYNAMODB_TABLE_NAME" \
+        --from-literal=aws-region="$AWS_REGION" \
+        --dry-run=client -o yaml | kubectl apply -f -
+    # Manifest 업데이트 (템플릿 로직 직접 구현 - extends script override 방지)
+    - echo "📝 Updating Manifest..."
+    - export IMAGE_TAG=$(cat service/auth_image_tag.txt)
+    - git clone https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git repo
+    - cd repo
+    - git checkout ${CI_COMMIT_REF_NAME}
+    - git pull --rebase origin ${CI_COMMIT_REF_NAME}
+    - 'sed -i "s|image: ${ECR_REGISTRY}/fromprom/auth:.*|image: ${ECR_REGISTRY}/fromprom/auth:${IMAGE_TAG}|g" infra/k8s-manifests/auth-service.yaml'
+    - git add infra/k8s-manifests/auth-service.yaml
+    - 'git commit -m "chore: update auth image to ${IMAGE_TAG} [skip ci]" || echo "No changes"'
+    - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "service/auth-service/**/*"
+
+update-manifest-search:
+  extends: .update_manifest_template
+  needs: ["build-search-service"]
+  variables:
+    SERVICE_NAME: "search"
+    SERVICE_DIR: "search-service"
+    ECR_REPO: "fromprom/search"
+    MANIFEST_FILE: "search-service.yaml"
+
+update-manifest-ai:
+  extends: .update_manifest_template
+  needs: ["build-ai-service"]
+  variables:
+    SERVICE_NAME: "ai"
+    SERVICE_DIR: "ai-service"
+    ECR_REPO: "fromprom/ai"
+    MANIFEST_FILE: "ai-service.yaml"

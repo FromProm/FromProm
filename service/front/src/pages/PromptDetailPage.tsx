@@ -1,69 +1,69 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { promptTypeToCategory } from '../services/dummyData';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
-import { creditApi, promptApi } from '../services/api';
+import { useAuthStore } from '../store/authStore';
+import { creditApi, promptApi, interactionApi } from '../services/api';
 import AnimatedContent from '../components/AnimatedContent';
+import { Comment } from '../types';
 
-// 프롬프트 상세 타입
+// 프롬프트 상세 타입 (새로운 API 응답 구조)
 interface PromptDetail {
   promptId: string;
   title: string;
   content: string;
   description: string;
-  price: number;
-  promptType: string;
+  category: string;
   model: string;
+  nickname: string;
+  userId: string;
   status: string;
-  createUser: string;
+  price: number;
+  createdAt: string;
+  updatedAt: string;
+  examplesS3Url?: string;
+  // DynamoDB 통계
   likeCount: number;
-  commentCount: number;
   bookmarkCount: number;
-  isPublic: boolean;
-  created_at: string;
-  updated_at: string;
+  commentCount: number;
+  isLiked?: boolean;
+  isBookmarked?: boolean;
+  // 평가 지표
+  evaluationMetrics?: {
+    finalScore: number;
+    relevance: number;
+    consistency: number;
+    hallucination: number;
+    informationDensity: number;
+    modelVariance: number;
+    tokenUsage: number;
+    promptType?: string;
+    overallFeedback?: string;
+  };
+  // 예시
   examples?: Array<{
     index: number;
-    input: { content: string; input_type: string };
+    input: { inputType: string; content: string };
     output: string;
   }>;
-  evaluationMetrics?: {
-    consistency?: string;
-    hallucination?: string;
-    information_density?: string;
-    model_variance?: string;
-    relevance?: string;
-    token_usage?: string;
-    final_score?: string;
-    feedback?: {
-      final_score?: string;
-      overall_feedback?: string;
-      prompt_type?: string;
-      individual_scores?: {
-        consistency?: string;
-        hallucination?: string;
-        information_density?: string;
-        model_variance?: string;
-        relevance?: string;
-        token_usage?: string;
-      };
-    };
-  };
 }
 
 const PromptDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState<PromptDetail | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [credit, setCredit] = useState<number>(0);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const { addToCart, isInCart } = useCartStore();
   const { isPurchased, addPurchasedPrompt } = usePurchaseStore();
+  const { user } = useAuthStore();
 
   const isAlreadyInCart = prompt ? isInCart(prompt.promptId) : false;
   const isAlreadyPurchased = prompt ? isPurchased(prompt.promptId) : false;
@@ -77,9 +77,11 @@ const PromptDetailPage = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await promptApi.getPromptDetail(id);
+        const userId = user?.id;
+        const response = await promptApi.getPromptDetailWithComments(id, userId);
         if (response.data.success) {
           setPrompt(response.data.prompt);
+          setComments(response.data.comments || []);
         } else {
           setError('프롬프트를 찾을 수 없습니다.');
         }
@@ -91,7 +93,7 @@ const PromptDetailPage = () => {
       }
     };
     fetchPromptDetail();
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => {
     if (isLoggedIn()) {
@@ -113,16 +115,15 @@ const PromptDetailPage = () => {
     }
     
     if (prompt && !isAlreadyInCart && !isAlreadyPurchased) {
-      const category = promptTypeToCategory[prompt.promptType] || prompt.promptType;
       addToCart({
         id: prompt.promptId,
         title: prompt.title,
         price: prompt.price,
-        category: category,
-        sellerName: '판매자',
-        sellerSub: prompt.createUser?.replace('USER#', '') || '',
+        category: prompt.category,
+        sellerName: prompt.nickname || '판매자',
+        sellerSub: prompt.userId || '',
         description: prompt.description,
-        rating: 4.5
+        rating: prompt.evaluationMetrics?.finalScore || 4.5
       });
     }
   };
@@ -135,6 +136,75 @@ const PromptDetailPage = () => {
     }
     
     navigate(`/purchase/${prompt?.promptId}`);
+  };
+
+  // 좋아요 토글
+  const handleLikeToggle = async () => {
+    if (!isLoggedIn() || !prompt) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+
+    try {
+      if (prompt.isLiked) {
+        await interactionApi.deleteLike(prompt.promptId);
+        setPrompt({ ...prompt, isLiked: false, likeCount: prompt.likeCount - 1 });
+      } else {
+        await interactionApi.addLike(prompt.promptId);
+        setPrompt({ ...prompt, isLiked: true, likeCount: prompt.likeCount + 1 });
+      }
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+    }
+  };
+
+  // 북마크 토글
+  const handleBookmarkToggle = async () => {
+    if (!isLoggedIn() || !prompt) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+
+    try {
+      if (prompt.isBookmarked) {
+        await interactionApi.deleteBookmark(prompt.promptId);
+        setPrompt({ ...prompt, isBookmarked: false, bookmarkCount: prompt.bookmarkCount - 1 });
+      } else {
+        await interactionApi.addBookmark(prompt.promptId);
+        setPrompt({ ...prompt, isBookmarked: true, bookmarkCount: prompt.bookmarkCount + 1 });
+      }
+    } catch (error) {
+      console.error('Failed to toggle bookmark:', error);
+    }
+  };
+
+  // 댓글 작성
+  const handleSubmitComment = async () => {
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+
+    if (!newComment.trim() || !prompt) return;
+
+    setIsSubmittingComment(true);
+    try {
+      await interactionApi.addComment(prompt.promptId, newComment.trim());
+      // 댓글 목록 새로고침
+      const response = await promptApi.getPromptComments(prompt.promptId);
+      if (response.data.success) {
+        setComments(response.data.comments || []);
+      }
+      setNewComment('');
+    } catch (error) {
+      console.error('Failed to submit comment:', error);
+      alert('댓글 작성에 실패했습니다.');
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
   if (isLoading) {
@@ -161,23 +231,20 @@ const PromptDetailPage = () => {
     );
   }
 
-  const category = promptTypeToCategory[prompt.promptType] || prompt.promptType;
+  const category = prompt.category;
 
-  // 성능 지표 파싱 (evaluationMetrics 중첩 구조 처리)
-  const metrics = prompt.evaluationMetrics || {};
-  const feedbackData = metrics.feedback || {};
-  const individualScores = feedbackData.individual_scores || {};
-  
-  const performanceMetrics = {
-    tokenUsage: parseFloat(individualScores.token_usage || metrics.token_usage || '0'),
-    informationDensity: parseFloat(individualScores.information_density || metrics.information_density || '0'),
-    responseConsistency: parseFloat(individualScores.consistency || metrics.consistency || '0'),
-    modelPerformanceVariance: parseFloat(individualScores.model_variance || metrics.model_variance || '0'),
-    hallucinationDetection: parseFloat(individualScores.hallucination || metrics.hallucination || '0'),
-    relevance: parseFloat(individualScores.relevance || metrics.relevance || '0'),
-    finalScore: parseFloat(feedbackData.final_score || metrics.final_score || '0'),
-    feedback: feedbackData.overall_feedback || ''
-  };
+  // 성능 지표 (새로운 구조)
+  const metrics = prompt.evaluationMetrics;
+  const performanceMetrics = metrics ? {
+    tokenUsage: metrics.tokenUsage || 0,
+    informationDensity: metrics.informationDensity || 0,
+    responseConsistency: metrics.consistency || 0,
+    modelPerformanceVariance: metrics.modelVariance || 0,
+    hallucinationDetection: metrics.hallucination || 0,
+    relevance: metrics.relevance || 0,
+    finalScore: metrics.finalScore || 0,
+    feedback: metrics.overallFeedback || ''
+  } : null;
 
   return (
     <div className="min-h-screen bg-white">
@@ -220,15 +287,24 @@ const PromptDetailPage = () => {
               <p className="text-gray-600 text-lg leading-relaxed mb-6">{prompt.description}</p>
 
               <div className="flex items-center space-x-6 text-sm text-gray-500">
+                <button 
+                  onClick={handleLikeToggle}
+                  className="flex items-center space-x-1 hover:text-red-500 transition-colors"
+                >
+                  <span>{prompt.isLiked ? '❤️' : '🤍'}</span>
+                  <span>{prompt.likeCount || 0}</span>
+                </button>
                 <div className="flex items-center space-x-1">
-                  <span>❤️ {prompt.likeCount}</span>
+                  <span>💬 {prompt.commentCount || 0}</span>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <span>💬 {prompt.commentCount}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <span>📌 {prompt.bookmarkCount}</span>
-                </div>
+                <button 
+                  onClick={handleBookmarkToggle}
+                  className="flex items-center space-x-1 hover:text-yellow-500 transition-colors"
+                >
+                  <span>{prompt.isBookmarked ? '📌' : '📍'}</span>
+                  <span>{prompt.bookmarkCount || 0}</span>
+                </button>
+                <span className="text-xs">by {prompt.nickname || '익명'}</span>
               </div>
             </div>
 
@@ -293,14 +369,14 @@ const PromptDetailPage = () => {
             </div>
             <div className="bg-white rounded-lg p-4 border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">상태</h3>
-              <p className="text-gray-600">{prompt.status === 'completed' ? '검증 완료' : prompt.status === 'processing' ? '처리 중' : prompt.status}</p>
+              <p className="text-gray-600">{prompt.status === 'ACTIVE' ? '검증 완료' : prompt.status === 'processing' ? '처리 중' : prompt.status}</p>
             </div>
           </div>
         </div>
         </AnimatedContent>
 
         {/* 성능 지표 */}
-        {performanceMetrics.finalScore > 0 && (
+        {performanceMetrics && performanceMetrics.finalScore > 0 && (
         <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">성능 지표</h2>
@@ -447,6 +523,56 @@ const PromptDetailPage = () => {
         </div>
         </AnimatedContent>
         )}
+
+        {/* 댓글 섹션 */}
+        <AnimatedContent once distance={50} duration={0.6} delay={0.5}>
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">
+            댓글 ({comments.length})
+          </h2>
+          
+          {/* 댓글 작성 */}
+          {isLoggedIn() && (
+            <div className="mb-6">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="댓글을 작성해주세요..."
+                className="w-full p-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                rows={3}
+              />
+              <div className="flex justify-end mt-2">
+                <button
+                  onClick={handleSubmitComment}
+                  disabled={isSubmittingComment || !newComment.trim()}
+                  className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isSubmittingComment ? '작성 중...' : '댓글 작성'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 댓글 목록 */}
+          <div className="space-y-4">
+            {comments.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">아직 댓글이 없습니다. 첫 댓글을 작성해보세요!</p>
+            ) : (
+              comments.map((comment) => (
+                <div key={comment.commentId} className="bg-white rounded-lg p-4 border border-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-900">{comment.nickname || '익명'}</span>
+                    <span className="text-xs text-gray-500">
+                      {new Date(comment.createdAt).toLocaleDateString('ko-KR')}
+                    </span>
+                  </div>
+                  <p className="text-gray-700">{comment.content}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+        </AnimatedContent>
       </motion.div>
 
       {/* 결제 모달 */}
@@ -501,7 +627,7 @@ const PromptDetailPage = () => {
                   setIsPurchasing(true);
                   try {
                     await creditApi.purchasePrompt({
-                      sellerSub: prompt.createUser?.replace('USER#', '') || '',
+                      sellerSub: prompt.userId || '',
                       promptPrice: prompt.price,
                       promptTitle: prompt.title,
                       promptId: prompt.promptId,
@@ -512,9 +638,9 @@ const PromptDetailPage = () => {
                       title: prompt.title,
                       price: prompt.price,
                       category: category,
-                      sellerName: '판매자',
+                      sellerName: prompt.nickname || '판매자',
                       description: prompt.description,
-                      rating: 4.5,
+                      rating: prompt.evaluationMetrics?.finalScore || 4.5,
                       content: prompt.content
                     });
                     

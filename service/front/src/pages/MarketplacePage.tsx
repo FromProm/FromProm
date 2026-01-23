@@ -1,26 +1,45 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { categories, promptTypeToCategory } from '../services/dummyData';
+import { categories } from '../services/dummyData';
 import { promptApi } from '../services/api';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
+import { useAuthStore } from '../store/authStore';
 import SplitText from '../components/SplitText';
 import AnimatedContent from '../components/AnimatedContent';
 
-// 프롬프트 타입 정의
+// 프롬프트 타입 정의 (새로운 API 응답 구조)
 interface PromptItem {
   promptId: string;
   title: string;
   description: string;
-  price: number;
-  promptType: string;
+  content: string;
+  category: string;
   model: string;
+  nickname: string;
+  userId: string;
   status: string;
+  price: number;
+  createdAt: string;
+  updatedAt: string;
+  // DynamoDB 통계
   likeCount: number;
-  commentCount: number;
   bookmarkCount: number;
-  isPublic: boolean;
-  created_at: string;
+  commentCount: number;
+  isLiked?: boolean;
+  isBookmarked?: boolean;
+  // 검색 점수
+  score?: number;
+  // 평가 지표
+  evaluationMetrics?: {
+    finalScore: number;
+    relevance: number;
+    consistency: number;
+    hallucination: number;
+    informationDensity: number;
+    modelVariance: number;
+    tokenUsage: number;
+  };
 }
 
 const MarketplacePage = () => {
@@ -30,6 +49,7 @@ const MarketplacePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { addToCart, removeFromCart, isInCart } = useCartStore();
   const { isPurchased } = usePurchaseStore();
+  const { user } = useAuthStore();
   const navigate = useNavigate();
 
   const isLoggedIn = () => !!localStorage.getItem('accessToken');
@@ -63,7 +83,9 @@ const MarketplacePage = () => {
     const fetchPrompts = async () => {
       setIsLoading(true);
       try {
-        const response = await promptApi.getAllPrompts(50);
+        // 로그인한 경우 userId 전달하여 좋아요/북마크 여부 확인
+        const userId = user?.id;
+        const response = await promptApi.getAllPrompts(50, userId);
         if (response.data.success) {
           setPrompts(response.data.prompts || []);
         }
@@ -74,7 +96,7 @@ const MarketplacePage = () => {
       }
     };
     fetchPrompts();
-  }, []);
+  }, [user]);
 
   const handleAddToCart = (prompt: PromptItem, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -88,16 +110,15 @@ const MarketplacePage = () => {
     if (isInCart(prompt.promptId)) {
       removeFromCart(prompt.promptId);
     } else if (!isPurchased(prompt.promptId)) {
-      const category = promptTypeToCategory[prompt.promptType] || prompt.promptType;
       addToCart({
         id: prompt.promptId,
         title: prompt.title,
         price: prompt.price,
-        category: category,
-        sellerName: '판매자',
-        sellerSub: '',
+        category: prompt.category,
+        sellerName: prompt.nickname || '판매자',
+        sellerSub: prompt.userId || '',
         description: prompt.description,
-        rating: 4.5
+        rating: prompt.evaluationMetrics?.finalScore || 4.5
       });
     }
   };
@@ -116,8 +137,7 @@ const MarketplacePage = () => {
 
   // 카테고리 필터링
   const filteredPrompts = prompts.filter(prompt => {
-    const category = promptTypeToCategory[prompt.promptType] || prompt.promptType;
-    const matchesCategory = selectedCategory === 'All' || category === selectedCategory;
+    const matchesCategory = selectedCategory === 'All' || prompt.category === selectedCategory;
     const matchesSearch = prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       prompt.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -205,7 +225,6 @@ const MarketplacePage = () => {
             {/* 프롬프트 그리드 */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPrompts.map((prompt, index) => {
-                const category = promptTypeToCategory[prompt.promptType] || prompt.promptType;
                 return (
                   <AnimatedContent
                     key={prompt.promptId}
@@ -226,9 +245,9 @@ const MarketplacePage = () => {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-2">
                         <span className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">
-                          {category}
+                          {prompt.category}
                         </span>
-                        {prompt.status === 'completed' && (
+                        {prompt.status === 'ACTIVE' && (
                           <>
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                             <span className="text-xs text-green-600 font-medium">Verified</span>
@@ -250,29 +269,26 @@ const MarketplacePage = () => {
 
                     <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                       <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">{formatModelName(prompt.model)}</span>
-                      <div className="flex items-center space-x-1">
-                        <span>❤️ {prompt.likeCount}</span>
-                        <span>💬 {prompt.commentCount}</span>
-                      </div>
+                      <span className="text-xs text-gray-500">by {prompt.nickname || '익명'}</span>
                     </div>
 
                     {/* 통계 정보 */}
                     <div className="flex items-center justify-between text-xs text-gray-500 border-t border-blue-200 pt-4">
                       <div className="flex items-center space-x-4">
                         <span className="flex items-center space-x-1">
-                          <span>❤️</span>
-                          <span>{prompt.likeCount}</span>
+                          <span>{prompt.isLiked ? '❤️' : '🤍'}</span>
+                          <span>{prompt.likeCount || 0}</span>
                         </span>
                         <span className="flex items-center space-x-1">
-                          <span>📌</span>
-                          <span>{prompt.bookmarkCount}</span>
+                          <span>{prompt.isBookmarked ? '📌' : '📍'}</span>
+                          <span>{prompt.bookmarkCount || 0}</span>
                         </span>
                         <span className="flex items-center space-x-1">
                           <span>💬</span>
-                          <span>{prompt.commentCount}</span>
+                          <span>{prompt.commentCount || 0}</span>
                         </span>
                       </div>
-                      {prompt.status === 'completed' && (
+                      {prompt.evaluationMetrics?.finalScore && prompt.evaluationMetrics.finalScore >= 8 && (
                         <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded text-xs font-medium">
                           HOT
                         </div>

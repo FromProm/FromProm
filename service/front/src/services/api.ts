@@ -150,22 +150,88 @@ export const promptApi = {
   }),
 
   // 모든 프롬프트 목록 조회 (search-service - 인증 불필요)
-  getAllPrompts: (limit: number = 50) => api.get(`/api/search/prompts/all?limit=${limit}&_t=${Date.now()}`),
+  getAllPrompts: (limit: number = 50, userId?: string) => {
+    const params = new URLSearchParams({ size: limit.toString() });
+    if (userId) params.append('userId', userId);
+    return api.get(`/api/search/all?${params.toString()}&_t=${Date.now()}`);
+  },
+
+  // 키워드 검색 (search-service)
+  searchPrompts: (keyword: string, userId?: string) => {
+    const params = new URLSearchParams({ keyword });
+    if (userId) params.append('userId', userId);
+    return api.get(`/api/search?${params.toString()}`);
+  },
+
+  // 고급 검색 (search-service)
+  advancedSearch: (params: {
+    keyword?: string;
+    category?: string;
+    model?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    size?: number;
+    userId?: string;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params.keyword) searchParams.append('keyword', params.keyword);
+    if (params.category) searchParams.append('category', params.category);
+    if (params.model) searchParams.append('model', params.model);
+    if (params.minPrice !== undefined) searchParams.append('minPrice', params.minPrice.toString());
+    if (params.maxPrice !== undefined) searchParams.append('maxPrice', params.maxPrice.toString());
+    if (params.size) searchParams.append('size', params.size.toString());
+    if (params.userId) searchParams.append('userId', params.userId);
+    return api.get(`/api/search/advanced?${searchParams.toString()}`);
+  },
+
+  // 카테고리별 검색 (search-service)
+  searchByCategory: (category: string, size: number = 20) =>
+    api.get(`/api/search/category/${category}?size=${size}`),
+
+  // 모델별 검색 (search-service)
+  searchByModel: (model: string, size: number = 20) =>
+    api.get(`/api/search/model/${model}?size=${size}`),
+
+  // 인기 프롬프트 조회 (search-service)
+  getTopRatedPrompts: (size: number = 10) =>
+    api.get(`/api/search/top-rated?size=${size}`),
 
   // 내가 등록한 프롬프트 목록 조회 (auth-service - 인증 필요)
   getMyPrompts: () => api.get('/api/prompts/my'),
 
   // 프롬프트 상세 정보 조회 (search-service - 인증 불필요)
-  getPromptDetail: (promptId: string) => api.get(`/api/search/prompts/${promptId}`),
+  getPromptDetail: (promptId: string, userId?: string) => {
+    const params = userId ? `?userId=${userId}` : '';
+    return api.get(`/api/search/prompt/${promptId}${params}`);
+  },
 
   // 프롬프트 상세 + 댓글 목록 통합 조회 (search-service - 인증 불필요)
-  getPromptDetailWithComments: (promptId: string) => api.get(`/api/search/prompts/${promptId}/detail`),
+  getPromptDetailWithComments: (promptId: string, userId?: string) => {
+    const params = userId ? `?userId=${userId}` : '';
+    return api.get(`/api/search/prompt/${promptId}/detail${params}`);
+  },
 
   // 프롬프트 통계 조회 (search-service - 인증 불필요)
-  getPromptStats: (promptId: string) => api.get(`/api/search/prompts/${promptId}/stats`),
+  getPromptStats: (promptId: string, userId?: string) => {
+    const params = userId ? `?userId=${userId}` : '';
+    return api.get(`/api/search/prompt/${promptId}/stats${params}`);
+  },
 
   // 프롬프트 댓글 목록 조회 (search-service - 인증 불필요)
-  getPromptComments: (promptId: string) => api.get(`/api/search/prompts/${promptId}/comments`),
+  getPromptComments: (promptId: string) =>
+    api.get(`/api/search/prompt/${promptId}/comments`),
+
+  // 사용자별 프롬프트 조회 (search-service)
+  getPromptsByUser: (userId: string, size: number = 20) =>
+    api.get(`/api/search/user/${userId}?size=${size}`),
+
+  // 사용자가 좋아요한 프롬프트 목록 (search-service)
+  getUserLikedPrompts: (userId: string, size: number = 20) =>
+    api.get(`/api/search/user/${userId}/likes?size=${size}`),
+
+  // 사용자가 북마크한 프롬프트 목록 (search-service)
+  getUserBookmarkedPrompts: (userId: string, size: number = 20) =>
+    api.get(`/api/search/user/${userId}/bookmarks?size=${size}`),
 
   // 프롬프트 삭제 (auth-service - 인증 필요)
   deletePrompt: (promptId: string) => api.delete(`/api/prompts/${promptId}`),

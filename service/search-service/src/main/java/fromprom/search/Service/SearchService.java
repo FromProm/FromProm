@@ -3,10 +3,11 @@ package fromprom.search.Service;
 import fromprom.search.DTO.PromptDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.opensearch.client.json.JsonData;
 import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.FieldValue;
 import org.opensearch.client.opensearch._types.SortOrder;
 import org.opensearch.client.opensearch._types.query_dsl.BoolQuery;
-import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import org.opensearch.client.opensearch.core.search.Hit;
 import org.springframework.stereotype.Service;
@@ -70,8 +71,8 @@ public class SearchService {
                     .index(INDEX_NAME)
                     .query(q -> q
                             .bool(b -> b
-                                    .must(m -> m.term(t -> t.field("category").value(category)))
-                                    .must(m -> m.term(t -> t.field("status").value("ACTIVE")))
+                                    .must(m -> m.term(t -> t.field("category").value(FieldValue.of(category))))
+                                    .must(m -> m.term(t -> t.field("status").value(FieldValue.of("ACTIVE"))))
                             )
                     )
                     .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
@@ -105,8 +106,8 @@ public class SearchService {
                     .index(INDEX_NAME)
                     .query(q -> q
                             .bool(b -> b
-                                    .must(m -> m.term(t -> t.field("model").value(model)))
-                                    .must(m -> m.term(t -> t.field("status").value("ACTIVE")))
+                                    .must(m -> m.term(t -> t.field("model").value(FieldValue.of(model))))
+                                    .must(m -> m.term(t -> t.field("status").value(FieldValue.of("ACTIVE"))))
                             )
                     )
                     .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
@@ -142,7 +143,7 @@ public class SearchService {
                     .query(q -> q
                             .bool(b -> {
                                 BoolQuery.Builder builder = b
-                                        .must(m -> m.term(t -> t.field("status").value("ACTIVE")));
+                                        .must(m -> m.term(t -> t.field("status").value(FieldValue.of("ACTIVE"))));
                                 
                                 // 키워드 검색
                                 if (keyword != null && !keyword.isEmpty()) {
@@ -157,12 +158,12 @@ public class SearchService {
                                 
                                 // 카테고리 필터
                                 if (category != null && !category.isEmpty()) {
-                                    builder.filter(f -> f.term(t -> t.field("category").value(category)));
+                                    builder.filter(f -> f.term(t -> t.field("category").value(FieldValue.of(category))));
                                 }
                                 
                                 // 모델 필터
                                 if (model != null && !model.isEmpty()) {
-                                    builder.filter(f -> f.term(t -> t.field("model").value(model)));
+                                    builder.filter(f -> f.term(t -> t.field("model").value(FieldValue.of(model))));
                                 }
                                 
                                 // 가격 범위 필터
@@ -170,8 +171,8 @@ public class SearchService {
                                     builder.filter(f -> f
                                             .range(r -> {
                                                 r.field("price");
-                                                if (minPrice != null) r.gte(minPrice.toString());
-                                                if (maxPrice != null) r.lte(maxPrice.toString());
+                                                if (minPrice != null) r.gte(JsonData.of(minPrice));
+                                                if (maxPrice != null) r.lte(JsonData.of(maxPrice));
                                                 return r;
                                             })
                                     );
@@ -211,7 +212,7 @@ public class SearchService {
             SearchResponse<PromptDocument> response = openSearchClient.search(s -> s
                     .index(INDEX_NAME)
                     .query(q -> q
-                            .term(t -> t.field("status").value("ACTIVE"))
+                            .term(t -> t.field("status").value(FieldValue.of("ACTIVE")))
                     )
                     .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
                     .size(size),
@@ -268,7 +269,7 @@ public class SearchService {
                     .index(INDEX_NAME)
                     .query(q -> q
                             .bool(b -> b
-                                    .must(m -> m.term(t -> t.field("status").value("ACTIVE")))
+                                    .must(m -> m.term(t -> t.field("status").value(FieldValue.of("ACTIVE"))))
                                     .must(m -> m.exists(e -> e.field("evaluationMetrics.finalScore")))
                             )
                     )
@@ -304,7 +305,7 @@ public class SearchService {
             SearchResponse<PromptDocument> response = openSearchClient.search(s -> s
                     .index(INDEX_NAME)
                     .query(q -> q
-                            .term(t -> t.field("userId").value(userId))
+                            .term(t -> t.field("userId").value(FieldValue.of(userId)))
                     )
                     .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
                     .size(size),

@@ -44,6 +44,11 @@ dependencies {
 	// 6. OpenTelemetry API (trace context 전파용)
 	implementation 'io.opentelemetry:opentelemetry-api:1.32.0'
 
+	// 7. AWS X-Ray SDK for manual instrumentation (가장 확실한 트레이싱)
+	implementation 'com.amazonaws:aws-xray-recorder-sdk-core:2.15.0'
+	implementation 'com.amazonaws:aws-xray-recorder-sdk-aws-sdk-v2:2.15.0'
+	implementation 'com.amazonaws:aws-xray-recorder-sdk-aws-sdk-v2-instrumentor:2.15.0'
+
 }
 
 tasks.named('test') {

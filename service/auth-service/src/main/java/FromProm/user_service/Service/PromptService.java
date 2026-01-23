@@ -2,6 +2,8 @@ package FromProm.user_service.Service;
 
 import FromProm.user_service.DTO.PromptSaveRequest;
 import FromProm.user_service.DTO.PromptType;
+import com.amazonaws.xray.AWSXRay;
+import com.amazonaws.xray.entities.Subsegment;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,8 +13,6 @@ import software.amazon.awssdk.services.dynamodb.model.*;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanContext;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -474,20 +474,20 @@ public class PromptService {
     }
 
     private void sendSnsNotification(Map<String, Object> payload) {
+        Subsegment subsegment = AWSXRay.beginSubsegment("SNS::Publish");
         try {
+            subsegment.putMetadata("topic_arn", SNS_TOPIC_ARN);
+            subsegment.putAnnotation("promptPK", String.valueOf(payload.get("PK")));
+            
             String jsonMessage = objectMapper.writeValueAsString(payload);
             
-            // trace context 가져오기
-            SpanContext spanContext = Span.current().getSpanContext();
-            String traceparent = String.format("00-%s-%s-01", 
-                    spanContext.getTraceId(), 
-                    spanContext.getSpanId());
+            // X-Ray trace ID를 메시지 속성에 추가
+            String traceId = AWSXRay.getCurrentSegment().getTraceId().toString();
             
-            // 메시지 속성에 traceparent 추가
             Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
-            messageAttributes.put("traceparent", MessageAttributeValue.builder()
+            messageAttributes.put("AWSTraceHeader", MessageAttributeValue.builder()
                     .dataType("String")
-                    .stringValue(traceparent)
+                    .stringValue(traceId)
                     .build());
             
             snsClient.publish(PublishRequest.builder()
@@ -495,9 +495,13 @@ public class PromptService {
                     .message(jsonMessage)
                     .messageAttributes(messageAttributes)
                     .build());
-            System.out.println("[SNS 전송 완료] PK: " + payload.get("PK") + ", trace: " + traceparent);
+            
+            System.out.println("[SNS 전송 완료] PK: " + payload.get("PK") + ", trace: " + traceId);
         } catch (Exception e) {
+            subsegment.addException(e);
             e.printStackTrace();
+        } finally {
+            AWSXRay.endSubsegment();
         }
     }
 

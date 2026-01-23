@@ -254,7 +254,7 @@ const MyprofilePage = () => {
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg px-6 py-4 text-white">
                 <p className="text-sm opacity-80">보유 크레딧</p>
                 <p className="text-2xl font-bold">{(userInfo?.credit || 0).toLocaleString()}P</p>
-                <Link to="/credit" className="text-xs underline opacity-80 hover:opacity-100">충전하기</Link>
+                <Link to="/credit" className="text-xs underline opacity-80 hover:opacity-100">충전하러가기</Link>
               </div>
             </div>
           </div>
@@ -357,14 +357,17 @@ const MyprofilePage = () => {
                         <div className="text-center py-4"><div className="w-6 h-6 mx-auto border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>
                       ) : creditHistory.length > 0 ? (
                         <div className="space-y-2">
-                          {creditHistory.slice(0, 3).map((item, idx) => (
-                            <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                              <span className="text-sm text-gray-700">{item.user_description}</span>
-                              <span className={`text-sm font-medium ${item.user_description?.includes('구매') ? 'text-red-600' : 'text-green-600'}`}>
-                                {item.user_description?.includes('구매') ? '' : '+'}{item.amount.toLocaleString()}P
-                              </span>
-                            </div>
-                          ))}
+                          {creditHistory.slice(0, 3).map((item, idx) => {
+                            const isExpense = item.user_description?.includes('구매') || item.user_description?.includes('Purchase');
+                            return (
+                              <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                <span className="text-sm text-gray-700">{item.user_description}</span>
+                                <span className={`text-sm font-medium ${isExpense ? 'text-red-600' : 'text-green-600'}`}>
+                                  {isExpense ? '' : '+'}{item.amount.toLocaleString()}P
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : (
                         <p className="text-gray-500 text-sm text-center py-4">크레딧 내역이 없습니다</p>

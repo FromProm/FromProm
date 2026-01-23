@@ -26,7 +26,7 @@ public class InteractionService {
     private String tableName;
 
     /**
-     * 프롬프트 통계 조회 (좋아요/북마크/댓글 개수)
+     * 프롬프트 통계 조회 (좋아요/북마크/댓글)
      */
     public PromptStats getPromptStats(String promptId) {
         String promptPK = "PROMPT#" + promptId;

@@ -362,8 +362,8 @@ public class SearchController {
         result.put("content", prompt.getContent());
         result.put("category", prompt.getCategory());
         result.put("model", prompt.getModel());
-        result.put("nickname", prompt.getNickname());
-        result.put("userId", prompt.getUserId());
+        result.put("promptType", prompt.getPromptType());
+        result.put("createUser", prompt.getCreateUser());
         result.put("status", prompt.getStatus());
         result.put("price", prompt.getPrice());
         result.put("createdAt", prompt.getCreatedAt());
@@ -371,6 +371,7 @@ public class SearchController {
         result.put("examplesS3Url", prompt.getExamplesS3Url());
         result.put("evaluationMetrics", prompt.getEvaluationMetrics());
         result.put("examples", prompt.getExamples());
+        result.put("isPublic", prompt.getIsPublic());
         
         if (prompt.getScore() != null) {
             result.put("score", prompt.getScore());
@@ -382,12 +383,12 @@ public class SearchController {
             result.put("bookmarkCount", stats.getBookmarkCount());
             result.put("commentCount", stats.getCommentCount());
         } else {
-            result.put("likeCount", 0);
-            result.put("bookmarkCount", 0);
-            result.put("commentCount", 0);
+            result.put("likeCount", prompt.getLikeCount() != null ? prompt.getLikeCount() : "0");
+            result.put("bookmarkCount", prompt.getBookmarkCount() != null ? prompt.getBookmarkCount() : "0");
+            result.put("commentCount", prompt.getCommentCount() != null ? prompt.getCommentCount() : "0");
         }
         
-        // 사용자별 좋아요/북��크 여부
+        // 사용자별 좋아요/북마크 여부
         if (userId != null && !userId.isEmpty() && prompt.getPromptId() != null) {
             result.put("isLiked", interactionService.hasUserLiked(userId, prompt.getPromptId()));
             result.put("isBookmarked", interactionService.hasUserBookmarked(userId, prompt.getPromptId()));

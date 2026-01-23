@@ -4,6 +4,9 @@ import fromprom.search.DTO.PromptDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.SortOrder;
+import org.opensearch.client.opensearch._types.query_dsl.BoolQuery;
+import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import org.opensearch.client.opensearch.core.search.Hit;
 import org.springframework.stereotype.Service;
@@ -16,40 +19,308 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class SearchService {
+    
+    private static final String INDEX_NAME = "prompts";
     private final OpenSearchClient openSearchClient;
 
+    /**
+     * 키워드로 프롬프트 검색 (title, description, content 필드)
+     */
     public List<PromptDocument> searchPrompts(String keyword) {
         List<PromptDocument> resultList = new ArrayList<>();
-        String indexName = "prompts"; // OpenSearch 인덱스 이름
 
         try {
-            // 1. 검색 요청 빌드
             SearchResponse<PromptDocument> response = openSearchClient.search(s -> s
-                            .index(indexName)
-                            .query(q -> q
-                                    .multiMatch(m -> m
-                                            .fields("title", "content") // 제목과 내용에서 검색
-                                            .query(keyword)             // 사용자가 입력한 단어
-                                            .fuzziness("AUTO")          // 오타 자동 보정 (ex: ciy -> city)
-                                    )
+                    .index(INDEX_NAME)
+                    .query(q -> q
+                            .multiMatch(m -> m
+                                    .fields("title^3", "description^2", "content")
+                                    .query(keyword)
+                                    .fuzziness("AUTO")
                             )
-                            .size(20) // 결과 20개만 가져오기
-                    , PromptDocument.class // 결과를 매핑할 클래스
+                    )
+                    .size(20),
+                    PromptDocument.class
             );
 
-            // 2. 결과 파싱
             for (Hit<PromptDocument> hit : response.hits().hits()) {
                 PromptDocument doc = hit.source();
                 if (doc != null) {
-                    doc.setId(hit.id());       // 문서 ID 주입
-                    doc.setScore(hit.score()); // 정확도 점수 주입
+                    doc.setPromptId(hit.id());
+                    doc.setScore(hit.score());
                     resultList.add(doc);
                 }
             }
 
         } catch (IOException e) {
             log.error("OpenSearch 검색 실패: {}", e.getMessage());
-            // 필요 시 커스텀 예외 던지기
+        }
+
+        return resultList;
+    }
+
+    /**
+     * 카테고리별 프롬프트 검색
+     */
+    public List<PromptDocument> searchByCategory(String category, int size) {
+        List<PromptDocument> resultList = new ArrayList<>();
+
+        try {
+            SearchResponse<PromptDocument> response = openSearchClient.search(s -> s
+                    .index(INDEX_NAME)
+                    .query(q -> q
+                            .bool(b -> b
+                                    .must(m -> m.term(t -> t.field("category").value(category)))
+                                    .must(m -> m.term(t -> t.field("status").value("ACTIVE")))
+                            )
+                    )
+                    .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
+                    .size(size),
+                    PromptDocument.class
+            );
+
+            for (Hit<PromptDocument> hit : response.hits().hits()) {
+                PromptDocument doc = hit.source();
+                if (doc != null) {
+                    doc.setPromptId(hit.id());
+                    resultList.add(doc);
+                }
+            }
+
+        } catch (IOException e) {
+            log.error("카테고리 검색 실패: {}", e.getMessage());
+        }
+
+        return resultList;
+    }
+
+    /**
+     * 모델별 프롬프트 검색
+     */
+    public List<PromptDocument> searchByModel(String model, int size) {
+        List<PromptDocument> resultList = new ArrayList<>();
+
+        try {
+            SearchResponse<PromptDocument> response = openSearchClient.search(s -> s
+                    .index(INDEX_NAME)
+                    .query(q -> q
+                            .bool(b -> b
+                                    .must(m -> m.term(t -> t.field("model").value(model)))
+                                    .must(m -> m.term(t -> t.field("status").value("ACTIVE")))
+                            )
+                    )
+                    .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
+                    .size(size),
+                    PromptDocument.class
+            );
+
+            for (Hit<PromptDocument> hit : response.hits().hits()) {
+                PromptDocument doc = hit.source();
+                if (doc != null) {
+                    doc.setPromptId(hit.id());
+                    resultList.add(doc);
+                }
+            }
+
+        } catch (IOException e) {
+            log.error("모델 검색 실패: {}", e.getMessage());
+        }
+
+        return resultList;
+    }
+
+    /**
+     * 고급 검색 (키워드 + 필터)
+     */
+    public List<PromptDocument> advancedSearch(String keyword, String category, String model, 
+                                                Integer minPrice, Integer maxPrice, int size) {
+        List<PromptDocument> resultList = new ArrayList<>();
+
+        try {
+            SearchResponse<PromptDocument> response = openSearchClient.search(s -> s
+                    .index(INDEX_NAME)
+                    .query(q -> q
+                            .bool(b -> {
+                                BoolQuery.Builder builder = b
+                                        .must(m -> m.term(t -> t.field("status").value("ACTIVE")));
+                                
+                                // 키워드 검색
+                                if (keyword != null && !keyword.isEmpty()) {
+                                    builder.must(m -> m
+                                            .multiMatch(mm -> mm
+                                                    .fields("title^3", "description^2", "content")
+                                                    .query(keyword)
+                                                    .fuzziness("AUTO")
+                                            )
+                                    );
+                                }
+                                
+                                // 카테고리 필터
+                                if (category != null && !category.isEmpty()) {
+                                    builder.filter(f -> f.term(t -> t.field("category").value(category)));
+                                }
+                                
+                                // 모델 필터
+                                if (model != null && !model.isEmpty()) {
+                                    builder.filter(f -> f.term(t -> t.field("model").value(model)));
+                                }
+                                
+                                // 가격 범위 필터
+                                if (minPrice != null || maxPrice != null) {
+                                    builder.filter(f -> f
+                                            .range(r -> {
+                                                r.field("price");
+                                                if (minPrice != null) r.gte(minPrice.toString());
+                                                if (maxPrice != null) r.lte(maxPrice.toString());
+                                                return r;
+                                            })
+                                    );
+                                }
+                                
+                                return builder;
+                            })
+                    )
+                    .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
+                    .size(size),
+                    PromptDocument.class
+            );
+
+            for (Hit<PromptDocument> hit : response.hits().hits()) {
+                PromptDocument doc = hit.source();
+                if (doc != null) {
+                    doc.setPromptId(hit.id());
+                    doc.setScore(hit.score());
+                    resultList.add(doc);
+                }
+            }
+
+        } catch (IOException e) {
+            log.error("고급 검색 실패: {}", e.getMessage());
+        }
+
+        return resultList;
+    }
+
+    /**
+     * 전체 프롬프트 목록 조회 (최신순)
+     */
+    public List<PromptDocument> getAllPrompts(int size) {
+        List<PromptDocument> resultList = new ArrayList<>();
+
+        try {
+            SearchResponse<PromptDocument> response = openSearchClient.search(s -> s
+                    .index(INDEX_NAME)
+                    .query(q -> q
+                            .term(t -> t.field("status").value("ACTIVE"))
+                    )
+                    .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
+                    .size(size),
+                    PromptDocument.class
+            );
+
+            for (Hit<PromptDocument> hit : response.hits().hits()) {
+                PromptDocument doc = hit.source();
+                if (doc != null) {
+                    doc.setPromptId(hit.id());
+                    resultList.add(doc);
+                }
+            }
+
+        } catch (IOException e) {
+            log.error("전체 프롬프트 조회 실패: {}", e.getMessage());
+        }
+
+        return resultList;
+    }
+
+    /**
+     * 프롬프트 상세 조회 (ID로)
+     */
+    public PromptDocument getPromptById(String promptId) {
+        try {
+            var response = openSearchClient.get(g -> g
+                    .index(INDEX_NAME)
+                    .id(promptId),
+                    PromptDocument.class
+            );
+
+            if (response.found() && response.source() != null) {
+                PromptDocument doc = response.source();
+                doc.setPromptId(response.id());
+                return doc;
+            }
+
+        } catch (IOException e) {
+            log.error("프롬프트 조회 실패: {}", e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * 인기 프롬프트 조회 (평가 점수 기준)
+     */
+    public List<PromptDocument> getTopRatedPrompts(int size) {
+        List<PromptDocument> resultList = new ArrayList<>();
+
+        try {
+            SearchResponse<PromptDocument> response = openSearchClient.search(s -> s
+                    .index(INDEX_NAME)
+                    .query(q -> q
+                            .bool(b -> b
+                                    .must(m -> m.term(t -> t.field("status").value("ACTIVE")))
+                                    .must(m -> m.exists(e -> e.field("evaluationMetrics.finalScore")))
+                            )
+                    )
+                    .sort(sort -> sort.field(f -> f
+                            .field("evaluationMetrics.finalScore")
+                            .order(SortOrder.Desc)))
+                    .size(size),
+                    PromptDocument.class
+            );
+
+            for (Hit<PromptDocument> hit : response.hits().hits()) {
+                PromptDocument doc = hit.source();
+                if (doc != null) {
+                    doc.setPromptId(hit.id());
+                    resultList.add(doc);
+                }
+            }
+
+        } catch (IOException e) {
+            log.error("인기 프롬프트 조회 실패: {}", e.getMessage());
+        }
+
+        return resultList;
+    }
+
+    /**
+     * 사용자별 프롬프트 조회
+     */
+    public List<PromptDocument> getPromptsByUserId(String userId, int size) {
+        List<PromptDocument> resultList = new ArrayList<>();
+
+        try {
+            SearchResponse<PromptDocument> response = openSearchClient.search(s -> s
+                    .index(INDEX_NAME)
+                    .query(q -> q
+                            .term(t -> t.field("userId").value(userId))
+                    )
+                    .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
+                    .size(size),
+                    PromptDocument.class
+            );
+
+            for (Hit<PromptDocument> hit : response.hits().hits()) {
+                PromptDocument doc = hit.source();
+                if (doc != null) {
+                    doc.setPromptId(hit.id());
+                    resultList.add(doc);
+                }
+            }
+
+        } catch (IOException e) {
+            log.error("사용자 프롬프트 조회 실패: {}", e.getMessage());
         }
 
         return resultList;

@@ -257,11 +257,11 @@ export const interactionApi = {
 
   // 댓글 추가
   addComment: (promptId: string, content: string) =>
-    api.post(`/api/prompts/${promptId}/comments`, { content }),
+    api.post(`/api/prompts/${promptId}/comments`, { comment_content: content }),
 
   // 댓글 수정
   updateComment: (promptId: string, commentSK: string, content: string) =>
-    api.patch(`/api/prompts/${promptId}/comments`, { commentSK, content }),
+    api.patch(`/api/prompts/${promptId}/comments`, { commentSK, comment_content: content }),
 
   // 댓글 삭제
   deleteComment: (promptId: string, commentSK: string) =>

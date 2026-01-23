@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { categories } from '../services/dummyData';
-import { promptApi } from '../services/api';
+import { promptApi, interactionApi } from '../services/api';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
 import { useAuthStore } from '../store/authStore';
@@ -133,6 +133,70 @@ const MarketplacePage = () => {
     }
     
     navigate(`/purchase/${promptId}`);
+  };
+
+  // 좋아요 토글
+  const handleLikeToggle = async (prompt: PromptItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+
+    try {
+      const currentLikeCount = Number(prompt.likeCount) || 0;
+      if (prompt.isLiked) {
+        await interactionApi.deleteLike(prompt.promptId);
+        setPrompts(prev => prev.map(p => 
+          p.promptId === prompt.promptId 
+            ? { ...p, isLiked: false, likeCount: Math.max(0, currentLikeCount - 1) }
+            : p
+        ));
+      } else {
+        await interactionApi.addLike(prompt.promptId);
+        setPrompts(prev => prev.map(p => 
+          p.promptId === prompt.promptId 
+            ? { ...p, isLiked: true, likeCount: currentLikeCount + 1 }
+            : p
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+    }
+  };
+
+  // 북마크 토글
+  const handleBookmarkToggle = async (prompt: PromptItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!isLoggedIn()) {
+      alert('로그인이 필요한 서비스입니다.');
+      navigate('/auth/login');
+      return;
+    }
+
+    try {
+      const currentBookmarkCount = Number(prompt.bookmarkCount) || 0;
+      if (prompt.isBookmarked) {
+        await interactionApi.deleteBookmark(prompt.promptId);
+        setPrompts(prev => prev.map(p => 
+          p.promptId === prompt.promptId 
+            ? { ...p, isBookmarked: false, bookmarkCount: Math.max(0, currentBookmarkCount - 1) }
+            : p
+        ));
+      } else {
+        await interactionApi.addBookmark(prompt.promptId);
+        setPrompts(prev => prev.map(p => 
+          p.promptId === prompt.promptId 
+            ? { ...p, isBookmarked: true, bookmarkCount: currentBookmarkCount + 1 }
+            : p
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to toggle bookmark:', error);
+    }
   };
 
   // 카테고리 필터링
@@ -277,14 +341,20 @@ const MarketplacePage = () => {
                     {/* 통계 정보 */}
                     <div className="flex items-center justify-between text-xs text-gray-500 border-t border-blue-200 pt-4">
                       <div className="flex items-center space-x-4">
-                        <span className="flex items-center space-x-1">
+                        <button 
+                          onClick={(e) => handleLikeToggle(prompt, e)}
+                          className="flex items-center space-x-1 hover:scale-110 transition-transform"
+                        >
                           <span>{prompt.isLiked ? '❤️' : '🤍'}</span>
                           <span>{prompt.likeCount || 0}</span>
-                        </span>
-                        <span className="flex items-center space-x-1">
+                        </button>
+                        <button 
+                          onClick={(e) => handleBookmarkToggle(prompt, e)}
+                          className="flex items-center space-x-1 hover:scale-110 transition-transform"
+                        >
                           <span>{prompt.isBookmarked ? '📌' : '📍'}</span>
                           <span>{prompt.bookmarkCount || 0}</span>
-                        </span>
+                        </button>
                         <span className="flex items-center space-x-1">
                           <span>💬</span>
                           <span>{prompt.commentCount || 0}</span>

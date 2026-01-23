@@ -1,15 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useCartStore } from '../store/cartStore';
 import { useAuthStore } from '../store/authStore';
 
 const Header = () => {
-  const [showMenu, setShowMenu] = useState(false);
-  const { getItemCount } = useCartStore();
   const { isAuthenticated, userInfo, fetchUserInfo, logout, checkAuth } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const cartItemCount = getItemCount();
 
   // 로그인 상태 확인 및 사용자 정보 가져오기
   useEffect(() => {
@@ -20,22 +16,8 @@ const Header = () => {
     }
   }, [checkAuth, fetchUserInfo]);
 
-  // 메뉴 바깥 클릭 시 닫기
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (showMenu && !target.closest('.menu-container')) {
-        setShowMenu(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [showMenu]);
-
   const handleLogout = () => {
     logout();
-    setShowMenu(false);
     
     // 현재 페이지가 마켓플레이스면 마켓플레이스에 머무르고, 아니면 랜딩페이지로
     if (location.pathname === '/marketplace' || location.pathname.startsWith('/prompt/')) {
@@ -80,88 +62,24 @@ const Header = () => {
                     환영합니다. {userInfo.nickname}님!
                   </span>
                 )}
-                <div className="relative menu-container">
-                {/* 메뉴 아이콘 (햄버거) */}
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                <Link
+                  to="/dashboard"
+                  className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
+                  프로필
+                </Link>
+                <Link
+                  to="/prompt/create"
+                  className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                >
+                  프롬프트 등록
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-red-600 hover:text-red-700 font-medium transition-colors"
+                >
+                  로그아웃
                 </button>
-                {showMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
-                    <Link
-                      to="/marketplace"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      마켓플레이스
-                    </Link>
-                    <Link
-                      to="/cart"
-                      className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <span>장바구니</span>
-                      {cartItemCount > 0 && (
-                        <span className="bg-blue-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                          {cartItemCount}
-                        </span>
-                      )}
-                    </Link>
-                    <Link
-                      to="/credit"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      크레딧 충전
-                    </Link>
-                    <Link
-                      to="/prompt/create"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      프롬프트 등록
-                    </Link>
-                    <div className="border-t border-gray-100 my-1"></div>
-                    <Link
-                      to="/dashboard"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      내 프로필
-                    </Link>
-                    <Link
-                      to="/dashboard/purchased"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      구매한 프롬프트
-                    </Link>
-                    <Link
-                      to="/dashboard/selling"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      판매 중인 프롬프트
-                    </Link>
-                    <Link
-                      to="/dashboard/analytics"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      판매 분석
-                    </Link>
-                    <Link
-                      to="/dashboard/settings"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      개인정보 설정
-                    </Link>
-                    <div className="border-t border-gray-100 my-1"></div>
-                    <button
-                      onClick={handleLogout}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                    >
-                      로그아웃
-                    </button>
-                  </div>
-                )}
-              </div>
               </>
             ) : (
               <div className="flex items-center space-x-4">

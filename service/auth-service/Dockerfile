@@ -25,7 +25,7 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 # ADOT Java Agent 다운로드
-ARG ADOT_AGENT_VERSION=1.32.0
+ARG ADOT_AGENT_VERSION=2.11.5
 ADD https://github.com/aws-observability/aws-otel-java-instrumentation/releases/download/v${ADOT_AGENT_VERSION}/aws-opentelemetry-agent.jar /opt/aws-opentelemetry-agent.jar
 
 # builder 스테이지에서 생성된 jar 파일만 복사

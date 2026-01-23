@@ -1,9 +1,6 @@
 package FromProm.user_service.Service;
 
 import FromProm.user_service.DTO.PromptSaveRequest;
-import FromProm.user_service.DTO.PromptType;
-import com.amazonaws.xray.AWSXRay;
-import com.amazonaws.xray.entities.Subsegment;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,7 +9,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
-import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -549,34 +545,18 @@ public class PromptService {
     }
 
     private void sendSnsNotification(Map<String, Object> payload) {
-        Subsegment subsegment = AWSXRay.beginSubsegment("SNS::Publish");
         try {
-            subsegment.putMetadata("topic_arn", SNS_TOPIC_ARN);
-            subsegment.putAnnotation("promptPK", String.valueOf(payload.get("PK")));
-            
             String jsonMessage = objectMapper.writeValueAsString(payload);
-            
-            // X-Ray trace ID를 메시지 속성에 추가
-            String traceId = AWSXRay.getCurrentSegment().getTraceId().toString();
-            
-            Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
-            messageAttributes.put("AWSTraceHeader", MessageAttributeValue.builder()
-                    .dataType("String")
-                    .stringValue(traceId)
-                    .build());
             
             snsClient.publish(PublishRequest.builder()
                     .topicArn(SNS_TOPIC_ARN)
                     .message(jsonMessage)
-                    .messageAttributes(messageAttributes)
                     .build());
             
-            System.out.println("[SNS 전송 완료] PK: " + payload.get("PK") + ", trace: " + traceId);
+            System.out.println("[SNS 전송 완료] PK: " + payload.get("PK"));
         } catch (Exception e) {
-            subsegment.addException(e);
+            System.err.println("[SNS 전송 실패] " + e.getMessage());
             e.printStackTrace();
-        } finally {
-            AWSXRay.endSubsegment();
         }
     }
 

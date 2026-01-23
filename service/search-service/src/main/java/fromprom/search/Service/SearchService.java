@@ -203,7 +203,7 @@ public class SearchService {
     }
 
     /**
-     * 전체 프롬프트 목록 조회 (최신순)
+     * 전체 프롬프트 목록 조회 (최신순으로)
      */
     public List<PromptDocument> getAllPrompts(int size) {
         List<PromptDocument> resultList = new ArrayList<>();

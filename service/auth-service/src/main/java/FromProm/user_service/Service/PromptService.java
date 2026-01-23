@@ -10,6 +10,9 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.*;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
+import software.amazon.awssdk.services.sns.model.MessageAttributeValue;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -473,11 +476,26 @@ public class PromptService {
     private void sendSnsNotification(Map<String, Object> payload) {
         try {
             String jsonMessage = objectMapper.writeValueAsString(payload);
+            
+            // trace context 가져오기
+            SpanContext spanContext = Span.current().getSpanContext();
+            String traceparent = String.format("00-%s-%s-01", 
+                    spanContext.getTraceId(), 
+                    spanContext.getSpanId());
+            
+            // 메시지 속성에 traceparent 추가
+            Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
+            messageAttributes.put("traceparent", MessageAttributeValue.builder()
+                    .dataType("String")
+                    .stringValue(traceparent)
+                    .build());
+            
             snsClient.publish(PublishRequest.builder()
                     .topicArn(SNS_TOPIC_ARN)
                     .message(jsonMessage)
+                    .messageAttributes(messageAttributes)
                     .build());
-            System.out.println("[SNS 전송 완료] PK: " + payload.get("PK"));
+            System.out.println("[SNS 전송 완료] PK: " + payload.get("PK") + ", trace: " + traceparent);
         } catch (Exception e) {
             e.printStackTrace();
         }

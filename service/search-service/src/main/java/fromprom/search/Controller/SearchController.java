@@ -363,7 +363,8 @@ public class SearchController {
         result.put("category", prompt.getCategory());
         result.put("model", prompt.getModel());
         result.put("promptType", prompt.getPromptType());
-        result.put("createUser", prompt.getCreateUser());
+        result.put("userId", prompt.getUserId());
+        result.put("nickname", prompt.getNickname());
         result.put("status", prompt.getStatus());
         result.put("price", prompt.getPrice());
         result.put("createdAt", prompt.getCreatedAt());

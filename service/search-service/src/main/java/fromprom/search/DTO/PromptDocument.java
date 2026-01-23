@@ -20,52 +20,55 @@ public class PromptDocument {
     private String promptId;
     private String title;
     
-    @JsonProperty("prompt_description")
+    // OpenSearch 매핑: description (camelCase)
     private String description;
     
-    @JsonProperty("prompt_content")
+    // OpenSearch 매핑: content (camelCase)
     private String content;
     
     private String category;
     private String model;
     
-    @JsonProperty("prompt_type")
+    // OpenSearch 매핑: evaluationMetrics.promptType
     private String promptType;
     
-    @JsonProperty("create_user")
-    private String createUser;
+    // OpenSearch 매핑: userId (camelCase)
+    private String userId;
+    
+    // OpenSearch 매핑: nickname
+    private String nickname;
     
     private String status;
     private Integer price;
     
-    @JsonProperty("created_at")
+    // OpenSearch 매핑: createdAt (camelCase)
     private String createdAt;
     
-    @JsonProperty("updated_at")
+    // OpenSearch 매핑: updatedAt (camelCase)
     private String updatedAt;
     
-    @JsonProperty("examples_s3_url")
+    // OpenSearch 매핑: examplesS3Url (camelCase)
     private String examplesS3Url;
 
-    @JsonProperty("like_count")
+    // 통계 필드 (DynamoDB에서 가져옴, OpenSearch에는 없을 수 있음)
     private String likeCount;
-    
-    @JsonProperty("comment_count")
     private String commentCount;
-    
-    @JsonProperty("bookmark_count")
     private String bookmarkCount;
     
-    @JsonProperty("is_public")
     private Boolean isPublic;
     
-    @JsonProperty("evaluation_metrics")
+    // OpenSearch 매핑: evaluationMetrics (camelCase)
     private EvaluationMetrics evaluationMetrics;
     
     private List<Example> examples;
     
     // 검색 결과용 (OpenSearch에서 주입)
     private Double score;
+    
+    // 하위 호환성을 위한 getter (createUser -> userId)
+    public String getCreateUser() {
+        return userId;
+    }
 
     @Data
     @Builder
@@ -73,23 +76,27 @@ public class PromptDocument {
     @AllArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class EvaluationMetrics {
-        @JsonProperty("final_score")
-        private String finalScore;
+        // OpenSearch 매핑: finalScore (camelCase)
+        private Float finalScore;
         
-        private String relevance;
-        private String consistency;
-        private String hallucination;
+        private Float relevance;
+        private Float consistency;
+        private Float hallucination;
         
-        @JsonProperty("information_density")
-        private String informationDensity;
+        // OpenSearch 매핑: informationDensity (camelCase)
+        private Float informationDensity;
         
-        @JsonProperty("model_variance")
-        private String modelVariance;
+        // OpenSearch 매핑: modelVariance (camelCase)
+        private Float modelVariance;
         
-        @JsonProperty("token_usage")
-        private String tokenUsage;
+        // OpenSearch 매핑: tokenUsage (camelCase)
+        private Float tokenUsage;
         
-        private Map<String, Object> feedback;
+        // OpenSearch 매핑: overallFeedback (camelCase)
+        private String overallFeedback;
+        
+        // OpenSearch 매핑: promptType (camelCase)
+        private String promptType;
     }
 
     @Data
@@ -109,7 +116,7 @@ public class PromptDocument {
     @AllArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ExampleInput {
-        @JsonProperty("input_type")
+        // OpenSearch 매핑: inputType (camelCase)
         private String inputType;
         private String content;
     }

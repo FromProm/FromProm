@@ -37,7 +37,7 @@ public class SearchService {
                             .bool(b -> b
                                     .must(m -> m
                                             .multiMatch(mm -> mm
-                                                    .fields("title^3", "prompt_description^2", "prompt_content")
+                                                    .fields("title^3", "description^2", "content")
                                                     .query(keyword)
                                                     .fuzziness("AUTO")
                                             )
@@ -84,7 +84,7 @@ public class SearchService {
                                     .minimumShouldMatch("1")
                             )
                     )
-                    .sort(sort -> sort.field(f -> f.field("created_at").order(SortOrder.Desc)))
+                    .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
                     .size(size),
                     PromptDocument.class
             );
@@ -121,7 +121,7 @@ public class SearchService {
                                     .minimumShouldMatch("1")
                             )
                     )
-                    .sort(sort -> sort.field(f -> f.field("created_at").order(SortOrder.Desc)))
+                    .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
                     .size(size),
                     PromptDocument.class
             );
@@ -162,7 +162,7 @@ public class SearchService {
                                 if (keyword != null && !keyword.isEmpty()) {
                                     builder.must(m -> m
                                             .multiMatch(mm -> mm
-                                                    .fields("title^3", "prompt_description^2", "prompt_content")
+                                                    .fields("title^3", "description^2", "content")
                                                     .query(keyword)
                                                     .fuzziness("AUTO")
                                             )
@@ -194,7 +194,7 @@ public class SearchService {
                                 return builder;
                             })
                     )
-                    .sort(sort -> sort.field(f -> f.field("created_at").order(SortOrder.Desc)))
+                    .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
                     .size(size),
                     PromptDocument.class
             );
@@ -231,7 +231,7 @@ public class SearchService {
                                     .minimumShouldMatch("1")
                             )
                     )
-                    .sort(sort -> sort.field(f -> f.field("created_at").order(SortOrder.Desc)))
+                    .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
                     .size(size),
                     PromptDocument.class
             );
@@ -289,11 +289,11 @@ public class SearchService {
                                     .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("ACTIVE"))))
                                     .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("completed"))))
                                     .minimumShouldMatch("1")
-                                    .must(m -> m.exists(e -> e.field("evaluation_metrics.final_score")))
+                                    .must(m -> m.exists(e -> e.field("evaluationMetrics.finalScore")))
                             )
                     )
                     .sort(sort -> sort.field(f -> f
-                            .field("evaluation_metrics.final_score")
+                            .field("evaluationMetrics.finalScore")
                             .order(SortOrder.Desc)))
                     .size(size),
                     PromptDocument.class
@@ -324,9 +324,9 @@ public class SearchService {
             SearchResponse<PromptDocument> response = openSearchClient.search(s -> s
                     .index(INDEX_NAME)
                     .query(q -> q
-                            .term(t -> t.field("create_user").value(FieldValue.of(userId)))
+                            .term(t -> t.field("userId").value(FieldValue.of(userId)))
                     )
-                    .sort(sort -> sort.field(f -> f.field("created_at").order(SortOrder.Desc)))
+                    .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
                     .size(size),
                     PromptDocument.class
             );

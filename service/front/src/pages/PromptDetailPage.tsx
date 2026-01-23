@@ -147,12 +147,13 @@ const PromptDetailPage = () => {
     }
 
     try {
+      const currentLikeCount = Number(prompt.likeCount) || 0;
       if (prompt.isLiked) {
         await interactionApi.deleteLike(prompt.promptId);
-        setPrompt({ ...prompt, isLiked: false, likeCount: prompt.likeCount - 1 });
+        setPrompt({ ...prompt, isLiked: false, likeCount: Math.max(0, currentLikeCount - 1) });
       } else {
         await interactionApi.addLike(prompt.promptId);
-        setPrompt({ ...prompt, isLiked: true, likeCount: prompt.likeCount + 1 });
+        setPrompt({ ...prompt, isLiked: true, likeCount: currentLikeCount + 1 });
       }
     } catch (error) {
       console.error('Failed to toggle like:', error);
@@ -168,12 +169,13 @@ const PromptDetailPage = () => {
     }
 
     try {
+      const currentBookmarkCount = Number(prompt.bookmarkCount) || 0;
       if (prompt.isBookmarked) {
         await interactionApi.deleteBookmark(prompt.promptId);
-        setPrompt({ ...prompt, isBookmarked: false, bookmarkCount: prompt.bookmarkCount - 1 });
+        setPrompt({ ...prompt, isBookmarked: false, bookmarkCount: Math.max(0, currentBookmarkCount - 1) });
       } else {
         await interactionApi.addBookmark(prompt.promptId);
-        setPrompt({ ...prompt, isBookmarked: true, bookmarkCount: prompt.bookmarkCount + 1 });
+        setPrompt({ ...prompt, isBookmarked: true, bookmarkCount: currentBookmarkCount + 1 });
       }
     } catch (error) {
       console.error('Failed to toggle bookmark:', error);
@@ -283,8 +285,8 @@ const PromptDetailPage = () => {
                   </>
                 )}
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">{prompt.title}</h1>
-              <p className="text-gray-600 text-lg leading-relaxed mb-6">{prompt.description}</p>
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">{prompt.title || '제목 없음'}</h1>
+              <p className="text-gray-600 text-lg leading-relaxed mb-6">{prompt.description || '설명 없음'}</p>
 
               <div className="flex items-center space-x-6 text-sm text-gray-500">
                 <button 
@@ -292,17 +294,17 @@ const PromptDetailPage = () => {
                   className="flex items-center space-x-1 hover:text-red-500 transition-colors"
                 >
                   <span>{prompt.isLiked ? '❤️' : '🤍'}</span>
-                  <span>{prompt.likeCount || 0}</span>
+                  <span>{Number(prompt.likeCount) || 0}</span>
                 </button>
                 <div className="flex items-center space-x-1">
-                  <span>💬 {prompt.commentCount || 0}</span>
+                  <span>💬 {Number(prompt.commentCount) || 0}</span>
                 </div>
                 <button 
                   onClick={handleBookmarkToggle}
                   className="flex items-center space-x-1 hover:text-yellow-500 transition-colors"
                 >
                   <span>{prompt.isBookmarked ? '📌' : '📍'}</span>
-                  <span>{prompt.bookmarkCount || 0}</span>
+                  <span>{Number(prompt.bookmarkCount) || 0}</span>
                 </button>
                 <span className="text-xs">by {prompt.nickname || '익명'}</span>
               </div>

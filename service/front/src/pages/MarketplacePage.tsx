@@ -138,8 +138,10 @@ const MarketplacePage = () => {
   // 카테고리 필터링
   const filteredPrompts = prompts.filter(prompt => {
     const matchesCategory = selectedCategory === 'All' || prompt.category === selectedCategory;
-    const matchesSearch = prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      prompt.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const title = prompt.title || '';
+    const description = prompt.description || '';
+    const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -260,11 +262,11 @@ const MarketplacePage = () => {
                     </div>
 
                     <h3 className="text-gray-900 text-lg font-semibold mb-2 group-hover:text-blue-900 transition-colors line-clamp-1">
-                      {prompt.title}
+                      {prompt.title || '제목 없음'}
                     </h3>
 
                     <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">
-                      {prompt.description}
+                      {prompt.description || '설명 없음'}
                     </p>
 
                     <div className="flex items-center justify-between text-sm text-gray-500 mb-4">

@@ -42,9 +42,7 @@ public class SearchService {
                                                     .fuzziness("AUTO")
                                             )
                                     )
-                                    .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("ACTIVE"))))
-                                    .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("completed"))))
-                                    .minimumShouldMatch("1")
+                                    .filter(f -> f.term(t -> t.field("status").value(FieldValue.of("completed"))))
                             )
                     )
                     .size(20),
@@ -79,9 +77,7 @@ public class SearchService {
                     .query(q -> q
                             .bool(b -> b
                                     .must(m -> m.term(t -> t.field("category").value(FieldValue.of(category))))
-                                    .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("ACTIVE"))))
-                                    .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("completed"))))
-                                    .minimumShouldMatch("1")
+                                    .filter(f -> f.term(t -> t.field("status").value(FieldValue.of("completed"))))
                             )
                     )
                     .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
@@ -116,9 +112,7 @@ public class SearchService {
                     .query(q -> q
                             .bool(b -> b
                                     .must(m -> m.term(t -> t.field("model").value(FieldValue.of(model))))
-                                    .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("ACTIVE"))))
-                                    .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("completed"))))
-                                    .minimumShouldMatch("1")
+                                    .filter(f -> f.term(t -> t.field("status").value(FieldValue.of("completed"))))
                             )
                     )
                     .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
@@ -154,9 +148,7 @@ public class SearchService {
                     .query(q -> q
                             .bool(b -> {
                                 BoolQuery.Builder builder = b
-                                        .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("ACTIVE"))))
-                                        .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("completed"))))
-                                        .minimumShouldMatch("1");
+                                        .filter(f -> f.term(t -> t.field("status").value(FieldValue.of("completed"))));
                                 
                                 // 키워드 검색
                                 if (keyword != null && !keyword.isEmpty()) {
@@ -225,11 +217,7 @@ public class SearchService {
             SearchResponse<PromptDocument> response = openSearchClient.search(s -> s
                     .index(INDEX_NAME)
                     .query(q -> q
-                            .bool(b -> b
-                                    .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("ACTIVE"))))
-                                    .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("completed"))))
-                                    .minimumShouldMatch("1")
-                            )
+                            .term(t -> t.field("status").value(FieldValue.of("completed")))
                     )
                     .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
                     .size(size),
@@ -286,9 +274,7 @@ public class SearchService {
                     .index(INDEX_NAME)
                     .query(q -> q
                             .bool(b -> b
-                                    .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("ACTIVE"))))
-                                    .should(sh -> sh.term(t -> t.field("status").value(FieldValue.of("completed"))))
-                                    .minimumShouldMatch("1")
+                                    .filter(f -> f.term(t -> t.field("status").value(FieldValue.of("completed"))))
                                     .must(m -> m.exists(e -> e.field("evaluationMetrics.finalScore")))
                             )
                     )

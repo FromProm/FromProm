@@ -26,7 +26,7 @@ public class InteractionService {
     private String tableName;
 
     /**
-     * 프롬프트 통계 조회 (좋아요/북마크/댓글)
+     * 프롬프트 통계 조회 (좋아요/북마크/댓글 + 기본 정보)
      */
     public PromptStats getPromptStats(String promptId) {
         String promptPK = "PROMPT#" + promptId;
@@ -38,7 +38,7 @@ public class InteractionService {
                             "PK", AttributeValue.builder().s(promptPK).build(),
                             "SK", AttributeValue.builder().s("METADATA").build()
                     ))
-                    .projectionExpression("like_count, bookmark_count, comment_count")
+                    .projectionExpression("like_count, bookmark_count, comment_count, title, prompt_description, model, prompt_content, create_user")
                     .build());
 
             if (response.hasItem()) {
@@ -48,6 +48,11 @@ public class InteractionService {
                         .likeCount(getNumberValue(item, "like_count"))
                         .bookmarkCount(getNumberValue(item, "bookmark_count"))
                         .commentCount(getNumberValue(item, "comment_count"))
+                        .title(getStringValue(item, "title"))
+                        .description(getStringValue(item, "prompt_description"))
+                        .model(getStringValue(item, "model"))
+                        .content(getStringValue(item, "prompt_content"))
+                        .createUser(getStringValue(item, "create_user"))
                         .build();
             }
         } catch (Exception e) {
@@ -83,7 +88,7 @@ public class InteractionService {
 
             KeysAndAttributes keysAndAttributes = KeysAndAttributes.builder()
                     .keys(keys)
-                    .projectionExpression("PK, like_count, bookmark_count, comment_count")
+                    .projectionExpression("PK, like_count, bookmark_count, comment_count, title, prompt_description, model, prompt_content, create_user")
                     .build();
 
             BatchGetItemResponse response = dynamoDbClient.batchGetItem(BatchGetItemRequest.builder()
@@ -102,6 +107,11 @@ public class InteractionService {
                             .likeCount(getNumberValue(item, "like_count"))
                             .bookmarkCount(getNumberValue(item, "bookmark_count"))
                             .commentCount(getNumberValue(item, "comment_count"))
+                            .title(getStringValue(item, "title"))
+                            .description(getStringValue(item, "prompt_description"))
+                            .model(getStringValue(item, "model"))
+                            .content(getStringValue(item, "prompt_content"))
+                            .createUser(getStringValue(item, "create_user"))
                             .build());
                 }
             }

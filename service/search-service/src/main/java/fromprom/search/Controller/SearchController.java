@@ -350,18 +350,27 @@ public class SearchController {
     }
 
     /**
-     * OpenSearch 프롬프트 데이터에 DynamoDB 통계 정보 병합
+     * OpenSearch 프롬프트 데이터에 DynamoDB 통계 및 기본 정보 병합
+     * DynamoDB 데이터를 우선 사용 (더 정확한 원본 데이터)
      */
     private Map<String, Object> enrichPromptWithStats(PromptDocument prompt, PromptStats stats, String userId) {
         Map<String, Object> result = new HashMap<>();
         
-        // OpenSearch 데이터
+        // 기본 ID
         result.put("promptId", prompt.getPromptId());
-        result.put("title", prompt.getTitle());
-        result.put("description", prompt.getDescription());
-        result.put("content", prompt.getContent());
+        
+        // DynamoDB 데이터 우선 사용, 없으면 OpenSearch 데이터 사용
+        result.put("title", (stats != null && stats.getTitle() != null && !stats.getTitle().isEmpty()) 
+                ? stats.getTitle() : (prompt.getTitle() != null ? prompt.getTitle() : "제목 없음"));
+        result.put("description", (stats != null && stats.getDescription() != null && !stats.getDescription().isEmpty()) 
+                ? stats.getDescription() : (prompt.getDescription() != null ? prompt.getDescription() : ""));
+        result.put("content", (stats != null && stats.getContent() != null && !stats.getContent().isEmpty()) 
+                ? stats.getContent() : prompt.getContent());
+        result.put("model", (stats != null && stats.getModel() != null && !stats.getModel().isEmpty()) 
+                ? stats.getModel() : (prompt.getModel() != null ? prompt.getModel() : "AI Model"));
+        
+        // OpenSearch 데이터
         result.put("category", prompt.getCategory());
-        result.put("model", prompt.getModel());
         result.put("promptType", prompt.getPromptType());
         result.put("userId", prompt.getUserId());
         result.put("nickname", prompt.getNickname());

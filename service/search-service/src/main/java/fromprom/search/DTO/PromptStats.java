@@ -14,4 +14,11 @@ public class PromptStats {
     private int likeCount;
     private int bookmarkCount;
     private int commentCount;
+    
+    // DynamoDB에서 가져오는 기본 정보
+    private String title;
+    private String description;
+    private String model;
+    private String content;
+    private String createUser;
 }

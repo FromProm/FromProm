@@ -87,9 +87,84 @@ public class PromptService {
         fullPayload.put("bookmark_count", "0");
         fullPayload.put("is_public", false);
 
+        // 4. DynamoDB에 먼저 저장 (ai-service의 update_item이 기존 필드를 유지하도록)
+        savePromptToDynamoDB(fullPayload, structuredExamples);
+
+        // 5. SNS로 ai-service에 평가 요청
         sendSnsNotification(fullPayload);
 
         return promptUuid;
+    }
+
+    /**
+     * 프롬프트를 DynamoDB에 저장
+     */
+    private void savePromptToDynamoDB(Map<String, Object> payload, List<Map<String, Object>> examples) {
+        try {
+            // examples를 DynamoDB AttributeValue 형식으로 변환
+            List<AttributeValue> examplesList = new ArrayList<>();
+            for (Map<String, Object> ex : examples) {
+                Map<String, AttributeValue> inputMap = new HashMap<>();
+                @SuppressWarnings("unchecked")
+                Map<String, String> input = (Map<String, String>) ex.get("input");
+                inputMap.put("content", AttributeValue.builder().s(input.get("content")).build());
+                inputMap.put("input_type", AttributeValue.builder().s(input.get("input_type")).build());
+
+                Map<String, AttributeValue> exampleMap = new HashMap<>();
+                exampleMap.put("index", AttributeValue.builder().n(String.valueOf(ex.get("index"))).build());
+                exampleMap.put("input", AttributeValue.builder().m(inputMap).build());
+                exampleMap.put("output", AttributeValue.builder().s((String) ex.get("output")).build());
+
+                examplesList.add(AttributeValue.builder().m(exampleMap).build());
+            }
+
+            // evaluation_metrics를 DynamoDB 형식으로 변환
+            @SuppressWarnings("unchecked")
+            Map<String, String> metrics = (Map<String, String>) payload.get("evaluation_metrics");
+            Map<String, AttributeValue> metricsMap = new HashMap<>();
+            for (Map.Entry<String, String> entry : metrics.entrySet()) {
+                metricsMap.put(entry.getKey(), AttributeValue.builder().s(entry.getValue()).build());
+            }
+
+            // DynamoDB Item 생성
+            Map<String, AttributeValue> item = new HashMap<>();
+            item.put("PK", AttributeValue.builder().s((String) payload.get("PK")).build());
+            item.put("SK", AttributeValue.builder().s((String) payload.get("SK")).build());
+            item.put("PROMPT_INDEX_PK", AttributeValue.builder().s((String) payload.get("PROMPT_INDEX_PK")).build());
+            item.put("PROMPT_INDEX_SK", AttributeValue.builder().s((String) payload.get("PROMPT_INDEX_SK")).build());
+            item.put("type", AttributeValue.builder().s((String) payload.get("type")).build());
+            item.put("create_user", AttributeValue.builder().s((String) payload.get("create_user")).build());
+            item.put("title", AttributeValue.builder().s((String) payload.get("title")).build());
+            item.put("prompt_content", AttributeValue.builder().s((String) payload.get("prompt_content")).build());
+            item.put("prompt_description", AttributeValue.builder().s((String) payload.get("prompt_description")).build());
+            item.put("price", AttributeValue.builder().n(String.valueOf(payload.get("price"))).build());
+            item.put("prompt_type", AttributeValue.builder().s((String) payload.get("prompt_type")).build());
+            item.put("examples", AttributeValue.builder().l(examplesList).build());
+            item.put("examples_s3_url", AttributeValue.builder().s((String) payload.get("examples_s3_url")).build());
+            item.put("model", AttributeValue.builder().s((String) payload.get("model")).build());
+            item.put("evaluation_metrics", AttributeValue.builder().m(metricsMap).build());
+            item.put("status", AttributeValue.builder().s((String) payload.get("status")).build());
+            item.put("created_at", AttributeValue.builder().s((String) payload.get("created_at")).build());
+            item.put("updated_at", AttributeValue.builder().s((String) payload.get("updated_at")).build());
+            item.put("like_count", AttributeValue.builder().s((String) payload.get("like_count")).build());
+            item.put("comment_count", AttributeValue.builder().s((String) payload.get("comment_count")).build());
+            item.put("bookmark_count", AttributeValue.builder().s((String) payload.get("bookmark_count")).build());
+            item.put("is_public", AttributeValue.builder().bool((Boolean) payload.get("is_public")).build());
+
+            // DynamoDB에 저장
+            PutItemRequest putRequest = PutItemRequest.builder()
+                    .tableName(TABLE_NAME)
+                    .item(item)
+                    .build();
+
+            dynamoDbClient.putItem(putRequest);
+            System.out.println("[DynamoDB 저장 완료] PK: " + payload.get("PK"));
+
+        } catch (Exception e) {
+            System.err.println("[DynamoDB 저장 실패] " + e.getMessage());
+            e.printStackTrace();
+            // DynamoDB 저장 실패해도 SNS는 발송 (ai-service에서 처리)
+        }
     }
 
     /**

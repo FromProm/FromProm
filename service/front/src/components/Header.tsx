@@ -20,6 +20,19 @@ const Header = () => {
     }
   }, [checkAuth, fetchUserInfo]);
 
+  // 메뉴 바깥 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showMenu && !target.closest('.menu-container')) {
+        setShowMenu(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showMenu]);
+
   const handleLogout = () => {
     logout();
     setShowMenu(false);
@@ -67,11 +80,10 @@ const Header = () => {
                     환영합니다. {userInfo.nickname}님!
                   </span>
                 )}
-                <div className="relative">
+                <div className="relative menu-container">
                 {/* 메뉴 아이콘 (햄버거) */}
                 <button
                   onClick={() => setShowMenu(!showMenu)}
-                  onBlur={() => setTimeout(() => setShowMenu(false), 150)}
                   className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

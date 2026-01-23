@@ -279,13 +279,47 @@ update-manifest-auth:
         - "service/auth-service/**/*"
 
 update-manifest-search:
-  extends: .update_manifest_template
+  stage: update-manifest
+  image: amazon/aws-cli:latest
   needs: ["build-search-service"]
-  variables:
-    SERVICE_NAME: "search"
-    SERVICE_DIR: "search-service"
-    ECR_REPO: "fromprom/search"
-    MANIFEST_FILE: "search-service.yaml"
+  before_script:
+    - yum install -y git
+    - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl" && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
+    - aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+    - git config --global user.email "gitlab-ci@fromprom.cloud"
+    - git config --global user.name "GitLab CI"
+  script:
+    - echo "🔐 Syncing Secrets..."
+    # Secret 생성 (OpenSearch 인증 정보)
+    - |
+      kubectl create secret generic search-service-secrets \
+        --from-literal=opensearch-username="$OPENSEARCH_USERNAME" \
+        --from-literal=opensearch-password="$OPENSEARCH_PASSWORD" \
+        --dry-run=client -o yaml | kubectl apply -f -
+    # ConfigMap 업데이트 (OpenSearch 호스트)
+    - |
+      kubectl create configmap search-service-config \
+        --from-literal=aws-region="$AWS_REGION" \
+        --from-literal=dynamodb-table-name="$AWS_DYNAMODB_TABLE_NAME" \
+        --from-literal=opensearch-host="$OPENSEARCH_HOST" \
+        --from-literal=opensearch-port="443" \
+        --from-literal=opensearch-protocol="https" \
+        --dry-run=client -o yaml | kubectl apply -f -
+    # Manifest 업데이트
+    - echo "📝 Updating Manifest..."
+    - export IMAGE_TAG=$(cat service/search_image_tag.txt)
+    - git clone https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git repo
+    - cd repo
+    - git checkout ${CI_COMMIT_REF_NAME}
+    - git pull --rebase origin ${CI_COMMIT_REF_NAME}
+    - 'sed -i "s|image: ${ECR_REGISTRY}/fromprom/search:.*|image: ${ECR_REGISTRY}/fromprom/search:${IMAGE_TAG}|g" infra/k8s-manifests/search-service.yaml'
+    - git add infra/k8s-manifests/search-service.yaml
+    - 'git commit -m "chore: update search image to ${IMAGE_TAG} [skip ci]" || echo "No changes"'
+    - git push https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git HEAD:${CI_COMMIT_REF_NAME}
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "service/search-service/**/*"
 
 update-manifest-ai:
   extends: .update_manifest_template

@@ -12,7 +12,15 @@ public class HealthController {
     @GetMapping("/healthy")
     public ResponseEntity<Map<String, String>> healthCheck() {
         return ResponseEntity.ok(Map.of(
-            "status", "healthy",
+            "status", "UP",
+            "service", "search-service"
+        ));
+    }
+
+    @GetMapping("/ready")
+    public ResponseEntity<Map<String, String>> readinessCheck() {
+        return ResponseEntity.ok(Map.of(
+            "status", "READY",
             "service", "search-service"
         ));
     }

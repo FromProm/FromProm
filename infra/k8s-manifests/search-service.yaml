@@ -5,7 +5,9 @@ metadata:
 data:
   aws-region: "ap-northeast-2"
   dynamodb-table-name: "FromProm_Table"
-  opensearch-host: "opensearch.fromprom.com"
+  opensearch-host: "OPENSEARCH_HOST_PLACEHOLDER"
+  opensearch-port: "443"
+  opensearch-protocol: "https"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -55,6 +57,16 @@ spec:
             configMapKeyRef:
               name: search-service-config
               key: opensearch-host
+        - name: OPENSEARCH_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: search-service-config
+              key: opensearch-port
+        - name: OPENSEARCH_PROTOCOL
+          valueFrom:
+            configMapKeyRef:
+              name: search-service-config
+              key: opensearch-protocol
         - name: OPENSEARCH_USERNAME
           valueFrom:
             secretKeyRef:

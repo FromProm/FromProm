@@ -31,10 +31,10 @@ public class InteractionService {
         String now = OffsetDateTime.now(ZoneOffset.UTC)
                 .format(DateTimeFormatter.ISO_INSTANT);
 
-        // 1. Like 아이템 생성
+        // 1. Like 아이템 생성 (SK 포맷: LIKE#PROMPT#{promptId})
         Map<String, AttributeValue> likeItem = new HashMap<>();
         likeItem.put("PK", AttributeValue.builder().s("USER#" + userId).build());
-        likeItem.put("SK", AttributeValue.builder().s("LIKE#" + promptId).build());
+        likeItem.put("SK", AttributeValue.builder().s("LIKE#PROMPT#" + promptId).build());
         likeItem.put("LIKE_INDEX_PK", AttributeValue.builder().s("USER_LIKES#" + userId).build());
         likeItem.put("LIKE_INDEX_SK", AttributeValue.builder().s(now).build());
         likeItem.put("type", AttributeValue.builder().s("LIKE").build());
@@ -75,13 +75,13 @@ public class InteractionService {
         try {
             dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
                     .transactItems(
-                            // 1. 유저의 좋아요 기록 삭제
+                            // 1. 유저의 좋아요 기록 삭제 (SK 포맷: LIKE#PROMPT#{promptId})
                             TransactWriteItem.builder()
                                     .delete(Delete.builder()
                                             .tableName(TABLE_NAME)
                                             .key(Map.of(
                                                     "PK", AttributeValue.builder().s("USER#" + userId).build(),
-                                                    "SK", AttributeValue.builder().s("LIKE#" + promptId).build()
+                                                    "SK", AttributeValue.builder().s("LIKE#PROMPT#" + promptId).build()
                                             ))
                                             // 기록이 있어야만 삭제 가능 (이미 취소된 경우 방지)
                                             .conditionExpression("attribute_exists(PK)")
@@ -116,13 +116,13 @@ public class InteractionService {
         }
     }
 
-    // 북마크 등록
+    // 북마크 등록 (SK 포맷: BOOKMARK#PROMPT#{promptId})
     public void addBookmark(String userId, String promptId) {
         String now = OffsetDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
 
         Map<String, AttributeValue> bookmarkItem = new HashMap<>();
         bookmarkItem.put("PK", AttributeValue.builder().s("USER#" + userId).build());
-        bookmarkItem.put("SK", AttributeValue.builder().s("BOOKMARK#" + promptId).build());
+        bookmarkItem.put("SK", AttributeValue.builder().s("BOOKMARK#PROMPT#" + promptId).build());
         bookmarkItem.put("BOOKMARK_INDEX_PK", AttributeValue.builder().s("USER_BOOKMARKS#" + userId).build());
         bookmarkItem.put("BOOKMARK_INDEX_SK", AttributeValue.builder().s(now).build());
         bookmarkItem.put("type", AttributeValue.builder().s("BOOKMARK").build());
@@ -155,7 +155,7 @@ public class InteractionService {
                 ).build());
     }
 
-    // 북마크 취소
+    // 북마크 취소 (SK 포맷: BOOKMARK#PROMPT#{promptId})
     public void deleteBookmark(String userId, String promptId) {
         dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
                 .transactItems(
@@ -164,7 +164,7 @@ public class InteractionService {
                                         .tableName(TABLE_NAME)
                                         .key(Map.of(
                                                 "PK", AttributeValue.builder().s("USER#" + userId).build(),
-                                                "SK", AttributeValue.builder().s("BOOKMARK#" + promptId).build()
+                                                "SK", AttributeValue.builder().s("BOOKMARK#PROMPT#" + promptId).build()
                                         ))
                                         .conditionExpression("attribute_exists(PK)")
                                         .build())

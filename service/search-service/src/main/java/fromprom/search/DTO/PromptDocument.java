@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -18,19 +19,49 @@ public class PromptDocument {
     
     private String promptId;
     private String title;
+    
+    @JsonProperty("prompt_description")
     private String description;
+    
+    @JsonProperty("prompt_content")
     private String content;
+    
     private String category;
     private String model;
-    private String nickname;
-    private String userId;
+    
+    @JsonProperty("prompt_type")
+    private String promptType;
+    
+    @JsonProperty("create_user")
+    private String createUser;
+    
     private String status;
     private Integer price;
-    private String createdAt;
-    private String updatedAt;
-    private String examplesS3Url;
     
+    @JsonProperty("created_at")
+    private String createdAt;
+    
+    @JsonProperty("updated_at")
+    private String updatedAt;
+    
+    @JsonProperty("examples_s3_url")
+    private String examplesS3Url;
+
+    @JsonProperty("like_count")
+    private String likeCount;
+    
+    @JsonProperty("comment_count")
+    private String commentCount;
+    
+    @JsonProperty("bookmark_count")
+    private String bookmarkCount;
+    
+    @JsonProperty("is_public")
+    private Boolean isPublic;
+    
+    @JsonProperty("evaluation_metrics")
     private EvaluationMetrics evaluationMetrics;
+    
     private List<Example> examples;
     
     // 검색 결과용 (OpenSearch에서 주입)
@@ -42,15 +73,23 @@ public class PromptDocument {
     @AllArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class EvaluationMetrics {
-        private Float finalScore;
-        private Float relevance;
-        private Float consistency;
-        private Float hallucination;
-        private Float informationDensity;
-        private Float modelVariance;
-        private Float tokenUsage;
-        private String promptType;
-        private String overallFeedback;
+        @JsonProperty("final_score")
+        private String finalScore;
+        
+        private String relevance;
+        private String consistency;
+        private String hallucination;
+        
+        @JsonProperty("information_density")
+        private String informationDensity;
+        
+        @JsonProperty("model_variance")
+        private String modelVariance;
+        
+        @JsonProperty("token_usage")
+        private String tokenUsage;
+        
+        private Map<String, Object> feedback;
     }
 
     @Data
@@ -70,6 +109,7 @@ public class PromptDocument {
     @AllArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ExampleInput {
+        @JsonProperty("input_type")
         private String inputType;
         private String content;
     }

@@ -32,7 +32,16 @@ interface CreditHistoryItem {
   created_at: string;
 }
 
+// 인터랙션 프롬프트 타입
+interface InteractionPrompt {
+  promptId: string;
+  title: string;
+  price: number;
+  createdAt: string;
+}
+
 type MenuTab = 'profile' | 'purchased' | 'selling' | 'analytics' | 'settings';
+type ModalType = 'likes' | 'comments' | 'bookmarks' | null;
 
 const MyprofilePage = () => {
   const navigate = useNavigate();
@@ -47,6 +56,11 @@ const MyprofilePage = () => {
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(true);
   const [creditHistory, setCreditHistory] = useState<CreditHistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // 모달 관련 상태
+  const [modalType, setModalType] = useState<ModalType>(null);
+  const [modalData, setModalData] = useState<InteractionPrompt[]>([]);
+  const [isLoadingModal, setIsLoadingModal] = useState(false);
 
   // 설정 관련 상태
   const [nickname, setNickname] = useState('');
@@ -198,6 +212,36 @@ const MyprofilePage = () => {
     }
   };
 
+  // 모달 열기
+  const openModal = async (type: ModalType) => {
+    setModalType(type);
+    setIsLoadingModal(true);
+    setModalData([]);
+    
+    // TODO: API 연동 시 실제 데이터 가져오기
+    // 현재는 빈 배열로 표시
+    setTimeout(() => {
+      setModalData([]);
+      setIsLoadingModal(false);
+    }, 500);
+  };
+
+  // 모달 닫기
+  const closeModal = () => {
+    setModalType(null);
+    setModalData([]);
+  };
+
+  // 모달 제목 가져오기
+  const getModalTitle = () => {
+    switch (modalType) {
+      case 'likes': return '❤️ 좋아요 누른 프롬프트';
+      case 'comments': return '💬 댓글 남긴 프롬프트';
+      case 'bookmarks': return '🔖 북마크한 프롬프트';
+      default: return '';
+    }
+  };
+
   const menuItems = [
     { id: 'profile' as MenuTab, label: '내 프로필', icon: '👤' },
     { id: 'purchased' as MenuTab, label: '구매한 프롬프트', icon: '📥' },
@@ -254,7 +298,7 @@ const MyprofilePage = () => {
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg px-6 py-4 text-white">
                 <p className="text-sm opacity-80">보유 크레딧</p>
                 <p className="text-2xl font-bold">{(userInfo?.credit || 0).toLocaleString()}P</p>
-                <Link to="/credit" className="text-xs underline opacity-80 hover:opacity-100">충전하러가기</Link>
+                <Link to="/credit" className="text-xs underline opacity-80 hover:opacity-100">충전하러가기 →</Link>
               </div>
             </div>
           </div>
@@ -296,55 +340,42 @@ const MyprofilePage = () => {
                 {activeTab === 'profile' && (
                   <div>
                     <h2 className="text-xl font-bold text-gray-900 mb-6">내 프로필</h2>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* 내 프롬프트 */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      {/* 좋아요 누른 프롬프트 */}
                       <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <h3 className="font-semibold text-gray-900 mb-4">내 프롬프트</h3>
-                        {isLoadingPrompts ? (
-                          <div className="text-center py-4"><div className="w-6 h-6 mx-auto border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>
-                        ) : myPrompts.length > 0 ? (
-                          <div className="space-y-2">
-                            {myPrompts.slice(0, 3).map((prompt) => (
-                              <Link key={prompt.promptId} to={`/prompt/${prompt.promptId}`}
-                                className="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                                <div className="flex justify-between items-center">
-                                  <span className="font-medium text-sm truncate">{prompt.title}</span>
-                                  <span className={`text-xs px-2 py-0.5 rounded-full ${prompt.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                    {prompt.status === 'completed' ? '완료' : '처리중'}
-                                  </span>
-                                </div>
-                              </Link>
-                            ))}
-                            <button onClick={() => setActiveTab('selling')} className="text-blue-600 text-sm hover:underline mt-2">모두 보기 →</button>
-                          </div>
-                        ) : (
-                          <div className="text-center py-4">
-                            <p className="text-gray-500 text-sm mb-2">등록한 프롬프트가 없습니다</p>
-                            <Link to="/prompt/create" className="text-blue-600 text-sm hover:underline">프롬프트 등록하기</Link>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className="text-lg">❤️</span>
+                          <h3 className="font-semibold text-gray-900">좋아요 누른 프롬프트</h3>
+                        </div>
+                        <div className="text-center py-6">
+                          <p className="text-2xl font-bold text-red-500 mb-1">0</p>
+                          <p className="text-gray-500 text-sm">개의 프롬프트</p>
+                        </div>
+                        <button onClick={() => openModal('likes')} className="w-full text-blue-600 text-sm hover:underline">모두 보기 →</button>
                       </div>
-                      {/* 구매한 프롬프트 */}
+                      {/* 댓글 남긴 프롬프트 */}
                       <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <h3 className="font-semibold text-gray-900 mb-4">구매한 프롬프트</h3>
-                        {purchasedPrompts.length > 0 ? (
-                          <div className="space-y-2">
-                            {purchasedPrompts.slice(0, 3).map((prompt) => (
-                              <div key={prompt.id} className="p-3 bg-gray-50 rounded-lg">
-                                <div className="flex justify-between items-center">
-                                  <span className="font-medium text-sm truncate">{prompt.title}</span>
-                                  <span className="text-blue-600 text-sm">{prompt.price}P</span>
-                                </div>
-                              </div>
-                            ))}
-                            <button onClick={() => setActiveTab('purchased')} className="text-blue-600 text-sm hover:underline mt-2">모두 보기 →</button>
-                          </div>
-                        ) : (
-                          <div className="text-center py-4">
-                            <p className="text-gray-500 text-sm mb-2">구매한 프롬프트가 없습니다</p>
-                            <Link to="/marketplace" className="text-blue-600 text-sm hover:underline">마켓플레이스 둘러보기</Link>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className="text-lg">💬</span>
+                          <h3 className="font-semibold text-gray-900">댓글 남긴 프롬프트</h3>
+                        </div>
+                        <div className="text-center py-6">
+                          <p className="text-2xl font-bold text-blue-500 mb-1">0</p>
+                          <p className="text-gray-500 text-sm">개의 프롬프트</p>
+                        </div>
+                        <button onClick={() => openModal('comments')} className="w-full text-blue-600 text-sm hover:underline">모두 보기 →</button>
+                      </div>
+                      {/* 북마크한 프롬프트 */}
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-center gap-2 mb-4">
+                          <span className="text-lg">🔖</span>
+                          <h3 className="font-semibold text-gray-900">북마크한 프롬프트</h3>
+                        </div>
+                        <div className="text-center py-6">
+                          <p className="text-2xl font-bold text-yellow-500 mb-1">0</p>
+                          <p className="text-gray-500 text-sm">개의 프롬프트</p>
+                        </div>
+                        <button onClick={() => openModal('bookmarks')} className="w-full text-blue-600 text-sm hover:underline">모두 보기 →</button>
                       </div>
                     </div>
                     {/* 크레딧 히스토리 */}
@@ -544,6 +575,61 @@ const MyprofilePage = () => {
           </div>
         </div>
       </div>
+
+      {/* 모달 */}
+      {modalType && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={closeModal}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* 모달 헤더 */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">{getModalTitle()}</h3>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* 모달 내용 */}
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              {isLoadingModal ? (
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 mx-auto border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-gray-500 mt-2">로딩 중...</p>
+                </div>
+              ) : modalData.length > 0 ? (
+                <div className="space-y-3">
+                  {modalData.map((prompt) => (
+                    <Link key={prompt.promptId} to={`/prompt/${prompt.promptId}`} onClick={closeModal}
+                      className="block p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-900">{prompt.title}</span>
+                        <span className="text-blue-600 font-medium">{prompt.price}P</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <span className="text-2xl">
+                      {modalType === 'likes' ? '❤️' : modalType === 'comments' ? '💬' : '🔖'}
+                    </span>
+                  </div>
+                  <p className="text-gray-500">
+                    {modalType === 'likes' && '좋아요 누른 프롬프트가 없습니다'}
+                    {modalType === 'comments' && '댓글 남긴 프롬프트가 없습니다'}
+                    {modalType === 'bookmarks' && '북마크한 프롬프트가 없습니다'}
+                  </p>
+                  <Link to="/marketplace" onClick={closeModal}
+                    className="inline-block mt-4 text-blue-600 hover:underline">
+                    마켓플레이스 둘러보기 →
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

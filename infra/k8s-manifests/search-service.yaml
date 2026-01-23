@@ -28,7 +28,7 @@ spec:
       serviceAccountName: search-service-sa
       containers:
       - name: search-service
-        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/search:c777005e
+        image: 261595668962.dkr.ecr.ap-northeast-2.amazonaws.com/fromprom/search:6eb9cf93
         ports:
         - containerPort: 8080
         env:

@@ -61,25 +61,27 @@ const CartPage = () => {
   };
 
   // 더미 데이터 장바구니에 추가 (개발 모드 전용)
-  const addDummyToCart = async () => {
+  const addDummyToCart = () => {
     if (!isDevMode) return;
-    try {
-      const { dummyPrompts } = await import('../services/dummyPrompts.local');
-      dummyPrompts.forEach((prompt: any) => {
-        addToCart({
-          id: prompt.promptId,
-          title: prompt.title,
-          price: prompt.price,
-          category: prompt.category,
-          sellerName: prompt.nickname,
-          sellerSub: prompt.userId,
-          description: prompt.description,
-          rating: prompt.evaluationMetrics?.finalScore || 4.5,
-        });
+    const dummyPrompts = [
+      { promptId: 'dummy-001', title: '마케팅 카피라이팅 마스터', description: '제품/서비스의 특징을 입력하면 매력적인 마케팅 문구를 생성해주는 프롬프트입니다.', category: '글 창작 및 생성', nickname: '마케팅마스터', userId: 'dummy-user-001', price: 500, finalScore: 8.5 },
+      { promptId: 'dummy-002', title: '코드 리뷰 어시스턴트', description: '코드를 입력하면 버그, 성능 개선점, 베스트 프랙티스를 분석해주는 프롬프트입니다.', category: '사실/정보/근거 요구', nickname: '코드마스터', userId: 'dummy-user-002', price: 800, finalScore: 9.2 },
+      { promptId: 'dummy-003', title: '판타지 일러스트 생성기', description: '판타지 세계관의 캐릭터, 배경, 아이템 이미지를 생성하는 프롬프트입니다.', category: '이미지 창작 및 생성', nickname: '아트디렉터', userId: 'dummy-user-003', price: 1200, finalScore: 9.0 },
+      { promptId: 'dummy-004', title: '비즈니스 이메일 작성기', description: '상황과 목적을 입력하면 전문적인 비즈니스 이메일을 작성해주는 프롬프트입니다.', category: '글 창작 및 생성', nickname: '비즈니스프로', userId: 'dummy-user-004', price: 300, finalScore: 8.0 },
+      { promptId: 'dummy-005', title: '데이터 분석 리포트 생성기', description: '데이터를 입력하면 인사이트와 시각화 제안을 포함한 분석 리포트를 생성합니다.', category: '사실/정보/근거 요구', nickname: '데이터사이언티스트', userId: 'dummy-user-005', price: 1000, finalScore: 8.8 },
+    ];
+    dummyPrompts.forEach((prompt) => {
+      addToCart({
+        id: prompt.promptId,
+        title: prompt.title,
+        price: prompt.price,
+        category: prompt.category,
+        sellerName: prompt.nickname,
+        sellerSub: prompt.userId,
+        description: prompt.description,
+        rating: prompt.finalScore,
       });
-    } catch (e) {
-      console.error('Failed to load dummy data:', e);
-    }
+    });
   };
 
   const handlePurchase = async () => {

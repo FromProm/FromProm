@@ -297,20 +297,16 @@ const MyprofilePage = () => {
                 )}
               </div>
               {/* 크레딧 */}
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg px-6 py-4 text-white">
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg px-6 py-4 text-white min-w-[160px] h-[88px] flex flex-col justify-between">
                 <p className="text-sm opacity-80">보유 크레딧</p>
                 <p className="text-2xl font-bold">{(userInfo?.credit || 0).toLocaleString()}P</p>
                 <Link to="/credit" className="text-xs underline opacity-80 hover:opacity-100">충전하러가기 →</Link>
               </div>
               {/* 장바구니 */}
-              <Link to="/cart" className="bg-gradient-to-r from-orange-500 to-red-500 rounded-lg px-6 py-4 text-white hover:from-orange-600 hover:to-red-600 transition-all">
+              <Link to="/cart" className="bg-gradient-to-r from-orange-500 to-red-500 rounded-lg px-6 py-4 text-white hover:from-orange-600 hover:to-red-600 transition-all min-w-[160px] h-[88px] flex flex-col justify-between">
                 <p className="text-sm opacity-80">장바구니</p>
                 <p className="text-2xl font-bold">{cartItems.length}개</p>
-                {cartItems.length > 0 ? (
-                  <p className="text-xs opacity-80">{getCartTotalPrice().toLocaleString()}P</p>
-                ) : (
-                  <p className="text-xs opacity-80">비어있음</p>
-                )}
+                <p className="text-xs opacity-80">{cartItems.length > 0 ? `${getCartTotalPrice().toLocaleString()}P` : '비어있음'}</p>
               </Link>
             </div>
           </div>

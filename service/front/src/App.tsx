@@ -24,6 +24,7 @@ import CreditHistoryPage from './pages/dashboard/CreditHistoryPage';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
+import ScrollToTop from './components/ScrollToTop';
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ function App() {
     return (
         <QueryClientProvider client={queryClient}>
             <Router>
+                <ScrollToTop />
                 <Routes>
                     {/* 공개 라우트 - Header 없음 */}
                     <Route path="/" element={<LandingPage />} />

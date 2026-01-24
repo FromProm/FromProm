@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { promptApi, userApi, creditApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { usePurchaseStore } from '../../store/purchaseStore';
+import { useCartStore } from '../../store/cartStore';
 import AnimatedContent from '../../components/AnimatedContent';
 
 // 내 프롬프트 타입 정의
@@ -47,6 +48,7 @@ const MyprofilePage = () => {
   const navigate = useNavigate();
   const { userInfo, fetchUserInfo, updateUserInfo, isAuthenticated } = useAuthStore();
   const { getPurchasedPrompts } = usePurchaseStore();
+  const { items: cartItems, getTotalPrice: getCartTotalPrice } = useCartStore();
   const [activeTab, setActiveTab] = useState<MenuTab>('profile');
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [editBio, setEditBio] = useState('');
@@ -300,6 +302,16 @@ const MyprofilePage = () => {
                 <p className="text-2xl font-bold">{(userInfo?.credit || 0).toLocaleString()}P</p>
                 <Link to="/credit" className="text-xs underline opacity-80 hover:opacity-100">충전하러가기 →</Link>
               </div>
+              {/* 장바구니 */}
+              <Link to="/cart" className="bg-gradient-to-r from-orange-500 to-red-500 rounded-lg px-6 py-4 text-white hover:from-orange-600 hover:to-red-600 transition-all">
+                <p className="text-sm opacity-80">장바구니</p>
+                <p className="text-2xl font-bold">{cartItems.length}개</p>
+                {cartItems.length > 0 ? (
+                  <p className="text-xs opacity-80">{getCartTotalPrice().toLocaleString()}P</p>
+                ) : (
+                  <p className="text-xs opacity-80">비어있음</p>
+                )}
+              </Link>
             </div>
           </div>
         </AnimatedContent>

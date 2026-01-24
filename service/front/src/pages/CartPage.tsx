@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useCartStore } from '../store/cartStore';
+import { useCartStore, CartItem } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
 import { creditApi } from '../services/api';
+import { dummyPrompts } from '../services/dummyData';
 import Header from '../components/Header';
 import AnimatedContent from '../components/AnimatedContent';
 import SplitText from '../components/SplitText';
 
 const CartPage = () => {
   const navigate = useNavigate();
-  const { items, removeFromCart, clearCart, getTotalPrice } = useCartStore();
+  const { items, addToCart, removeFromCart, clearCart, getTotalPrice } = useCartStore();
   const { addPurchasedPrompt } = usePurchaseStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [credit, setCredit] = useState<number>(0);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isDevMode] = useState(() => import.meta.env.DEV);
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -27,7 +30,59 @@ const CartPage = () => {
     }
   }, []);
 
+  // 초기 로드 시 모든 아이템 선택
+  useEffect(() => {
+    setSelectedIds(new Set(items.map(item => item.id)));
+  }, [items.length]);
+
+  // 선택된 아이템들
+  const selectedItems = items.filter(item => selectedIds.has(item.id));
+  const selectedTotalPrice = selectedItems.reduce((sum, item) => sum + item.price, 0);
+
+  // 개별 선택 토글
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  // 전체 선택/해제
+  const toggleSelectAll = () => {
+    if (selectedIds.size === items.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map(item => item.id)));
+    }
+  };
+
+  // 더미 데이터 장바구니에 추가 (개발 모드 전용)
+  const addDummyToCart = () => {
+    dummyPrompts.forEach(prompt => {
+      addToCart({
+        id: prompt.promptId,
+        title: prompt.title,
+        price: prompt.price,
+        category: prompt.category,
+        sellerName: prompt.nickname,
+        sellerSub: prompt.userId,
+        description: prompt.description,
+        rating: prompt.evaluationMetrics?.finalScore || 4.5,
+      });
+    });
+  };
+
   const handlePurchase = async () => {
+    if (selectedItems.length === 0) {
+      alert('구매할 프롬프트를 선택해주세요.');
+      return;
+    }
+
     const token = localStorage.getItem('accessToken');
     if (!token) {
       alert('로그인이 필요한 서비스입니다.');
@@ -35,9 +90,7 @@ const CartPage = () => {
       return;
     }
 
-    const totalPrice = getTotalPrice();
-    
-    if (credit < totalPrice) {
+    if (credit < selectedTotalPrice) {
       alert('크레딧이 부족합니다. 충전 후 다시 시도해주세요.');
       navigate('/credit');
       return;
@@ -46,8 +99,8 @@ const CartPage = () => {
     setIsProcessing(true);
     
     try {
-      // 장바구니 일괄 구매 API 호출
-      await creditApi.purchaseCart(items.map(item => ({
+      // 선택된 아이템만 구매 API 호출
+      await creditApi.purchaseCart(selectedItems.map(item => ({
         id: item.id,
         title: item.title,
         price: item.price,
@@ -58,15 +111,15 @@ const CartPage = () => {
         sellerSub: item.sellerSub,
       })));
       
-      // 구매한 프롬프트로 이동
-      items.forEach(item => {
+      // 구매한 프롬프트 저장
+      selectedItems.forEach(item => {
         addPurchasedPrompt({
           ...item,
           content: `이것은 "${item.title}" 프롬프트의 실제 내용입니다. 구매해주셔서 감사합니다!`
         });
+        removeFromCart(item.id);
       });
       
-      clearCart();
       alert('구매가 완료되었습니다!');
       navigate('/dashboard/purchased');
     } catch (error: any) {
@@ -75,6 +128,12 @@ const CartPage = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // 선택된 아이템만 삭제
+  const removeSelected = () => {
+    selectedItems.forEach(item => removeFromCart(item.id));
+    setSelectedIds(new Set());
   };
 
   if (items.length === 0) {
@@ -90,12 +149,22 @@ const CartPage = () => {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">장바구니가 비어있습니다</h2>
             <p className="text-gray-600 mb-8">마켓플레이스에서 원하는 프롬프트를 찾아보세요</p>
-            <Link
-              to="/marketplace"
-              className="inline-flex items-center px-6 py-3 bg-blue-900 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors"
-            >
-              마켓플레이스 둘러보기
-            </Link>
+            <div className="flex flex-col items-center gap-4">
+              <Link
+                to="/marketplace"
+                className="inline-flex items-center px-6 py-3 bg-blue-900 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors"
+              >
+                마켓플레이스 둘러보기
+              </Link>
+              {isDevMode && (
+                <button
+                  onClick={addDummyToCart}
+                  className="inline-flex items-center px-6 py-3 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 transition-colors"
+                >
+                  🧪 테스트용 더미 데이터 추가
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -141,13 +210,49 @@ const CartPage = () => {
           </div>
         </div>
 
+        {/* 전체 선택 / 선택 삭제 바 */}
+        <div className="flex items-center justify-between mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectedIds.size === items.length && items.length > 0}
+              onChange={toggleSelectAll}
+              className="w-5 h-5 text-blue-900 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="ml-3 text-sm font-medium text-gray-700">
+              전체 선택 ({selectedIds.size}/{items.length})
+            </span>
+          </label>
+          <button
+            onClick={removeSelected}
+            disabled={selectedIds.size === 0}
+            className="text-sm text-red-600 hover:text-red-800 disabled:text-gray-400 disabled:cursor-not-allowed"
+          >
+            선택 삭제
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 장바구니 아이템 목록 */}
           <div className="lg:col-span-2 space-y-4">
             {items.map((item, index) => (
               <AnimatedContent key={item.id} once distance={50} duration={0.6} delay={index * 0.1}>
-              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                <div className="flex items-start justify-between">
+              <div 
+                className={`bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border p-6 shadow-sm transition-all ${
+                  selectedIds.has(item.id) ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
+                }`}
+              >
+                <div className="flex items-start">
+                  {/* 체크박스 */}
+                  <div className="flex items-center mr-4 pt-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(item.id)}
+                      onChange={() => toggleSelect(item.id)}
+                      className="w-5 h-5 text-blue-900 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                    />
+                  </div>
+                  
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
                       <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
@@ -196,30 +301,34 @@ const CartPage = () => {
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">상품 개수</span>
-                  <span className="text-gray-900">{items.length}개</span>
+                  <span className="text-gray-600">선택한 상품</span>
+                  <span className="text-gray-900">{selectedItems.length}개</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">총 금액</span>
-                  <span className="text-gray-900">{getTotalPrice()}P</span>
+                  <span className="text-gray-600">전체 상품</span>
+                  <span className="text-gray-500">{items.length}개</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">선택 금액</span>
+                  <span className="text-gray-900">{selectedTotalPrice}P</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">보유 크레딧</span>
-                  <span className={`font-medium ${credit >= getTotalPrice() ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className={`font-medium ${credit >= selectedTotalPrice ? 'text-green-600' : 'text-red-600'}`}>
                     {credit}P
                   </span>
                 </div>
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between font-semibold">
                     <span className="text-gray-900">결제 금액</span>
-                    <span className="text-blue-900 text-lg">{getTotalPrice()}P</span>
+                    <span className="text-blue-900 text-lg">{selectedTotalPrice}P</span>
                   </div>
                 </div>
               </div>
 
               <button
                 onClick={handlePurchase}
-                disabled={isProcessing}
+                disabled={isProcessing || selectedItems.length === 0}
                 className="w-full bg-blue-900 text-white font-medium py-3 rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {isProcessing ? (
@@ -230,8 +339,10 @@ const CartPage = () => {
                     </svg>
                     구매 처리 중...
                   </>
+                ) : selectedItems.length === 0 ? (
+                  '프롬프트를 선택해주세요'
                 ) : (
-                  '구매하기'
+                  `선택한 ${selectedItems.length}개 구매하기`
                 )}
               </button>
 

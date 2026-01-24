@@ -1,11 +1,14 @@
 import { useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { useCartStore } from '../store/cartStore';
 
 const Header = () => {
   const { isAuthenticated, userInfo, fetchUserInfo, logout, checkAuth } = useAuthStore();
+  const { getItemCount } = useCartStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const cartItemCount = getItemCount();
 
   // 로그인 상태 확인 및 사용자 정보 가져오기
   useEffect(() => {
@@ -67,6 +70,17 @@ const Header = () => {
                   className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
                 >
                   프로필
+                </Link>
+                <Link
+                  to="/cart"
+                  className="relative text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                >
+                  장바구니
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                      {cartItemCount > 9 ? '9+' : cartItemCount}
+                    </span>
+                  )}
                 </Link>
                 <Link
                   to="/prompt/create"

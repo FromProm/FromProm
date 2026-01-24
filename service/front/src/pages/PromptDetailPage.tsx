@@ -462,11 +462,12 @@ const PromptDetailPage = () => {
             </div>
           </div>
 
-          {/* AI 피드백 */}
-          {performanceMetrics.feedback && (
+          {/* AI 피드백 - 프롬프트 등록자에게만 표시 */}
+          {performanceMetrics.feedback && user?.id === prompt.userId && (
             <div className="mt-6 bg-white rounded-lg p-6 border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <span className="mr-2">🤖</span> AI 평가 피드백
+                <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">등록자 전용</span>
               </h3>
               <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
                 {performanceMetrics.feedback}

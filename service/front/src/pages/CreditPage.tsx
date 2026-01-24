@@ -189,44 +189,6 @@ const CreditPage = () => {
                     </div>
                   ))}
                 </div>
-
-                {/* 사용자 정의 금액 */}
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">사용자 정의 금액</h3>
-                  <div className="flex items-center space-x-4">
-                    <input
-                      type="radio"
-                      id="custom"
-                      name="amount"
-                      checked={selectedAmount === 0}
-                      onChange={() => setSelectedAmount(0)}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                    />
-                    <label htmlFor="custom" className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="number"
-                          min="100"
-                          max="100000000"
-                          step="100"
-                          value={customAmount}
-                          onChange={(e) => {
-                            setCustomAmount(e.target.value);
-                            setSelectedAmount(0);
-                          }}
-                          placeholder="1000"
-                          className="w-40 px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        />
-                        <span className="text-gray-700">P</span>
-                        <span className="text-gray-500">=</span>
-                        <span className="text-blue-600 font-medium">
-                          ₩{customAmount ? parseInt(customAmount).toLocaleString() : '0'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">최소 100P ~ 최대 1억P (보유 가능 최대 크레딧: 1억P)</p>
-                    </label>
-                  </div>
-                </div>
               </div>
               </AnimatedContent>
             </div>
@@ -290,28 +252,6 @@ const CreditPage = () => {
                         </div>
                       </div>
                     </label>
-                    <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input 
-                        type="radio" 
-                        name="payment" 
-                        value="paypal"
-                        checked={paymentMethod === 'paypal'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="mr-3" 
-                      />
-                      <span className="text-sm font-medium">PayPal</span>
-                    </label>
-                    <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input 
-                        type="radio" 
-                        name="payment" 
-                        value="bank"
-                        checked={paymentMethod === 'bank'}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="mr-3" 
-                      />
-                      <span className="text-sm font-medium">계좌이체</span>
-                    </label>
                   </div>
                 </div>
 
@@ -323,10 +263,6 @@ const CreditPage = () => {
                 >
                   {isProcessing ? '처리 중...' : '크레딧 충전하기'}
                 </button>
-
-                <p className="text-xs text-gray-500 mt-3 text-center">
-                  결제 완료 후 즉시 크레딧이 충전됩니다
-                </p>
               </div>
               </AnimatedContent>
             </div>

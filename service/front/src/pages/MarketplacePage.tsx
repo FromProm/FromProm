@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { categories } from '../services/dummyData';
 import { promptApi, interactionApi } from '../services/api';
 import { useCartStore } from '../store/cartStore';
@@ -51,6 +51,7 @@ const MarketplacePage = () => {
   const { isPurchased } = usePurchaseStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const isLoggedIn = () => !!localStorage.getItem('accessToken');
 
@@ -103,7 +104,7 @@ const MarketplacePage = () => {
     
     if (!isLoggedIn()) {
       alert('로그인이 필요한 서비스입니다.');
-      navigate('/auth/login');
+      navigate('/auth/login', { state: { from: location.pathname } });
       return;
     }
     
@@ -128,7 +129,7 @@ const MarketplacePage = () => {
     
     if (!isLoggedIn()) {
       alert('로그인이 필요한 서비스입니다.');
-      navigate('/auth/login');
+      navigate('/auth/login', { state: { from: location.pathname } });
       return;
     }
     
@@ -141,7 +142,7 @@ const MarketplacePage = () => {
     
     if (!isLoggedIn()) {
       alert('로그인이 필요한 서비스입니다.');
-      navigate('/auth/login');
+      navigate('/auth/login', { state: { from: location.pathname } });
       return;
     }
 
@@ -173,7 +174,7 @@ const MarketplacePage = () => {
     
     if (!isLoggedIn()) {
       alert('로그인이 필요한 서비스입니다.');
-      navigate('/auth/login');
+      navigate('/auth/login', { state: { from: location.pathname } });
       return;
     }
 

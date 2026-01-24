@@ -111,6 +111,7 @@ const LandingPage = () => {
                 <div className="flex items-center space-x-4">
                   <Link
                     to="/auth/login"
+                    state={{ from: '/' }}
                     className="text-gray-300 hover:text-white font-medium text-sm transition-colors"
                   >
                     Sign in
@@ -209,8 +210,8 @@ const LandingPage = () => {
               </Link>
             </motion.div>
 
-            {/* 이 달의 인기 프롬프트 Top 5 */}
-            <div className="max-w-3xl mx-auto">
+            {/* 이 달의 인기 프롬프트 Top 5 - 추후 API 연동 시 활성화 */}
+            {/* <div className="max-w-3xl mx-auto">
               <h2 className="text-3xl font-bold text-white mb-10 text-center">이 달의 인기 프롬프트 Top 5</h2>
               <div className="space-y-4">
                 {[
@@ -259,7 +260,7 @@ const LandingPage = () => {
                   </motion.div>
                 ))}
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 

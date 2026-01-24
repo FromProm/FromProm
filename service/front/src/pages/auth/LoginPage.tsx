@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { userApi } from '../../services/api';
 import LightRays from '../../components/LightRays';
 import SplitText from '../../components/SplitText';
@@ -10,6 +10,10 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // 이전 페이지 경로 (state에서 가져오거나 기본값은 마켓플레이스)
+  const from = (location.state as { from?: string })?.from || '/marketplace';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +28,9 @@ const LoginPage = () => {
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('idToken', idToken);
       
-      navigate('/marketplace');
+      // 이전 페이지로 이동 (로그인/회원가입 페이지는 제외)
+      const redirectTo = from.startsWith('/auth') ? '/marketplace' : from;
+      navigate(redirectTo);
     } catch (error: any) {
       const message = error.response?.data || '로그인에 실패했습니다.';
       alert(message);

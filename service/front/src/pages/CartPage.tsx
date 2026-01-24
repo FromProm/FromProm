@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useCartStore, CartItem } from '../store/cartStore';
+import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
 import { creditApi } from '../services/api';
-import { dummyPrompts } from '../services/dummyData';
 import Header from '../components/Header';
 import AnimatedContent from '../components/AnimatedContent';
 import SplitText from '../components/SplitText';
@@ -62,19 +61,25 @@ const CartPage = () => {
   };
 
   // 더미 데이터 장바구니에 추가 (개발 모드 전용)
-  const addDummyToCart = () => {
-    dummyPrompts.forEach(prompt => {
-      addToCart({
-        id: prompt.promptId,
-        title: prompt.title,
-        price: prompt.price,
-        category: prompt.category,
-        sellerName: prompt.nickname,
-        sellerSub: prompt.userId,
-        description: prompt.description,
-        rating: prompt.evaluationMetrics?.finalScore || 4.5,
+  const addDummyToCart = async () => {
+    if (!isDevMode) return;
+    try {
+      const { dummyPrompts } = await import('../services/dummyPrompts.local');
+      dummyPrompts.forEach((prompt: any) => {
+        addToCart({
+          id: prompt.promptId,
+          title: prompt.title,
+          price: prompt.price,
+          category: prompt.category,
+          sellerName: prompt.nickname,
+          sellerSub: prompt.userId,
+          description: prompt.description,
+          rating: prompt.evaluationMetrics?.finalScore || 4.5,
+        });
       });
-    });
+    } catch (e) {
+      console.error('Failed to load dummy data:', e);
+    }
   };
 
   const handlePurchase = async () => {

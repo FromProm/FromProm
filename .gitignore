@@ -10,3 +10,6 @@ ENV/
 .terraform/
 *.tfstate
 *.tfstate.backup
+
+# Local test data
+*.local.ts

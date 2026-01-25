@@ -106,19 +106,25 @@ const CartPage = () => {
     setIsProcessing(true);
     
     try {
-      // 선택된 아이템만 구매 API 호출
-      await creditApi.purchaseCart(selectedItems.map(item => ({
-        id: item.id,
-        title: item.title,
-        price: item.price,
-        category: item.category,
-        sellerName: item.sellerName,
-        description: item.description,
-        rating: item.rating,
-        sellerSub: item.sellerSub,
-      })));
+      // 더미 데이터와 실제 데이터 분리
+      const dummyItems = selectedItems.filter(item => item.id.startsWith('dummy-'));
+      const realItems = selectedItems.filter(item => !item.id.startsWith('dummy-'));
       
-      // 구매한 프롬프트 저장
+      // 실제 데이터만 API 호출
+      if (realItems.length > 0) {
+        await creditApi.purchaseCart(realItems.map(item => ({
+          id: item.id,
+          title: item.title,
+          price: item.price,
+          category: item.category,
+          sellerName: item.sellerName,
+          description: item.description,
+          rating: item.rating,
+          sellerSub: item.sellerSub,
+        })));
+      }
+      
+      // 구매한 프롬프트 저장 (더미 + 실제 모두)
       selectedItems.forEach(item => {
         addPurchasedPrompt({
           ...item,
@@ -127,7 +133,12 @@ const CartPage = () => {
         removeFromCart(item.id);
       });
       
-      alert('구매가 완료되었습니다!');
+      // 더미 데이터만 구매한 경우 안내 메시지
+      if (dummyItems.length > 0 && realItems.length === 0) {
+        alert('테스트 구매가 완료되었습니다! (더미 데이터는 실제 결제되지 않습니다)');
+      } else {
+        alert('구매가 완료되었습니다!');
+      }
       navigate('/dashboard/purchased');
     } catch (error: any) {
       const message = error.response?.data?.message || '구매 처리 중 오류가 발생했습니다.';

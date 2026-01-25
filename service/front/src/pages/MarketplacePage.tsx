@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { categories } from '../services/dummyData';
+import { categories, promptTypeToCategory } from '../services/dummyData';
 import { promptApi, interactionApi } from '../services/api';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
@@ -200,9 +200,11 @@ const MarketplacePage = () => {
     }
   };
 
-  // 카테고리 필터링
+  // 카테고리 필터링 (promptType을 한글 카테고리로 변환하여 비교)
   const filteredPrompts = prompts.filter(prompt => {
-    const matchesCategory = selectedCategory === 'All' || prompt.category === selectedCategory;
+    // prompt.category가 promptType(type_a 등)일 수 있으므로 한글로 변환
+    const promptCategory = promptTypeToCategory[prompt.category] || prompt.category;
+    const matchesCategory = selectedCategory === 'All' || promptCategory === selectedCategory;
     const title = prompt.title || '';
     const description = prompt.description || '';
     const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -312,7 +314,7 @@ const MarketplacePage = () => {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-2">
                         <span className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">
-                          {prompt.category}
+                          {promptTypeToCategory[prompt.category] || prompt.category}
                         </span>
                         {prompt.status === 'ACTIVE' && (
                           <>

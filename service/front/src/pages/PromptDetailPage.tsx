@@ -499,16 +499,42 @@ const PromptDetailPage = () => {
         <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">예시 입력/출력</h2>
           <div className="space-y-8">
-            {prompt.examples.map((example, index) => (
+            {prompt.examples.map((example, index) => {
+              // JSON 형식의 입력값을 파싱하여 보기 좋게 표시
+              const formatInputContent = (content: string | undefined): React.ReactNode => {
+                if (!content) return '입력 없음';
+                try {
+                  const parsed = JSON.parse(content);
+                  if (typeof parsed === 'object' && parsed !== null) {
+                    return (
+                      <div className="space-y-2">
+                        {Object.entries(parsed).map(([key, value]) => (
+                          <div key={key} className="flex">
+                            <span className="font-medium text-blue-700 min-w-[80px]">{key}</span>
+                            <span className="text-gray-500 mx-2">:</span>
+                            <span className="text-gray-700">{String(value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return content;
+                } catch {
+                  // JSON 파싱 실패 시 원본 그대로 표시
+                  return content;
+                }
+              };
+
+              return (
               <div key={index} className="bg-white border border-gray-200 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">예시 {index + 1}</h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">입력</h4>
                     <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                      <pre className="text-gray-700 whitespace-pre-wrap text-sm">
-                        {example.input?.content || '입력 없음'}
-                      </pre>
+                      <div className="text-sm">
+                        {formatInputContent(example.input?.content)}
+                      </div>
                     </div>
                   </div>
                   <div>
@@ -521,7 +547,8 @@ const PromptDetailPage = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
         </AnimatedContent>

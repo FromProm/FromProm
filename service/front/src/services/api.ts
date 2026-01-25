@@ -136,6 +136,7 @@ export const promptApi = {
     price: number;
     content: string;
     model: string;
+    nickname?: string;
     inputs: Array<{ key: string; value: string }>;
     examples: Array<{ inputValues: Array<{ key: string; value: string }> }>;
   }) => api.post('/api/prompts/registration', {
@@ -145,6 +146,7 @@ export const promptApi = {
     model: data.model,
     description: data.description,
     content: data.content,
+    nickname: data.nickname,
     inputs: data.inputs,
     examples: data.examples,
   }),

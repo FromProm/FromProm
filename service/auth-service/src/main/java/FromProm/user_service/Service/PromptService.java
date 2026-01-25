@@ -43,11 +43,14 @@ public class PromptService {
         fullPayload.put("PROMPT_INDEX_SK", "USER#" + userId + "#" + now);
         fullPayload.put("type", "PROMPT");
         fullPayload.put("create_user", "USER#" + userId);
+        fullPayload.put("userId", "USER#" + userId);  // Lambda에서 OpenSearch로 동기화할 때 필요
+        fullPayload.put("nickname", dto.getNickname()); // Lambda에서 OpenSearch로 동기화할 때 필요
         fullPayload.put("title", dto.getTitle());
         fullPayload.put("prompt_content", dto.getContent());
         fullPayload.put("prompt_description", dto.getDescription());
         fullPayload.put("price", dto.getPrice());
         fullPayload.put("prompt_type", dto.getPromptType().name());
+        fullPayload.put("category", dto.getPromptType().name()); // Lambda에서 OpenSearch로 동기화할 때 필요
 
         // 2. 3가지 예시 시나리오 구조화
         List<Map<String, Object>> structuredExamples = new ArrayList<>();
@@ -130,11 +133,18 @@ public class PromptService {
             item.put("PROMPT_INDEX_SK", AttributeValue.builder().s((String) payload.get("PROMPT_INDEX_SK")).build());
             item.put("type", AttributeValue.builder().s((String) payload.get("type")).build());
             item.put("create_user", AttributeValue.builder().s((String) payload.get("create_user")).build());
+            item.put("userId", AttributeValue.builder().s((String) payload.get("userId")).build());
+            // nickname이 null일 수 있으므로 체크
+            String nickname = (String) payload.get("nickname");
+            if (nickname != null && !nickname.isEmpty()) {
+                item.put("nickname", AttributeValue.builder().s(nickname).build());
+            }
             item.put("title", AttributeValue.builder().s((String) payload.get("title")).build());
             item.put("prompt_content", AttributeValue.builder().s((String) payload.get("prompt_content")).build());
             item.put("prompt_description", AttributeValue.builder().s((String) payload.get("prompt_description")).build());
             item.put("price", AttributeValue.builder().n(String.valueOf(payload.get("price"))).build());
             item.put("prompt_type", AttributeValue.builder().s((String) payload.get("prompt_type")).build());
+            item.put("category", AttributeValue.builder().s((String) payload.get("category")).build());
             item.put("examples", AttributeValue.builder().l(examplesList).build());
             item.put("examples_s3_url", AttributeValue.builder().s((String) payload.get("examples_s3_url")).build());
             item.put("model", AttributeValue.builder().s((String) payload.get("model")).build());

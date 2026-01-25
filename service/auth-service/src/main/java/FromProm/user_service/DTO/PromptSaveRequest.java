@@ -13,6 +13,7 @@ public class PromptSaveRequest {
     private String model;      // AI 모델 및 버전
     private String description;
     private String content;
+    private String nickname;   // 등록자 닉네임 (OpenSearch 동기화용)
     private List<InputDetail> inputs;
     private List<String> exampleOutputs;
 

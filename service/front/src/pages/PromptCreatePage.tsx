@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { categories, getCategoryModels } from '../services/dummyData';
 import { promptApi } from '../services/api';
+import { useAuthStore } from '../store/authStore';
 import AnimatedContent from '../components/AnimatedContent';
 import SplitText from '../components/SplitText';
 
@@ -27,6 +28,7 @@ interface ExampleInput {
 
 const PromptCreatePage = () => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const alertShownRef = useRef(false);
   
@@ -147,6 +149,7 @@ const PromptCreatePage = () => {
         price: parseInt(formData.price),
         content: formData.content,
         model: formData.model,
+        nickname: user?.nickname || '',
         inputs: inputs,
         examples: examples,
       });

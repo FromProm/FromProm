@@ -5,6 +5,42 @@ import LightRays from '../../components/LightRays';
 import SplitText from '../../components/SplitText';
 import AnimatedContent from '../../components/AnimatedContent';
 
+// Cognito 에러 메시지를 사용자 친화적으로 변환
+const getErrorMessage = (error: any): string => {
+  const rawMessage = error.response?.data || error.message || '';
+  
+  // Cognito 에러 코드/메시지 매핑
+  if (rawMessage.includes('UsernameExistsException') || rawMessage.includes('already exists')) {
+    return '이미 등록된 이메일입니다.';
+  }
+  if (rawMessage.includes('InvalidPasswordException') || rawMessage.includes('Password did not conform')) {
+    return '비밀번호는 8자 이상, 대문자, 소문자, 숫자, 특수문자를 포함해야 합니다.';
+  }
+  if (rawMessage.includes('InvalidParameterException')) {
+    return '입력 정보가 올바르지 않습니다.';
+  }
+  if (rawMessage.includes('CodeMismatchException') || rawMessage.includes('Invalid verification code')) {
+    return '인증 코드가 올바르지 않습니다.';
+  }
+  if (rawMessage.includes('ExpiredCodeException')) {
+    return '인증 코드가 만료되었습니다. 재전송해주세요.';
+  }
+  if (rawMessage.includes('LimitExceededException')) {
+    return '요청 횟수가 초과되었습니다. 잠시 후 다시 시도해주세요.';
+  }
+  if (rawMessage.includes('TooManyRequestsException')) {
+    return '너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.';
+  }
+  if (rawMessage.includes('UserNotFoundException')) {
+    return '사용자를 찾을 수 없습니다.';
+  }
+  if (rawMessage.includes('NotAuthorizedException')) {
+    return '인증에 실패했습니다.';
+  }
+  
+  return '오류가 발생했습니다. 다시 시도해주세요.';
+};
+
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
     nickname: '',
@@ -37,8 +73,7 @@ const RegisterPage = () => {
       setIsSignUpComplete(true);
       alert('회원가입이 완료되었습니다. 이메일로 전송된 인증 코드를 입력해주세요.');
     } catch (error: any) {
-      const message = error.response?.data || '회원가입에 실패했습니다.';
-      alert(message);
+      alert(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -60,8 +95,7 @@ const RegisterPage = () => {
       alert('이메일 인증이 완료되었습니다! 로그인 페이지로 이동합니다.');
       navigate('/auth/login');
     } catch (error: any) {
-      const message = error.response?.data || '인증에 실패했습니다.';
-      alert(message);
+      alert(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -73,8 +107,7 @@ const RegisterPage = () => {
       await userApi.resendCode(formData.email);
       alert('인증 코드가 재전송되었습니다.');
     } catch (error: any) {
-      const message = error.response?.data || '코드 재전송에 실패했습니다.';
-      alert(message);
+      alert(getErrorMessage(error));
     }
   };
 
@@ -280,7 +313,7 @@ const RegisterPage = () => {
                       className="mt-1 w-full px-3 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       placeholder="••••••••"
                     />
-                    <p className="mt-1 text-xs text-gray-400">8자 이상, 영문/숫자/특수문자 포함</p>
+                    <p className="mt-1 text-xs text-gray-400">8자 이상, 대문자를 포함한 영문/숫자/특수문자 포함</p>
                   </div>
 
                   {/* 비밀번호 확인 */}

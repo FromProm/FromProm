@@ -336,13 +336,13 @@ class StrandsSupervisorAgent:
     ):
         """평가 완료 이메일 발송"""
         try:
-            # PK에서 UUID 추출 (PROMPT#uuid -> uuid)
-            pk = job_request.PK
-            if not pk or not pk.startswith("PROMPT#"):
-                logger.warning(f"[{execution_id}] ⚠️ Invalid PK format: {pk}")
+            # create_user에서 USER# prefix 제거하여 user_id 추출
+            create_user = job_request.create_user
+            if not create_user or not create_user.startswith("USER#"):
+                logger.warning(f"[{execution_id}] ⚠️ Invalid create_user format: {create_user}")
                 return
 
-            user_id = pk.replace("PROMPT#", "")
+            user_id = create_user.replace("USER#", "")
             logger.info(f"[{execution_id}] 📧 Preparing to send completion email for user_id: {user_id}")
 
             # 1. User ID로 이메일 조회

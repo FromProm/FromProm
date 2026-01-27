@@ -74,8 +74,9 @@ class JobCreateRequest(BaseModel):
     title: Optional[str] = Field(None, description="프롬프트 제목 (WAS 전달용)")
     description: Optional[str] = Field(None, description="프롬프트 설명 (WAS 전달용)")
     user_id: Optional[str] = Field(None, description="사용자 ID (SB에서 전달)")
-    # DynamoDB PK 필드 (이메일 조회용)
+    # DynamoDB 필드
     PK: Optional[str] = Field(None, description="DynamoDB PK (PROMPT#uuid 형식)")
+    create_user: Optional[str] = Field(None, description="생성자 (USER#uuid 형식)")
     # DynamoDB examples 필드 (변환용)
     examples: Optional[List[DynamoDBExampleInput]] = Field(None, description="DynamoDB 예시 형식")
 

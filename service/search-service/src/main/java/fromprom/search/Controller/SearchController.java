@@ -168,7 +168,7 @@ public class SearchController {
     }
 
     /**
-     * 프롬프트 상세 + 댓글 통합 조회ㅇㅇ
+     * 프롬프트 상세 + 댓글 통합 조회ㅇ
      * GET /api/search/prompt/{promptId}/detail
      */
     @GetMapping("/prompt/{promptId}/detail")

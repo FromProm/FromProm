@@ -476,7 +476,7 @@ class DynamoDBS3Repository(BaseRepository):
             # 2. TYPE_B_IMAGE인 경우 이미지도 S3에 저장 (TODO: 실제 이미지 데이터 처리)
             # 현재는 URL만 생성, 실제 이미지 업로드는 별도 처리 필요
             
-            # 3. DynamoDB에 새 스키마로 저장ㅇㅇ
+            # 3. DynamoDB에 새 스키마로 저장ㅇ
             dynamodb_record = convert_job_to_dynamodb_record(
                 job=job,
                 title=title,

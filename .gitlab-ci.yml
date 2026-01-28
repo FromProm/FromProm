@@ -197,6 +197,7 @@ sonarqube-auth:
     - export PATH="$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
   script:
     - cd service/auth-service
+    - chmod +x gradlew
     - ./gradlew build -x test
     - sonar-scanner -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
   allow_failure: true
@@ -224,6 +225,7 @@ sonarqube-search:
     - export PATH="$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
   script:
     - cd service/search-service
+    - chmod +x gradlew
     - ./gradlew build -x test
     - sonar-scanner -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
   allow_failure: true

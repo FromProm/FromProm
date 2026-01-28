@@ -155,7 +155,7 @@ test-infra-connection:
     - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
 
 # ==========================================
-# 6-8. SonarQube (SAST)
+# 6-8. SonarQube (SAST) - 서비스별 분리
 # ==========================================
 sonarqube-ai:
   stage: sast
@@ -163,44 +163,74 @@ sonarqube-ai:
     name: sonarsource/sonar-scanner-cli:latest
     entrypoint: [""]
   variables:
-    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
-    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
   cache:
-    key: "${CI_JOB_NAME}"
+    key: "sonar-ai-${CI_COMMIT_REF_SLUG}"
     paths:
       - .sonar/cache
   script:
-    # - cd service/ai-service
+    - cd service/ai-service
     - sonar-scanner -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
   allow_failure: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
       changes:
-        - "service/**/*"
+        - "service/ai-service/**/*"
 
-# sonarqube-auth:
-#   stage: sast
-#   image: gradle:8.5-jdk17
-#   script:
-#     - cd service/auth-service
-#     - ./gradlew test jacocoTestReport sonarqube -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
-#   allow_failure: true
-#   rules:
-#     - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
-#       changes:
-#         - "service/auth-service/**/*"
+sonarqube-auth:
+  stage: sast
+  image: gradle:8.5-jdk17
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  cache:
+    key: "sonar-auth-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - .sonar/cache
+      - service/auth-service/.gradle/
+  before_script:
+    # sonar-scanner 설치
+    - apt-get update && apt-get install -y unzip curl
+    - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+    - unzip -q sonar-scanner.zip
+    - export PATH="$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
+  script:
+    - cd service/auth-service
+    - ./gradlew build -x test
+    - sonar-scanner -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
+  allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "service/auth-service/**/*"
 
-# sonarqube-search:
-#   stage: sast
-#   image: gradle:8.5-jdk17
-#   script:
-#     - cd service/search-service
-#     - ./gradlew test jacocoTestReport sonarqube -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
-#   allow_failure: true
-#   rules:
-#     - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
-#       changes:
-#         - "service/search-service/**/*"
+sonarqube-search:
+  stage: sast
+  image: gradle:8.5-jdk17
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+    GIT_DEPTH: "0"
+  cache:
+    key: "sonar-search-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - .sonar/cache
+      - service/search-service/.gradle/
+  before_script:
+    # sonar-scanner 설치
+    - apt-get update && apt-get install -y unzip curl
+    - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+    - unzip -q sonar-scanner.zip
+    - export PATH="$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
+  script:
+    - cd service/search-service
+    - ./gradlew build -x test
+    - sonar-scanner -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
+  allow_failure: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
+      changes:
+        - "service/search-service/**/*"
 
 # ==========================================
 # 9. Frontend Deploy

@@ -191,7 +191,7 @@ sonarqube-auth:
   script:
     - cd service/auth-service
     - chmod +x gradlew
-    - ./gradlew sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
+    - ./gradlew classes sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
   allow_failure: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "feature/sonartest"'
@@ -211,7 +211,7 @@ sonarqube-search:
   script:
     - cd service/search-service
     - chmod +x gradlew
-    - ./gradlew sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
+    - ./gradlew classes sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
   allow_failure: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "feature/sonartest"'

@@ -191,8 +191,8 @@ sonarqube-auth:
   script:
     - cd service/auth-service
     - chmod +x gradlew
-    - ./gradlew classes sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
-  allow_failure: true
+    - ./gradlew classes sonar -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN -Dsonar.qualitygate.wait=true
+  allow_failure: false
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "feature/sonartest"'
       changes:
@@ -264,7 +264,7 @@ update-manifest-auth:
   # extends를 쓰되, Secret 업데이트 로직 때문에 script를 override 하거나 before_script에 추가
   stage: update-manifest
   image: amazon/aws-cli:latest # kubectl 설치 필요로 인해 aws-cli 이미지 사용
-  needs: ["build-auth-service"]
+  needs: ["build-auth-service", "sonarqube-auth"]
   before_script:
     - yum install -y git
     - curl -LO "https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl" && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl

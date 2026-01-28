@@ -19,7 +19,7 @@ import java.util.Map;
 public class UserController {
     private final UserService userService;
 
-    // 회원가입ㅇ
+    // 회원가입
     @PostMapping("/signup")
     public ResponseEntity<String> signUp(@RequestBody UserSignUpRequest request) {
         try {

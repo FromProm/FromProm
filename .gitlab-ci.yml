@@ -180,9 +180,7 @@ sonarqube-ai:
 
 sonarqube-auth:
   stage: sast
-  image:
-    name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]
+  image: gradle:8.5-jdk17
   variables:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
     GIT_DEPTH: "0"
@@ -190,8 +188,14 @@ sonarqube-auth:
     key: "sonar-auth-${CI_COMMIT_REF_SLUG}"
     paths:
       - .sonar/cache
+  before_script:
+    - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+    - unzip -q sonar-scanner.zip
+    - export PATH="$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
   script:
     - cd service/auth-service
+    - chmod +x gradlew
+    - ./gradlew classes -x test
     - sonar-scanner -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
   allow_failure: true
   rules:
@@ -201,9 +205,7 @@ sonarqube-auth:
 
 sonarqube-search:
   stage: sast
-  image:
-    name: sonarsource/sonar-scanner-cli:latest
-    entrypoint: [""]
+  image: gradle:8.5-jdk17
   variables:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
     GIT_DEPTH: "0"
@@ -211,8 +213,14 @@ sonarqube-search:
     key: "sonar-search-${CI_COMMIT_REF_SLUG}"
     paths:
       - .sonar/cache
+  before_script:
+    - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+    - unzip -q sonar-scanner.zip
+    - export PATH="$PWD/sonar-scanner-5.0.1.3006-linux/bin:$PATH"
   script:
     - cd service/search-service
+    - chmod +x gradlew
+    - ./gradlew classes -x test
     - sonar-scanner -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
   allow_failure: true
   rules:

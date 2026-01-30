@@ -14,9 +14,12 @@ interface PromptDetail {
   description: string;
   price: number;
   promptType: string;
+  category?: string;
   model: string;
   status: string;
-  createUser: string;
+  userId: string;        // API 응답 필드명
+  createUser?: string;   // 하위 호환성
+  nickname?: string;
   likeCount: number;
   commentCount: number;
   bookmarkCount: number;
@@ -81,9 +84,20 @@ const PurchasePage = () => {
     setIsProcessing(true);
 
     try {
+      // 판매자 ID 추출 (userId 또는 createUser 필드 사용)
+      const rawSellerId = prompt.userId || prompt.createUser || '';
+      const sellerSub = rawSellerId.replace('USER#', '');
+      
+      // 판매자 ID 유효성 검사
+      if (!sellerSub || sellerSub.trim() === '') {
+        alert('판매자 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.');
+        setIsProcessing(false);
+        return;
+      }
+      
       // 단일 프롬프트 구매 API 호출
       await creditApi.purchasePrompt({
-        sellerSub: prompt.createUser?.replace('USER#', '') || '',
+        sellerSub: sellerSub,
         promptPrice: prompt.price,
         promptTitle: prompt.title,
         promptId: prompt.promptId,

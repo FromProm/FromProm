@@ -656,8 +656,16 @@ const PromptDetailPage = () => {
                   
                   setIsPurchasing(true);
                   try {
+                    // 판매자 ID 추출 및 유효성 검사
+                    const sellerSub = (prompt.userId || '').replace('USER#', '');
+                    if (!sellerSub || sellerSub.trim() === '') {
+                      alert('판매자 정보를 확인할 수 없습니다. 잠시 후 다시 시도해주세요.');
+                      setIsPurchasing(false);
+                      return;
+                    }
+                    
                     await creditApi.purchasePrompt({
-                      sellerSub: prompt.userId || '',
+                      sellerSub: sellerSub,
                       promptPrice: prompt.price,
                       promptTitle: prompt.title,
                       promptId: prompt.promptId,

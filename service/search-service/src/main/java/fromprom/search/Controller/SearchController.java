@@ -45,9 +45,17 @@ public class SearchController {
                 .collect(Collectors.toList());
         Map<String, PromptStats> statsMap = interactionService.getPromptStatsBatch(promptIds);
         
-        // 결과에 통계 정보 병합
+        // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
+        List<String> userIdsNeedingNickname = results.stream()
+                .filter(p -> p.getNickname() == null || p.getNickname().isEmpty())
+                .map(PromptDocument::getUserId)
+                .filter(id -> id != null && !id.isEmpty())
+                .collect(Collectors.toList());
+        Map<String, String> nicknameMap = interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
+        
+        // 결과에 통계 정보 및 닉네임 병합
         List<Map<String, Object>> enrichedResults = results.stream()
-                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId))
+                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId, nicknameMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -131,9 +139,17 @@ public class SearchController {
                 .collect(Collectors.toList());
         Map<String, PromptStats> statsMap = interactionService.getPromptStatsBatch(promptIds);
         
-        // 결과에 통계 정보 병합
+        // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
+        List<String> userIdsNeedingNickname = results.stream()
+                .filter(p -> p.getNickname() == null || p.getNickname().isEmpty())
+                .map(PromptDocument::getUserId)
+                .filter(id -> id != null && !id.isEmpty())
+                .collect(Collectors.toList());
+        Map<String, String> nicknameMap = interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
+        
+        // 결과에 통계 정보 및 닉네임 병합
         List<Map<String, Object>> enrichedResults = results.stream()
-                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId))
+                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId, nicknameMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -159,7 +175,17 @@ public class SearchController {
         
         // DynamoDB에서 통계 정보 가져오기
         PromptStats stats = interactionService.getPromptStats(promptId);
-        Map<String, Object> enrichedPrompt = enrichPromptWithStats(prompt, stats, userId);
+        
+        // 닉네임 조회
+        Map<String, String> nicknameMap = new HashMap<>();
+        if (prompt.getNickname() == null || prompt.getNickname().isEmpty()) {
+            String nickname = interactionService.getUserNickname(prompt.getUserId());
+            if (nickname != null) {
+                nicknameMap.put(prompt.getUserId(), nickname);
+            }
+        }
+        
+        Map<String, Object> enrichedPrompt = enrichPromptWithStats(prompt, stats, userId, nicknameMap);
         
         return ResponseEntity.ok(Map.of(
             "success", true,
@@ -185,7 +211,16 @@ public class SearchController {
         PromptStats stats = interactionService.getPromptStats(promptId);
         List<Comment> comments = interactionService.getComments(promptId);
         
-        Map<String, Object> enrichedPrompt = enrichPromptWithStats(prompt, stats, userId);
+        // 닉네임 조회
+        Map<String, String> nicknameMap = new HashMap<>();
+        if (prompt.getNickname() == null || prompt.getNickname().isEmpty()) {
+            String nickname = interactionService.getUserNickname(prompt.getUserId());
+            if (nickname != null) {
+                nicknameMap.put(prompt.getUserId(), nickname);
+            }
+        }
+        
+        Map<String, Object> enrichedPrompt = enrichPromptWithStats(prompt, stats, userId, nicknameMap);
         
         return ResponseEntity.ok(Map.of(
             "success", true,
@@ -272,8 +307,16 @@ public class SearchController {
                 .collect(Collectors.toList());
         Map<String, PromptStats> statsMap = interactionService.getPromptStatsBatch(promptIds);
         
+        // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
+        List<String> userIdsNeedingNickname = results.stream()
+                .filter(p -> p.getNickname() == null || p.getNickname().isEmpty())
+                .map(PromptDocument::getUserId)
+                .filter(id -> id != null && !id.isEmpty())
+                .collect(Collectors.toList());
+        Map<String, String> nicknameMap = interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
+        
         List<Map<String, Object>> enrichedResults = results.stream()
-                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId))
+                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId, nicknameMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -305,8 +348,16 @@ public class SearchController {
         Map<String, PromptStats> statsMap = interactionService.getPromptStatsBatch(
                 prompts.stream().map(PromptDocument::getPromptId).collect(Collectors.toList()));
         
+        // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
+        List<String> userIdsNeedingNickname = prompts.stream()
+                .filter(p -> p.getNickname() == null || p.getNickname().isEmpty())
+                .map(PromptDocument::getUserId)
+                .filter(id -> id != null && !id.isEmpty())
+                .collect(Collectors.toList());
+        Map<String, String> nicknameMap = interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
+        
         List<Map<String, Object>> enrichedResults = prompts.stream()
-                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId))
+                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId, nicknameMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -338,8 +389,16 @@ public class SearchController {
         Map<String, PromptStats> statsMap = interactionService.getPromptStatsBatch(
                 prompts.stream().map(PromptDocument::getPromptId).collect(Collectors.toList()));
         
+        // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
+        List<String> userIdsNeedingNickname = prompts.stream()
+                .filter(p -> p.getNickname() == null || p.getNickname().isEmpty())
+                .map(PromptDocument::getUserId)
+                .filter(id -> id != null && !id.isEmpty())
+                .collect(Collectors.toList());
+        Map<String, String> nicknameMap = interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
+        
         List<Map<String, Object>> enrichedResults = prompts.stream()
-                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId))
+                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId, nicknameMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -353,7 +412,7 @@ public class SearchController {
      * OpenSearch 프롬프트 데이터에 DynamoDB 통계 및 기본 정보 병합
      * DynamoDB 데이터를 우선 사용 (더 정확한 원본 데이터)
      */
-    private Map<String, Object> enrichPromptWithStats(PromptDocument prompt, PromptStats stats, String userId) {
+    private Map<String, Object> enrichPromptWithStats(PromptDocument prompt, PromptStats stats, String userId, Map<String, String> nicknameMap) {
         Map<String, Object> result = new HashMap<>();
         
         // 기본 ID
@@ -373,7 +432,21 @@ public class SearchController {
         result.put("category", prompt.getCategory());
         result.put("promptType", prompt.getPromptType());
         result.put("userId", prompt.getUserId());
-        result.put("nickname", prompt.getNickname());
+        
+        // 닉네임: OpenSearch에 있으면 사용, 없으면 nicknameMap에서 조회
+        String nickname = prompt.getNickname();
+        if (nickname == null || nickname.isEmpty()) {
+            // nicknameMap에서 조회 (USER# 접두사 있는 버전과 없는 버전 모두 시도)
+            String promptUserId = prompt.getUserId();
+            if (promptUserId != null && nicknameMap != null) {
+                nickname = nicknameMap.get(promptUserId);
+                if (nickname == null) {
+                    nickname = nicknameMap.get(promptUserId.replace("USER#", ""));
+                }
+            }
+        }
+        result.put("nickname", nickname);
+        
         result.put("status", prompt.getStatus());
         result.put("price", prompt.getPrice());
         result.put("createdAt", prompt.getCreatedAt());

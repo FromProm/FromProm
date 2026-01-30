@@ -290,4 +290,92 @@ public class InteractionService {
         }
         return 0;
     }
+
+    /**
+     * 사용자 닉네임 조회 (userId로)
+     */
+    public String getUserNickname(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return null;
+        }
+        
+        // userId가 "USER#" 접두사 없이 들어올 수 있으므로 정규화
+        String userPK = userId.startsWith("USER#") ? userId : "USER#" + userId;
+
+        try {
+            GetItemResponse response = dynamoDbClient.getItem(GetItemRequest.builder()
+                    .tableName(tableName)
+                    .key(Map.of(
+                            "PK", AttributeValue.builder().s(userPK).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()
+                    ))
+                    .projectionExpression("nickname")
+                    .build());
+
+            if (response.hasItem()) {
+                return getStringValue(response.item(), "nickname");
+            }
+        } catch (Exception e) {
+            log.error("사용자 닉네임 조회 실패: {}", e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * 여러 사용자의 닉네임 일괄 조회 (N+1 문제 방지)
+     */
+    public Map<String, String> getUserNicknamesBatch(List<String> userIds) {
+        Map<String, String> nicknameMap = new HashMap<>();
+
+        if (userIds == null || userIds.isEmpty()) {
+            return nicknameMap;
+        }
+
+        // 중복 제거 및 정규화
+        List<String> uniqueUserIds = userIds.stream()
+                .filter(id -> id != null && !id.isEmpty())
+                .map(id -> id.startsWith("USER#") ? id : "USER#" + id)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (uniqueUserIds.isEmpty()) {
+            return nicknameMap;
+        }
+
+        try {
+            // BatchGetItem 요청 생성
+            List<Map<String, AttributeValue>> keys = uniqueUserIds.stream()
+                    .map(id -> Map.of(
+                            "PK", AttributeValue.builder().s(id).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()
+                    ))
+                    .collect(Collectors.toList());
+
+            KeysAndAttributes keysAndAttributes = KeysAndAttributes.builder()
+                    .keys(keys)
+                    .projectionExpression("PK, nickname")
+                    .build();
+
+            BatchGetItemResponse response = dynamoDbClient.batchGetItem(BatchGetItemRequest.builder()
+                    .requestItems(Map.of(tableName, keysAndAttributes))
+                    .build());
+
+            // 결과 파싱
+            List<Map<String, AttributeValue>> items = response.responses().get(tableName);
+            if (items != null) {
+                for (Map<String, AttributeValue> item : items) {
+                    String pk = item.get("PK").s();
+                    String nickname = getStringValue(item, "nickname");
+                    nicknameMap.put(pk, nickname);
+                    // USER# 없는 버전도 저장 (편의성)
+                    nicknameMap.put(pk.replace("USER#", ""), nickname);
+                }
+            }
+        } catch (Exception e) {
+            log.error("사용자 닉네임 일괄 조회 실패: {}", e.getMessage());
+        }
+
+        return nicknameMap;
+    }
 }

@@ -28,7 +28,7 @@ interface ExampleInput {
 
 const PromptCreatePage = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, userInfo, fetchUserInfo } = useAuthStore();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const alertShownRef = useRef(false);
   
@@ -78,8 +78,10 @@ const PromptCreatePage = () => {
       }
     } else {
       setIsAuthenticated(true);
+      // 사용자 정보 가져오기 (nickname 포함)
+      fetchUserInfo();
     }
-  }, [navigate]);
+  }, [navigate, fetchUserInfo]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -149,7 +151,7 @@ const PromptCreatePage = () => {
         price: parseInt(formData.price),
         content: formData.content,
         model: formData.model,
-        nickname: user?.nickname || '',
+        nickname: userInfo?.nickname || '',
         inputs: inputs,
         examples: examples,
       });

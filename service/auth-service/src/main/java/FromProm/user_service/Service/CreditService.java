@@ -165,12 +165,20 @@ public class CreditService {
                 .build();
     }
     public void transferCreditForPromptPurchase(String buyerAuthHeader, String sellerSub, int promptPrice, String promptTitle) {
+        // 판매자 ID 유효성 검사
+        if (sellerSub == null || sellerSub.trim().isEmpty()) {
+            throw new RuntimeException("판매자 정보가 유효하지 않습니다.");
+        }
+        
         String buyerSub = getUserIdFromToken(buyerAuthHeader);
+        
+        // 판매자 ID 형식 정규화 (USER# 접두사 추가)
+        String normalizedSellerSub = sellerSub.startsWith("USER#") ? sellerSub : "USER#" + sellerSub;
         
         // 1. 구매자와 판매자 정보 조회
         User buyer = userRepository.findUser(buyerSub)
                 .orElseThrow(() -> new RuntimeException("구매자를 찾을 수 없습니다."));
-        User seller = userRepository.findUser(sellerSub)
+        User seller = userRepository.findUser(normalizedSellerSub)
                 .orElseThrow(() -> new RuntimeException("판매자를 찾을 수 없습니다."));
 
         // 2. 구매자 잔액 확인
@@ -209,7 +217,7 @@ public class CreditService {
         // 6. 판매자 크레딧 히스토리 저장 (단일 프롬프트)
         String sellerUniqueSK = "CREDIT#" + now + "#" + UUID.randomUUID().toString().substring(0, 8);
         Credit sellerHistory = Credit.builder()
-                .PK(sellerSub)
+                .PK(normalizedSellerSub)
                 .SK(sellerUniqueSK)
                 .type("CREDIT")
                 .amount(promptPrice)

@@ -169,6 +169,7 @@ sonarqube-ai:
     key: "sonar-ai-${CI_COMMIT_REF_SLUG}"
     paths:
       - .sonar/cache
+  resource_group: sonarqube
   script:
     - cd service/ai-service
     - sonar-scanner -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
@@ -188,6 +189,7 @@ sonarqube-auth:
     key: "sonar-auth-${CI_COMMIT_REF_SLUG}"
     paths:
       - .sonar/cache
+  resource_group: sonarqube
   script:
     - cd service/auth-service
     - chmod +x gradlew
@@ -208,6 +210,7 @@ sonarqube-search:
     key: "sonar-search-${CI_COMMIT_REF_SLUG}"
     paths:
       - .sonar/cache
+  resource_group: sonarqube
   script:
     - cd service/search-service
     - chmod +x gradlew

@@ -273,6 +273,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public void withdrawWithToken(String accessToken) {
         // 1. AccessToken으로 Cognito에서 'sub' 조회 (유저 본인 확인)
         GetUserRequest getUserRequest = GetUserRequest.builder()

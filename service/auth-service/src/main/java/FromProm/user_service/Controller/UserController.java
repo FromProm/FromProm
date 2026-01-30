@@ -17,7 +17,7 @@ import java.util.Map;
 public class UserController {
     private final UserService userService;
 
-    // 회원가입!!
+    // 회원가입!
     public ResponseEntity<String> signUp(@RequestBody UserSignUpRequest request) {
         try {
             userService.signUp(request);

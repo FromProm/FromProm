@@ -1,94 +1,30 @@
 package FromProm.user_service.Service;
 
 import FromProm.user_service.DTO.*;
-import FromProm.user_service.Entity.Credit;
 import FromProm.user_service.Entity.User;
-import FromProm.user_service.Repository.CreditRepository;
 import FromProm.user_service.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Map;
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final CognitoIdentityProviderClient cognitoClient;
     private final UserRepository userRepository;
-    private final CreditRepository creditRepository;
-    private final DynamoDbEnhancedClient enhancedClient; // [추가 필요!] 빨간불 방지
 
     @Value("${aws.cognito.clientId}")
     private String clientId;
 
     @Value("${aws.cognito.userPoolId}")
     private String userPoolId;
-
-    // ============================================================
-    // [SonarQube 데모용 코드 - 테스트 후 삭제 필요]
-    // ============================================================
-    
-    // Bug: 하드코딩된 비밀번호 (Security Hotspot)
-    private static final String ADMIN_PASSWORD = "admin123!@#";
-    
-    // Code Smell: 사용되지 않는 변수
-    private String unusedVariable = "이 변수는 사용되지 않습니다";
-    
-    // Code Smell: 빈 메서드
-    public void emptyMethod() {
-        // TODO: 구현 필요
-    }
-    
-    // Bug: NullPointerException 가능성
-    public String unsafeMethod(String input) {
-        return input.toUpperCase(); // input이 null이면 NPE 발생
-    }
-    
-    // Code Smell: 너무 많은 파라미터 (Cognitive Complexity)
-    public void tooManyParams(String a, String b, String c, String d, String e, String f, String g, String h) {
-        System.out.println(a + b + c + d + e + f + g + h);
-    }
-    
-    // Security: SQL Injection 취약점 시뮬레이션 (실제로는 동작 안함)
-    public void vulnerableQuery(String userInput) {
-        String query = "SELECT * FROM users WHERE name = '" + userInput + "'";
-        System.out.println(query); // 실제 실행은 안함
-    }
-    
-    // Code Smell: 중복 코드
-    public int duplicateCode1(int x) {
-        int result = 0;
-        for (int i = 0; i < x; i++) {
-            result += i * 2;
-        }
-        return result;
-    }
-    
-    public int duplicateCode2(int x) {
-        int result = 0;
-        for (int i = 0; i < x; i++) {
-            result += i * 2;
-        }
-        return result;
-    }
-    // ============================================================
-    // [SonarQube 데모용 코드 끝]
-    // ============================================================
 
     // 회원가입
     public void signUp(UserSignUpRequest request) {

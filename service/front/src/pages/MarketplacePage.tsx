@@ -7,6 +7,7 @@ import { usePurchaseStore } from '../store/purchaseStore';
 import { useAuthStore } from '../store/authStore';
 import SplitText from '../components/SplitText';
 import AnimatedContent from '../components/AnimatedContent';
+import TiltCard from '../components/TiltCard';
 
 // 프롬프트 타입 정의 (새로운 API 응답 구조)
 interface PromptItem {
@@ -257,7 +258,7 @@ const MarketplacePage = () => {
               placeholder="프롬프트 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors shadow-lg shadow-blue-500/20"
+              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-900 focus:ring-1 focus:ring-blue-900 transition-colors shadow-lg shadow-blue-500/20"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,6 +295,55 @@ const MarketplacePage = () => {
             {/* 프롬프트 그리드 */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredPrompts.map((prompt, index) => {
+                // 타입별 카드 색상 설정
+                const getCardColors = (category: string) => {
+                  const type = promptTypeToCategory[category] || category;
+                  if (type === '사실 근거 기반' || category === 'type_a') {
+                    // 다홍 파스텔 계열
+                    return {
+                      gradient: 'from-rose-50 via-rose-25 to-white',
+                      hoverGradient: 'group-hover:from-rose-100 group-hover:via-rose-50 group-hover:to-white',
+                      border: 'border-rose-100',
+                      hoverBorder: 'hover:border-rose-500',
+                      shadow: 'shadow-rose-500/5 hover:shadow-rose-500/30',
+                      tag: 'text-gray-700 bg-white border border-rose-400',
+                      borderBottom: 'border-rose-100',
+                      barGradient: 'from-rose-200 to-rose-500',
+                      dotColor: 'bg-rose-500',
+                      dotGlow: 'shadow-rose-400'
+                    };
+                  } else if (type === '글 창작 및 생성' || category === 'type_b_text') {
+                    // 초록 연두 파스텔 계열
+                    return {
+                      gradient: 'from-emerald-50 via-emerald-25 to-white',
+                      hoverGradient: 'group-hover:from-emerald-100 group-hover:via-emerald-50 group-hover:to-white',
+                      border: 'border-emerald-100',
+                      hoverBorder: 'hover:border-emerald-500',
+                      shadow: 'shadow-emerald-500/5 hover:shadow-emerald-500/30',
+                      tag: 'text-gray-700 bg-white border border-emerald-400',
+                      borderBottom: 'border-emerald-100',
+                      barGradient: 'from-emerald-200 to-emerald-500',
+                      dotColor: 'bg-emerald-500',
+                      dotGlow: 'shadow-emerald-400'
+                    };
+                  } else {
+                    // 이미지 생성 - 파란색
+                    return {
+                      gradient: 'from-blue-50 via-blue-25 to-white',
+                      hoverGradient: 'group-hover:from-blue-100 group-hover:via-blue-50 group-hover:to-white',
+                      border: 'border-blue-100',
+                      hoverBorder: 'hover:border-blue-500',
+                      shadow: 'shadow-blue-500/5 hover:shadow-blue-500/30',
+                      tag: 'text-gray-700 bg-white border border-blue-400',
+                      borderBottom: 'border-blue-100',
+                      barGradient: 'from-blue-200 to-blue-500',
+                      dotColor: 'bg-blue-500',
+                      dotGlow: 'shadow-blue-400'
+                    };
+                  }
+                };
+                const colors = getCardColors(prompt.category);
+                
                 return (
                   <AnimatedContent
                     key={prompt.promptId}
@@ -307,42 +357,73 @@ const MarketplacePage = () => {
                     threshold={0.1}
                     delay={index * 0.1}
                   >
-                    <div
-                      className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-blue-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/20 hover:border-blue-300 transition-all cursor-pointer group h-[320px] flex flex-col"
+                    <TiltCard
+                      className={`relative bg-gradient-to-br ${colors.gradient} border-2 ${colors.border} ${colors.hoverBorder} rounded-xl p-5 shadow-lg ${colors.shadow} cursor-pointer group flex flex-col transition-colors duration-300`}
                       onClick={() => navigate(`/prompt/${prompt.promptId}`)}
+                      rotateAmplitude={8}
+                      scaleOnHover={1.03}
                     >
-                    <div className="flex items-start justify-between mb-4">
+                    {/* 상단: 카테고리 + 가격 */}
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">
+                        <span className={`text-xs ${colors.tag} px-2 py-1 rounded-full font-medium`}>
                           {promptTypeToCategory[prompt.category] || prompt.category}
                         </span>
                         {prompt.status === 'ACTIVE' && (
-                          <>
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="text-xs text-green-600 font-medium">Verified</span>
-                          </>
+                          <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                            Verified
+                          </span>
                         )}
                       </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-gray-900">{prompt.price}P</div>
-                      </div>
+                      <div className="text-xl font-bold text-gray-900">{prompt.price}P</div>
                     </div>
 
-                    <h3 className="text-gray-900 text-lg font-semibold mb-2 group-hover:text-blue-900 transition-colors line-clamp-1">
+                    {/* 제목 */}
+                    <h3 className="text-gray-900 text-lg font-bold mb-2 group-hover:text-blue-900 transition-colors line-clamp-1">
                       {prompt.title || '제목 없음'}
                     </h3>
 
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">
+                    {/* 설명 */}
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                       {prompt.description || '설명 없음'}
                     </p>
 
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                      <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">{formatModelName(prompt.model)}</span>
-                      <span className="text-xs text-gray-500">by {prompt.nickname || '익명'}</span>
+                    {/* 성능 점수 섹션 - 크게 강조 */}
+                    {prompt.evaluationMetrics?.finalScore && (
+                      <div className="bg-white/60 rounded-lg p-4 mb-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-700">AI 성능 점수</span>
+                          <span className="text-2xl font-black text-gray-800">
+                            {Math.round(prompt.evaluationMetrics.finalScore)}
+                            <span className="text-sm font-normal text-gray-400">/100</span>
+                          </span>
+                        </div>
+                        <div className="relative w-full h-3 bg-gray-100 rounded-full">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${colors.barGradient}`}
+                            style={{ width: `${prompt.evaluationMetrics.finalScore}%` }}
+                          />
+                          {/* Glow dot at the end - 바 밖으로 튀어나옴 */}
+                          <div 
+                            className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 ${colors.dotColor} rounded-full`}
+                            style={{ 
+                              left: `calc(${prompt.evaluationMetrics.finalScore}% - 8px)`,
+                              boxShadow: `0 0 8px 3px rgba(255, 255, 255, 0.9), 0 0 12px 5px rgba(255, 255, 255, 0.5)`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 모델 + 작성자 */}
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+                      <span className="bg-gray-50 border border-gray-200 px-2.5 py-1 rounded text-xs font-medium text-gray-700">{formatModelName(prompt.model)}</span>
+                      <span className="text-xs">by {prompt.nickname || '익명'}</span>
                     </div>
 
                     {/* 통계 정보 */}
-                    <div className="flex items-center justify-between text-xs text-gray-500 border-t border-blue-200 pt-4">
+                    <div className={`flex items-center justify-between text-xs text-gray-500 border-t ${colors.borderBottom} pt-3`}>
                       <div className="flex items-center space-x-4">
                         <button 
                           onClick={(e) => handleLikeToggle(prompt, e)}
@@ -363,9 +444,9 @@ const MarketplacePage = () => {
                           <span>{prompt.commentCount || 0}</span>
                         </span>
                       </div>
-                      {prompt.evaluationMetrics?.finalScore && prompt.evaluationMetrics.finalScore >= 8 && (
-                        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded text-xs font-medium">
-                          HOT
+                      {(prompt.likeCount || 0) >= 50 && (
+                        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                          🔥 HOT
                         </div>
                       )}
                     </div>
@@ -396,7 +477,7 @@ const MarketplacePage = () => {
                         </>
                       )}
                     </div>
-                    </div>
+                    </TiltCard>
                   </AnimatedContent>
                 );
               })}

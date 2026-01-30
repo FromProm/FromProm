@@ -1,15 +1,88 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
-import LightRays from '../components/LightRays';
-import SplitText from '../components/SplitText';
+import { promptApi } from '../services/api';
+import { promptTypeToCategory } from '../services/dummyData';
+import TextType from '../components/TextType';
+import LightPillar from '../components/LightPillar';
+import TiltCard from '../components/TiltCard';
+
+// 인기 프롬프트 타입
+interface PopularPrompt {
+  promptId: string;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  likeCount: number;
+  nickname: string;
+}
 
 const LandingPage = () => {
   const { isAuthenticated } = useAuthStore();
   const { clearCart } = useCartStore();
   const { clearPurchases } = usePurchaseStore();
+  const [popularPrompts, setPopularPrompts] = useState<PopularPrompt[]>([]);
+  const [isLoadingPrompts, setIsLoadingPrompts] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // 인기 프롬프트 가져오기 (좋아요 50개 이상)
+  useEffect(() => {
+    const fetchPopularPrompts = async () => {
+      try {
+        const response = await promptApi.getAllPrompts(100);
+        if (response.data.success) {
+          const filtered = (response.data.prompts || [])
+            .filter((p: PopularPrompt) => (p.likeCount || 0) >= 50)
+            .sort((a: PopularPrompt, b: PopularPrompt) => (b.likeCount || 0) - (a.likeCount || 0))
+            .slice(0, 10);
+          setPopularPrompts(filtered);
+        }
+      } catch (error) {
+        console.error('Failed to fetch popular prompts:', error);
+      } finally {
+        setIsLoadingPrompts(false);
+      }
+    };
+    fetchPopularPrompts();
+  }, []);
+
+  // 무한 스크롤 애니메이션
+  useEffect(() => {
+    if (!scrollRef.current || popularPrompts.length === 0) return;
+    
+    const scrollContainer = scrollRef.current;
+    let animationId: number;
+    let scrollPosition = 0;
+    const speed = 2.0;
+    
+    const animate = () => {
+      scrollPosition += speed;
+      if (scrollPosition >= scrollContainer.scrollWidth / 2) {
+        scrollPosition = 0;
+      }
+      scrollContainer.scrollLeft = scrollPosition;
+      animationId = requestAnimationFrame(animate);
+    };
+    
+    animationId = requestAnimationFrame(animate);
+    
+    // 호버 시 멈춤
+    const handleMouseEnter = () => cancelAnimationFrame(animationId);
+    const handleMouseLeave = () => { animationId = requestAnimationFrame(animate); };
+    
+    scrollContainer.addEventListener('mouseenter', handleMouseEnter);
+    scrollContainer.addEventListener('mouseleave', handleMouseLeave);
+    
+    return () => {
+      cancelAnimationFrame(animationId);
+      scrollContainer.removeEventListener('mouseenter', handleMouseEnter);
+      scrollContainer.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [popularPrompts]);
 
   const handleLogout = () => {
     localStorage.removeItem('accessToken');
@@ -21,40 +94,47 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-black">
-      {/* 배경 그라데이션 */}
-      <div className="absolute top-0 left-0 right-0 h-screen z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-900/50 via-gray-900/70 to-black" />
-      </div>
-
-      {/* LightRays 효과 - 상단에 고정, 스크롤해도 따라오지 않음 */}
-      <div className="absolute top-0 left-0 right-0 h-screen z-[1]">
-        <LightRays
-          raysOrigin="top-center"
-          raysColor="#ffffff"
-          raysSpeed={1}
-          lightSpread={1}
-          rayLength={3}
-          followMouse={false}
-          fadeDistance={3}
-          saturation={1}
-          mouseInfluence={0.1}
-          noiseAmount={0.1}
-          distortion={0.05}
+    <div className="relative min-h-screen overflow-hidden" style={{ background: 'linear-gradient(180deg, #05050A 0%, #020204 100%)' }}>
+      {/* LightPillar 배경 효과 */}
+      <div className="absolute top-0 left-0 right-0 z-0 opacity-30" style={{ height: '150vh' }}>
+        <LightPillar
+          topColor="#3ACCEF"
+          bottomColor="#3ACCEF"
+          intensity={1}
+          rotationSpeed={0.3}
+          glowAmount={0.002}
+          pillarWidth={3}
+          pillarHeight={0.4}
+          noiseIntensity={0.5}
+          pillarRotation={25}
+          interactive={false}
+          mixBlendMode="screen"
+          quality="high"
         />
+        {/* 아래로 페이드아웃 */}
+        <div className="absolute bottom-0 left-0 right-0 h-64" style={{ background: 'linear-gradient(to bottom, transparent, #020204)' }} />
       </div>
+      
+      {/* 그라데이션 오버레이 */}
+      <div 
+        className="absolute top-0 left-0 right-0 z-[1] pointer-events-none"
+        style={{ 
+          height: '100vh',
+          background: 'radial-gradient(60% 60% at 50% 40%, rgba(124,108,255,0.15), transparent)'
+        }}
+      />
 
       {/* 헤더 */}
-      <header className="relative z-10 border-b border-blue-900/30 bg-blue-900/20 backdrop-blur-xl">
+      <header className="relative z-10 border-b border-slate-800/50 bg-slate-900/30 backdrop-blur-xl">
         <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-14">
             <motion.div
               className="flex items-center space-x-3"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="w-13 h-14 rounded-md overflow-hidden flex items-center justify-center">
+              <div className="w-10 h-9 rounded-md overflow-hidden flex items-center justify-center">
                 {/* 이미지가 있으면 이미지를 사용하고, 없으면 기본 아이콘 사용 */}
                 <img 
                   src="/logo.png" 
@@ -67,7 +147,7 @@ const LandingPage = () => {
                     if (sibling) sibling.style.display = 'flex';
                   }}
                 />
-                <div className="w-10 h-10 bg-white rounded-md flex items-center justify-center" style={{display: 'none'}}>
+                <div className="w-10 h-9 bg-white rounded-md flex items-center justify-center" style={{display: 'none'}}>
                   <span className="text-black font-bold text-base">P</span>
                 </div>
               </div>
@@ -82,29 +162,20 @@ const LandingPage = () => {
             >
               <nav className="hidden md:flex items-center space-x-8">
                 <Link to="/marketplace" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
-                  Platform
+                  Market
                 </Link>
-                <Link to="#" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
-                  Pricing
-                </Link>
-                <Link to="#" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
-                  Docs
+                <Link to="/docs" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
+                  Guide
                 </Link>
               </nav>
 
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
-                  <Link
-                    to="/dashboard"
-                    className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors"
-                  >
-                    Dashboard
-                  </Link>
                   <button
                     onClick={handleLogout}
-                    className="text-gray-300 hover:text-white font-medium text-sm transition-colors"
+                    className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors"
                   >
-                    로그아웃
+                    Logout
                   </button>
                 </div>
               ) : (
@@ -139,165 +210,148 @@ const LandingPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 mb-8">
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 -mb-4">
                 <span className="text-sm font-medium text-blue-300">프롬프트 성능 검증 플랫폼</span>
               </div>
 
-              <h1 className="text-6xl md:text-8xl lg:text-[5.5rem] font-bold mb-8 tracking-tight">
-                <span className="block text-white mb-4 drop-shadow-2xl">
-                  <SplitText
-                    text="프롬프트의 가치를"
-                    className="text-6xl md:text-8xl lg:text-[5.5rem] font-bold text-white drop-shadow-2xl"
-                    delay={50}
-                    duration={0.8}
-                    ease="power3.out"
-                    splitType="chars"
-                    from={{ opacity: 0, y: 40 }}
-                    to={{ opacity: 1, y: 0 }}
-                    threshold={0.1}
-                    rootMargin="-50px"
-                    textAlign="center"
-                    tag="h1"
-                  />
-                </span>
-                <motion.span 
-                  className="block bg-gradient-to-r from-red-500 via-purple-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-lg"
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.5 }}
-                >
-                  수치로 증명합니다
-                </motion.span>
+              <h1 className="mb-0 tracking-tight text-center overflow-visible">
+                <TextType
+                  text={["FROMPROM"]}
+                  className="text-white drop-shadow-2xl"
+                  style={{ 
+                    fontFamily: 'system-ui, -apple-system, sans-serif', 
+                    letterSpacing: '-0.05em',
+                    fontWeight: 900,
+                    fontSize: '8vw',
+                    whiteSpace: 'nowrap',
+                    display: 'inline-flex',
+                    WebkitTextStroke: '2px white'
+                  }}
+                  typingSpeed={180}
+                  pauseDuration={3000}
+                  showCursor
+                  cursorCharacter="_"
+                  cursorClassName="text-white"
+                  deletingSpeed={80}
+                  loop={false}
+                  cursorBlinkDuration={0.5}
+                />
               </h1>
             </motion.div>
 
-            <div className="text-xl md:text-1xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed font-medium">
-              <SplitText
-                text="데이터 기반 성능 검증을 통해 검증된 프롬프트를 제공합니다. 토큰 효율성과 정확도를 동시에 확보하세요."
-                className="text-xl md:text-1xl text-gray-300 leading-relaxed font-medium"
-                delay={30}
-                duration={0.6}
-                ease="power3.out"
-                splitType="words"
-                from={{ opacity: 0, y: 20 }}
-                to={{ opacity: 1, y: 0 }}
-                threshold={0.1}
-                rootMargin="-50px"
-                textAlign="center"
-                tag="p"
-              />
-            </div>
+            <motion.p 
+              className="text-xl md:text-2xl text-gray-200 mt-8 mb-4 max-w-3xl mx-auto leading-relaxed font-medium"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
+              프롬프트의 가치를 <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400 font-extrabold">수치로 증명</span>합니다
+            </motion.p>
 
             {/* CTA 버튼 */}
             <motion.div
-              className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-16"
+              className="flex flex-col sm:flex-row justify-center items-center gap-6 mb-32"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
               <Link
                 to="/marketplace"
-                className="bg-white text-black font-semibold px-8 py-3 rounded-md hover:bg-gray-100 transition-colors text-sm"
+                className="bg-white text-black font-bold px-6 py-2.5 rounded-lg hover:bg-gray-100 transition-all text-base shadow-lg hover:shadow-xl hover:scale-105"
               >
                 프롬프트 둘러보기
               </Link>
 
               <Link
                 to="/prompt/create"
-                className="border border-gray-700 text-white font-medium px-8 py-3 rounded-md hover:border-gray-600 hover:bg-gray-900/50 transition-colors text-sm"
+                className="border-2 border-slate-500 text-white font-semibold px-6 py-2.5 rounded-lg hover:border-white hover:bg-white/10 transition-all text-base"
               >
                 프롬프트 등록하기
               </Link>
             </motion.div>
 
-            {/* 이 달의 인기 프롬프트 Top 5 - 추후 API 연동 시 활성화 */}
-            {/* <div className="max-w-3xl mx-auto">
-              <h2 className="text-3xl font-bold text-white mb-10 text-center">이 달의 인기 프롬프트 Top 5</h2>
-              <div className="space-y-4">
-                {[
-                  { rank: 1, id: "1", title: "GPT-4 코드 리뷰 전문가", category: "사실/정보/근거 요구", views: "12.5K", saves: "2.1K", hearts: "892" },
-                  { rank: 2, id: "2", title: "마케팅 카피 최적화", category: "글 창작 및 생성", views: "8.9K", saves: "1.8K", hearts: "654" },
-                  { rank: 3, id: "3", title: "데이터 분석 인사이트", category: "사실/정보/근거 요구", views: "7.2K", saves: "1.5K", hearts: "523" },
-                  { rank: 4, id: "4", title: "창의적 스토리텔링", category: "글 창작 및 생성", views: "6.8K", saves: "1.2K", hearts: "445" },
-                  { rank: 5, id: "5", title: "AI 아트 프롬프트", category: "이미지 창작 및 생성", views: "5.4K", saves: "987", hearts: "321" }
-                ].map((prompt, index) => (
-                  <motion.div
-                    key={index}
-                    className="bg-gray-900/50 border border-gray-800/50 rounded-lg p-6 backdrop-blur-sm hover:border-gray-700/50 transition-all cursor-pointer group"
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: false, amount: 0.5 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    onClick={() => window.location.href = `/prompt/${prompt.id}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-black text-lg font-bold shadow-lg">
-                          {prompt.rank}
-                        </div>
-                        <div>
-                          <h3 className="text-white text-lg font-semibold mb-1 group-hover:text-gray-200 transition-colors">
-                            {prompt.title}
-                          </h3>
-                          <span className="text-sm text-gray-400 bg-gray-800/50 px-3 py-1 rounded-full">{prompt.category}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-6 text-sm text-gray-400">
-                        <span className="flex items-center space-x-1">
-                          <span>👁</span>
-                          <span>{prompt.views}</span>
-                        </span>
-                        <span className="flex items-center space-x-1">
-                          <span>📌</span>
-                          <span>{prompt.saves}</span>
-                        </span>
-                        <span className="flex items-center space-x-1">
-                          <span>❤️</span>
-                          <span>{prompt.hearts}</span>
-                        </span>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div> */}
           </div>
         </div>
 
-        {/* 신뢰성 섹션 */}
-        <motion.div
-          className="border-t border-gray-800/50 bg-gray-900/20 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 0.8 }}
-        >
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-16">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl font-bold text-white mb-4">
-                Trusted by leading AI teams
-              </h2>
-              <p className="text-gray-400 max-w-2xl mx-auto">
-                Enterprise customers rely on our platform for mission-critical AI applications
-              </p>
+        {/* 이 달의 인기 프롬프트 - 전체 너비 무한 스크롤 캐러셀 */}
+        {!isLoadingPrompts && popularPrompts.length > 0 && (
+          <motion.div
+            className="mt-8 pb-20"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+          >
+            <h2 className="text-4xl font-bold text-white mb-4 text-center">
+              인기 프롬프트
+            </h2>
+            <div className="relative w-full overflow-hidden">
+              {/* 좌우 페이드 효과 */}
+              <div className="absolute left-0 top-0 bottom-0 w-48 bg-gradient-to-r from-black to-transparent z-10 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-48 bg-gradient-to-l from-black to-transparent z-10 pointer-events-none" />
+              
+              {/* 스크롤 컨테이너 */}
+              <div
+                ref={scrollRef}
+                className="flex gap-10 overflow-x-hidden py-8 px-6"
+                style={{ scrollBehavior: 'auto' }}
+              >
+                {/* 무한 스크롤을 위해 아이템 복제 */}
+                {[...popularPrompts, ...popularPrompts].map((prompt, index) => (
+                  <TiltCard
+                    key={`${prompt.promptId}-${index}`}
+                    rotateAmplitude={10}
+                    scaleOnHover={1.02}
+                  >
+                    <Link
+                      to={`/prompt/${prompt.promptId}`}
+                      className="block flex-shrink-0 w-[420px] min-h-[240px] bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-md border border-slate-700/60 rounded-2xl p-8 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group"
+                    >
+                      <div className="flex items-center gap-3 mb-5">
+                        <span className="text-sm text-slate-200 bg-slate-700/60 px-4 py-2 rounded-lg font-medium">
+                          {promptTypeToCategory[prompt.category] || prompt.category}
+                        </span>
+                        <span className="text-sm text-red-400 flex items-center gap-1.5 font-medium">
+                          ❤️ {prompt.likeCount}
+                        </span>
+                      </div>
+                      <h3 className="text-2xl text-white font-bold mb-4 line-clamp-1 group-hover:text-indigo-300 transition-colors">
+                        {prompt.title}
+                      </h3>
+                      <p className="text-slate-400 text-lg line-clamp-2 mb-5 leading-relaxed">
+                        {prompt.description}
+                      </p>
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
+                        <span className="text-base text-slate-500">by {prompt.nickname || '익명'}</span>
+                        <span className="text-indigo-400 font-bold text-xl">{prompt.price}P</span>
+                      </div>
+                    </Link>
+                  </TiltCard>
+                ))}
+              </div>
             </div>
+          </motion.div>
+        )}
 
-            {/* 가상의 로고들 */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center opacity-50">
-              <div className="bg-gray-800/30 h-12 rounded flex items-center justify-center">
-                <span className="text-gray-500 font-semibold text-sm">TechCorp</span>
-              </div>
-              <div className="bg-gray-800/30 h-12 rounded flex items-center justify-center">
-                <span className="text-gray-500 font-semibold text-sm">DataFlow</span>
-              </div>
-              <div className="bg-gray-800/30 h-12 rounded flex items-center justify-center">
-                <span className="text-gray-500 font-semibold text-sm">AI Labs</span>
-              </div>
-              <div className="bg-gray-800/30 h-12 rounded flex items-center justify-center">
-                <span className="text-gray-500 font-semibold text-sm">CloudTech</span>
-              </div>
-            </div>
+        {/* 인기 프롬프트 로딩 중 */}
+        {isLoadingPrompts && (
+          <div className="mt-16 pb-20 text-center">
+            <div className="w-10 h-10 mx-auto border-2 border-slate-600 border-t-white rounded-full animate-spin"></div>
           </div>
-        </motion.div>
+        )}
+
+        {/* 인기 프롬프트가 없을 때 */}
+        {!isLoadingPrompts && popularPrompts.length === 0 && (
+          <motion.div
+            className="mt-16 pb-20 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <p className="text-slate-500 text-lg">아직 인기 프롬프트가 없습니다</p>
+          </motion.div>
+        )}
+
+        {/* 신뢰성 섹션 */}
       </main>
     </div>
   );

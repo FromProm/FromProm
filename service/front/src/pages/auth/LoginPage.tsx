@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { userApi } from '../../services/api';
-import LightRays from '../../components/LightRays';
+import LightPillar from '../../components/LightPillar';
 import SplitText from '../../components/SplitText';
 import AnimatedContent from '../../components/AnimatedContent';
 
@@ -40,35 +40,39 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-black overflow-hidden">
-      {/* 배경 그라데이션 */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-gray-900 to-black" />
-      </div>
-
-      {/* LightRays 효과 */}
-      <div className="absolute inset-0 z-[1]" style={{ width: '100%', height: '100%' }}>
-        <LightRays
-          raysOrigin="top-center"
-          raysColor="#ffffff"
-          raysSpeed={1}
-          lightSpread={1}
-          rayLength={3}
-          followMouse={false}
-          fadeDistance={3}
-          saturation={1}
-          mouseInfluence={0.1}
-          noiseAmount={0.1}
-          distortion={0.05}
+    <div className="relative min-h-screen overflow-hidden" style={{ background: 'linear-gradient(180deg, #05050A 0%, #020204 100%)' }}>
+      {/* LightPillar 배경 효과 */}
+      <div className="absolute inset-0 z-0 opacity-30">
+        <LightPillar
+          topColor="#3ACCEF"
+          bottomColor="#3ACCEF"
+          intensity={1}
+          rotationSpeed={0.3}
+          glowAmount={0.002}
+          pillarWidth={3}
+          pillarHeight={0.4}
+          noiseIntensity={0.5}
+          pillarRotation={25}
+          interactive={false}
+          mixBlendMode="screen"
+          quality="high"
         />
       </div>
+      
+      {/* 그라데이션 오버레이 */}
+      <div 
+        className="absolute inset-0 z-[1] pointer-events-none"
+        style={{ 
+          background: 'radial-gradient(60% 60% at 50% 40%, rgba(124,108,255,0.15), transparent)'
+        }}
+      />
 
       <div className="relative z-10 flex flex-col justify-center py-12 sm:px-6 lg:px-8 min-h-screen">
         {/* 상단 로고와 제목 */}
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <div className="flex items-center justify-center mb-8">
             <Link to="/" className="flex items-center space-x-2 mr-4">
-              <div className="w-10 h-10 rounded-md overflow-hidden flex items-center justify-center shadow-lg">
+              <div className="w-11 h-10 rounded-md overflow-hidden flex items-center justify-center shadow-lg">
                 {/* 이미지가 있으면 이미지를 사용하고, 없으면 기본 아이콘 사용 */}
                 <img
                   src="/logo.png"
@@ -201,7 +205,7 @@ const LoginPage = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 hover:from-cyan-600 hover:via-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {isLoading ? '로그인 중...' : '로그인'}
                 </button>

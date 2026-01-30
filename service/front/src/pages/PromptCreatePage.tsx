@@ -348,9 +348,6 @@ const PromptCreatePage = () => {
                     placeholder={"프롬프트를 작성하세요. 변수는 {{변수명}} 형식으로 입력하세요.\n\n예시:\n{{주제}}에 대해 {{형식}}으로 설명해주세요."}
                     className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none font-mono"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    구매 후에만 공개되는 프롬프트입니다.
-                  </p>
                   
                   {/* 추출된 변수 표시 */}
                   {extractedVariables.length > 0 && (

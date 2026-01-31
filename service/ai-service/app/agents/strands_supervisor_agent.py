@@ -145,7 +145,7 @@ class StrandsSupervisorAgent:
                 "example_inputs": [inp.dict() for inp in job_request.example_inputs],
                 "execution_results": execution_data["execution_results"],
                 "embeddings": execution_data.get("embeddings", {}),
-                "recommended_model": job_request.recommended_model.value if job_request.recommended_model else ""
+                "recommended_model": job_request.recommended_model.value if job_request.recommended_model else None
             }
 
             logger.info(f"[{execution_id}]    Executing {len(agent_types)} workers in parallel...")

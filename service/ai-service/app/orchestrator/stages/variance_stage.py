@@ -58,14 +58,19 @@ class VarianceStage:
         try:
             # 선택된 모델에 대한 비교 모델 가져오기
             if not recommended_model:
-                logger.warning("No recommended model specified")
-                return MetricScore(score=50.0, details={'error': 'no_model_specified'})
-            
-            # RecommendedModel enum을 문자열로 변환
-            if hasattr(recommended_model, 'value'):
-                model_str = recommended_model.value
+                # 기본 모델 사용
+                from app.core.config import settings
+                if prompt_type == PromptType.TYPE_B_IMAGE:
+                    model_str = settings.default_models.get("type_b_image", "amazon.nova-canvas-v1:0")
+                else:
+                    model_str = settings.default_models.get("type_a", "anthropic.claude-3-haiku-20240307-v1:0")
+                logger.info(f"No recommended model specified, using default: {model_str}")
             else:
-                model_str = recommended_model
+                # RecommendedModel enum을 문자열로 변환
+                if hasattr(recommended_model, 'value'):
+                    model_str = recommended_model.value
+                else:
+                    model_str = recommended_model
             
             comparison_models = self._get_comparison_models(model_str)
             # 선택된 모델 + 비교 모델들

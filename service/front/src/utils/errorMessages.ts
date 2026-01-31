@@ -4,7 +4,10 @@ const errorMessageMap: Record<string, string> = {
   // Cognito 인증 관련
   'NotAuthorizedException': '인증에 실패했습니다. 다시 로그인해주세요.',
   'UserNotFoundException': '사용자를 찾을 수 없습니다.',
-  'UsernameExistsException': '이미 사용 중인 이메일입니다.',
+  'UsernameExistsException': '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
+  'User already exists': '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
+  'An account with the given email already exists': '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
+  'email already exists': '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
   'InvalidPasswordException': '비밀번호 형식이 올바르지 않습니다.',
   'CodeMismatchException': '인증 코드가 일치하지 않습니다.',
   'ExpiredCodeException': '인증 코드가 만료되었습니다. 다시 요청해주세요.',
@@ -71,6 +74,13 @@ export const getFriendlyErrorMessage = (error: any): string => {
 
   // HTTP 상태 코드 기반 메시지
   const status = error?.response?.status;
+  const rawMessageLower = rawMessage.toLowerCase();
+  
+  // 회원가입 중복 이메일 체크
+  if (status === 400 && (rawMessageLower.includes('exist') || rawMessageLower.includes('already') || rawMessageLower.includes('duplicate'))) {
+    return '이미 가입된 이메일입니다. 로그인을 시도해주세요.';
+  }
+  
   if (status) {
     switch (status) {
       case 400:

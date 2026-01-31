@@ -1,8 +1,17 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import LightPillar from '../components/LightPillar';
+import { useAuthStore } from '../store/authStore';
 
 const DocsPage = () => {
+  const { isAuthenticated, logout } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ background: 'linear-gradient(180deg, #05050A 0%, #020204 100%)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* LightPillar 배경 효과 */}
@@ -41,12 +50,23 @@ const DocsPage = () => {
               </nav>
             </div>
             <div className="flex items-center space-x-4">
-              <Link to="/auth/login" className="text-gray-300 hover:text-white font-medium text-sm transition-colors">
-                로그인
-              </Link>
-              <Link to="/auth/register" className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors">
-                시작하기
-              </Link>
+              {isAuthenticated ? (
+                <button
+                  onClick={handleLogout}
+                  className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors"
+                >
+                  로그아웃
+                </button>
+              ) : (
+                <>
+                  <Link to="/auth/login" className="text-gray-300 hover:text-white font-medium text-sm transition-colors">
+                    로그인
+                  </Link>
+                  <Link to="/auth/register" className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors">
+                    회원가입
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -61,8 +81,11 @@ const DocsPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-4xl font-bold text-white mb-6">FromProm 서비스 가이드</h1>
-          <p className="text-xl text-gray-300 leading-relaxed">
+          <h1 className="text-2xl sm:text-4xl font-bold text-white mb-6">
+            <span className="block sm:inline">FromProm</span>
+            <span className="block sm:inline"> 서비스 가이드</span>
+          </h1>
+          <p className="text-lg sm:text-xl text-gray-300 leading-relaxed">
             FromProm은 <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-orange-400 font-semibold">AI를 기반으로 프롬프트의 성능을 객관적으로 검증</span>하고 거래할 수 있는 마켓플레이스입니다.
             <br />
             판매자는 자신의 프롬프트를 등록하고, 구매자는 검증된 지표를 통해 신뢰할 수 있는 프롬프트를 구매할 수 있습니다.

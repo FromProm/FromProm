@@ -31,6 +31,7 @@ const PromptCreatePage = () => {
   const { user, userInfo, fetchUserInfo } = useAuthStore();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const alertShownRef = useRef(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   
   const defaultCategory = '사실/정보/근거 요구';
   const defaultModels = getCategoryModels(defaultCategory);
@@ -157,7 +158,7 @@ const PromptCreatePage = () => {
       });
       
       console.log('프롬프트 등록 응답:', response.data);
-      alert('프롬프트가 성공적으로 등록되었습니다! AI 검증이 완료되면 마켓플레이스에 공개됩니다.');
+      setShowSuccessModal(true);
       navigate('/dashboard');
     } catch (error: any) {
       console.error('프롬프트 등록 실패:', error);
@@ -471,6 +472,49 @@ const PromptCreatePage = () => {
           </form>
         </motion.div>
       </main>
+
+      {/* 등록 성공 모달 */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div 
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 text-center"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">프롬프트 등록 완료!</h3>
+            <p className="text-gray-600 mb-4">
+              프롬프트가 성공적으로 등록되었습니다.
+            </p>
+            <div className="bg-blue-50 rounded-lg p-4 mb-6 text-left">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-blue-900">AI 분석이 진행됩니다</p>
+                  <p className="text-sm text-blue-700 mt-1">
+                    분석이 완료되면 <span className="font-semibold">{userInfo?.email}</span>으로 결과가 발송됩니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              마이페이지로 이동
+            </button>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

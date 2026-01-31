@@ -46,7 +46,7 @@ type ModalType = 'likes' | 'comments' | 'bookmarks' | null;
 
 const MyprofilePage = () => {
   const navigate = useNavigate();
-  const { userInfo, fetchUserInfo, updateUserInfo, isAuthenticated } = useAuthStore();
+  const { userInfo, fetchUserInfo, updateUserInfo, isAuthenticated, logout } = useAuthStore();
   const { getPurchasedPrompts } = usePurchaseStore();
   const { items: cartItems, getTotalPrice: getCartTotalPrice } = useCartStore();
   const [activeTab, setActiveTab] = useState<MenuTab>('profile');
@@ -222,6 +222,7 @@ const MyprofilePage = () => {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('idToken');
+      logout(); // auth store 상태 초기화
       alert('회원 탈퇴가 완료되었습니다.');
       navigate('/');
     } catch (error: any) {
@@ -396,18 +397,26 @@ const MyprofilePage = () => {
           <div className="lg:w-64 flex-shrink-0">
             <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
               <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-xl shadow-lg border border-blue-200 p-2 sm:p-4">
-                <nav className="flex lg:flex-col gap-1 sm:gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
-                  {menuItems.map((item) => (
-                    <button key={item.id} onClick={() => setActiveTab(item.id)}
-                      className={`whitespace-nowrap px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-left transition-all text-sm sm:text-base ${
-                        activeTab === item.id 
-                          ? 'bg-white border-2 border-blue-900 text-gray-900 font-bold' 
-                          : 'text-gray-700 hover:bg-white hover:shadow-sm font-medium'
-                      }`}>
-                      {item.label}
-                    </button>
-                  ))}
-                </nav>
+                <div className="relative">
+                  <nav className="flex lg:flex-col gap-1 sm:gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 scrollbar-hide">
+                    {menuItems.map((item) => (
+                      <button key={item.id} onClick={() => setActiveTab(item.id)}
+                        className={`whitespace-nowrap px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-left transition-all text-sm sm:text-base ${
+                          activeTab === item.id 
+                            ? 'bg-white border-2 border-blue-900 text-gray-900 font-bold' 
+                            : 'text-gray-700 hover:bg-white hover:shadow-sm font-medium'
+                        }`}>
+                        {item.label}
+                      </button>
+                    ))}
+                  </nav>
+                  {/* 모바일에서 오른쪽 스크롤 힌트 */}
+                  <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-blue-50 to-transparent pointer-events-none flex items-center justify-end pr-1 lg:hidden">
+                    <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
               </div>
             </AnimatedContent>
           </div>

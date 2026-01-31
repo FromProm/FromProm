@@ -100,11 +100,11 @@ const DocsPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-2xl sm:text-4xl font-bold text-white mb-6">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-6">
             <span className="block sm:inline">FromProm</span>
             <span className="block sm:inline"> 서비스 가이드</span>
           </h1>
-          <p className="text-lg sm:text-xl text-gray-300 leading-relaxed">
+          <p className="text-sm sm:text-xl text-gray-300 leading-relaxed">
             FromProm은 <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-orange-400 font-semibold">AI를 기반으로 프롬프트의 성능을 객관적으로 검증</span>하고 거래할 수 있는 마켓플레이스입니다.
             <br />
             판매자는 자신의 프롬프트를 등록하고, 구매자는 검증된 지표를 통해 신뢰할 수 있는 프롬프트를 구매할 수 있습니다.

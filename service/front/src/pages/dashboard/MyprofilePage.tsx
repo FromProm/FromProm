@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { promptApi, userApi, creditApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import { usePurchaseStore } from '../../store/purchaseStore';
 import { useCartStore } from '../../store/cartStore';
 import { promptTypeToCategory } from '../../services/dummyData';
 import AnimatedContent from '../../components/AnimatedContent';
@@ -20,17 +21,6 @@ interface MyPrompt {
   bookmarkCount: number;
   isPublic: boolean;
   created_at: string;
-}
-
-// 구매한 프롬프트 타입 정의
-interface PurchasedPromptItem {
-  promptId: string;
-  title: string;
-  description: string;
-  price: number;
-  category: string;
-  nickname: string;
-  purchasedAt: string;
 }
 
 interface CreditHistoryItem {
@@ -59,6 +49,7 @@ const MyprofilePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { userInfo, fetchUserInfo, updateUserInfo, isAuthenticated, logout } = useAuthStore();
+  const { getPurchasedPrompts } = usePurchaseStore();
   const { items: cartItems, getTotalPrice: getCartTotalPrice } = useCartStore();
   
   // URL 쿼리 파라미터에서 탭 설정 (예: ?tab=selling)
@@ -78,8 +69,6 @@ const MyprofilePage = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [myPrompts, setMyPrompts] = useState<MyPrompt[]>([]);
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(true);
-  const [purchasedPrompts, setPurchasedPrompts] = useState<PurchasedPromptItem[]>([]);
-  const [isLoadingPurchased, setIsLoadingPurchased] = useState(true);
   const [creditHistory, setCreditHistory] = useState<CreditHistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
@@ -143,47 +132,6 @@ const MyprofilePage = () => {
       }
     };
     fetchMyPrompts();
-  }, []);
-
-  // 구매한 프롬프트 목록 가져오기
-  useEffect(() => {
-    const fetchPurchasedPrompts = async () => {
-      setIsLoadingPurchased(true);
-      try {
-        const historyResponse = await creditApi.getPurchaseHistory();
-        const purchases = historyResponse.data.purchases || [];
-        
-        const promptDetails: PurchasedPromptItem[] = [];
-        for (const purchase of purchases) {
-          if (purchase.promptId) {
-            try {
-              const detailResponse = await promptApi.getPromptDetail(purchase.promptId);
-              if (detailResponse.data.success && detailResponse.data.prompt) {
-                const prompt = detailResponse.data.prompt;
-                promptDetails.push({
-                  promptId: prompt.promptId,
-                  title: prompt.title,
-                  description: prompt.description,
-                  price: prompt.price,
-                  category: promptTypeToCategory[prompt.promptType] || prompt.promptType,
-                  nickname: prompt.nickname || '익명',
-                  purchasedAt: purchase.created_at || purchase.purchasedAt,
-                });
-              }
-            } catch (err) {
-              console.error(`Failed to fetch prompt ${purchase.promptId}:`, err);
-            }
-          }
-        }
-        
-        setPurchasedPrompts(promptDetails);
-      } catch (error) {
-        console.error('Failed to fetch purchased prompts:', error);
-      } finally {
-        setIsLoadingPurchased(false);
-      }
-    };
-    fetchPurchasedPrompts();
   }, []);
 
   // 크레딧 히스토리 가져오기
@@ -341,6 +289,8 @@ const MyprofilePage = () => {
     { id: 'analytics' as MenuTab, label: '판매 분석' },
     { id: 'settings' as MenuTab, label: '개인정보 설정' },
   ];
+
+  const purchasedPrompts = getPurchasedPrompts();
 
   // 영어 크레딧 설명을 한국어로 변환
   const translateCreditDescription = (description: string): string => {
@@ -622,12 +572,10 @@ const MyprofilePage = () => {
                         </Link>
                       )}
                     </div>
-                    {isLoadingPurchased ? (
-                      <div className="text-center py-12"><div className="w-8 h-8 mx-auto border-2 border-blue-900 border-t-transparent rounded-full animate-spin"></div></div>
-                    ) : purchasedPrompts.length > 0 ? (
+                    {purchasedPrompts.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         {purchasedPrompts.map((prompt) => (
-                          <Link key={prompt.promptId} to={`/prompt/${prompt.promptId}`} 
+                          <Link key={prompt.id} to={`/prompt/${prompt.id}`} 
                             className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all group">
                             <div className="flex justify-between items-start mb-2 sm:mb-3">
                               <h3 className="font-semibold text-gray-900 group-hover:text-blue-900 transition-colors text-sm sm:text-base line-clamp-1 flex-1 mr-2">{prompt.title}</h3>
@@ -636,7 +584,7 @@ const MyprofilePage = () => {
                             <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">{prompt.description}</p>
                             <div className="flex justify-between items-center">
                               <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">{prompt.category}</span>
-                              <span className="text-xs text-gray-500 truncate ml-2">by {prompt.nickname}</span>
+                              <span className="text-xs text-gray-500 truncate ml-2">by {prompt.sellerName}</span>
                             </div>
                           </Link>
                         ))}

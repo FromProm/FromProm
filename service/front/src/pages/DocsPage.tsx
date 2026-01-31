@@ -67,7 +67,7 @@ const DocsPage = () => {
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
                   <Link to="/prompt/create" className="bg-blue-200 text-blue-900 font-medium px-3 py-1.5 rounded-md text-sm hover:bg-blue-900 hover:text-white transition-colors animate-bounce-subtle">
-                    ✏️ 프롬프트 등록
+                    프롬프트 등록
                   </Link>
                   <button
                     onClick={handleLogout}

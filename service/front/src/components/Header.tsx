@@ -125,7 +125,7 @@ const Header = () => {
                         : 'bg-blue-200 text-blue-900 font-medium hover:bg-blue-900 hover:text-white animate-bounce-subtle'
                     }`}
                   >
-                    ✏️ 프롬프트 등록
+                    프롬프트 등록
                   </Link>
                   {userInfo?.nickname && (
                     <span className="text-sm text-gray-700">
@@ -204,7 +204,7 @@ const Header = () => {
                       : 'bg-blue-200 text-blue-900 font-medium animate-bounce-subtle'
                   }`}
                 >
-                  ✏️ 프롬프트 등록
+                  프롬프트 등록
                 </Link>
                 <Link
                   to="/cart"

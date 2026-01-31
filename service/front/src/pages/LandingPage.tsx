@@ -185,7 +185,7 @@ const LandingPage = () => {
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
                   <Link to="/prompt/create" className="bg-blue-200 text-blue-900 font-medium px-3 py-1.5 rounded-md text-sm hover:bg-blue-900 hover:text-white transition-colors animate-bounce-subtle">
-                    ✏️ 프롬프트 등록
+                    프롬프트 등록
                   </Link>
                   <button
                     onClick={handleLogout}
@@ -270,12 +270,12 @@ const LandingPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              {/* 사용 가이드 버튼 - 위에 긴 버튼 */}
+              {/* 사용 가이드 버튼 - 위에 긴 버튼 (프롬프트 성능 검증 플랫폼과 동일한 스타일) */}
               <Link
                 to="/docs"
-                className="w-full max-w-md bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold px-8 py-3 rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all text-base shadow-lg hover:shadow-xl hover:scale-105 text-center"
+                className="px-8 py-3 rounded-full bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 text-blue-300 font-bold text-base text-center hover:from-blue-600/30 hover:to-purple-600/30 hover:border-blue-400/50 transition-all animate-bounce-subtle"
               >
-                📖 FromProm 사용 가이드 보기
+                FromProm 사용 가이드 보기
               </Link>
               
               {/* 아래 두 버튼 */}

@@ -390,20 +390,53 @@ const MarketplacePage = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
-            {categories.map((category) => (
+          {/* 모바일: All 첫줄, 나머지 둘째줄 / 데스크탑: 한줄 */}
+          <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-1.5 sm:gap-2">
+            {/* 모바일에서 All 버튼 첫 줄 */}
+            <div className="flex justify-center sm:hidden">
               <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-                  selectedCategory === category
+                onClick={() => setSelectedCategory('All')}
+                className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  selectedCategory === 'All'
                     ? 'bg-blue-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 sm:hover:border-blue-900 sm:hover:text-blue-900'
+                    : 'bg-white text-gray-700 border border-gray-300'
                 }`}
               >
-                {category}
+                All
               </button>
-            ))}
+            </div>
+            {/* 모바일에서 나머지 버튼 둘째 줄 */}
+            <div className="flex justify-center gap-1.5 sm:hidden">
+              {categories.filter(c => c !== 'All').map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    selectedCategory === category
+                      ? 'bg-blue-900 text-white'
+                      : 'bg-white text-gray-700 border border-gray-300'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+            {/* 데스크탑에서는 한 줄로 */}
+            <div className="hidden sm:flex sm:flex-wrap justify-center gap-2">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedCategory === category
+                      ? 'bg-blue-900 text-white'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-900 hover:text-blue-900'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

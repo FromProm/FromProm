@@ -167,8 +167,9 @@ const CreditHistoryPage = () => {
               {history.map((item, index) => (
                 <AnimatedContent key={item.SK || index} once distance={50} duration={0.6} delay={index * 0.05}>
                   <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-4 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200 cursor-pointer">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="flex flex-col gap-3">
+                      {/* 상단: 타입 뱃지 + 설명 */}
+                      <div className="flex items-start gap-3">
                         <span className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0 ${getTypeColor(item.user_description)}`}>
                           {getTypeLabel(item.user_description)}
                         </span>
@@ -182,11 +183,14 @@ const CreditHistoryPage = () => {
                           <p className="text-sm text-gray-500 mt-1">{formatDate(item.created_at)}</p>
                         </div>
                       </div>
-                      <div className="text-left sm:text-right flex-shrink-0 pl-[52px] sm:pl-0">
-                        <p className={`text-lg font-bold ${isExpense(item.user_description) ? 'text-red-600' : 'text-green-600'}`}>
-                          {isExpense(item.user_description) ? '' : '+'}{item.amount.toLocaleString()}P
-                        </p>
-                        <p className="text-sm text-gray-500">잔액: {item.balance.toLocaleString()}P</p>
+                      {/* 하단: 금액 + 잔액 (우측 정렬, 흰 배경) */}
+                      <div className="flex justify-end">
+                        <div className="bg-white/80 rounded-lg px-4 py-2 text-right shadow-sm">
+                          <p className={`text-lg font-bold ${isExpense(item.user_description) ? 'text-red-600' : 'text-green-600'}`}>
+                            {isExpense(item.user_description) ? '' : '+'}{item.amount.toLocaleString()}P
+                          </p>
+                          <p className="text-sm text-gray-500">잔액: {item.balance.toLocaleString()}P</p>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -23,13 +23,15 @@ public class SearchController {
     private final InteractionService interactionService;
 
     /**
-     * 키워드 검색 - 최적화됨
-     * GET /api/search?keyword=마케팅
+     * 키워드 검색 - 최적화됨 + 페이지네이션
+     * GET /api/search?keyword=마케팅&size=20&cursor=xxx
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> search(
             @RequestParam String keyword,
-            @RequestParam(required = false) String userId) {
+            @RequestParam(required = false) String userId,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String cursor) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
@@ -37,7 +39,9 @@ public class SearchController {
             ));
         }
 
-        List<PromptDocument> results = searchService.searchPrompts(keyword.trim());
+        // 페이지네이션 적용
+        SearchService.PagedSearchResult pagedResult = searchService.searchPromptsPaged(keyword.trim(), size, cursor);
+        List<PromptDocument> results = pagedResult.getItems();
         
         // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
         List<String> userIdsNeedingNickname = results.stream()
@@ -69,11 +73,16 @@ public class SearchController {
                 .map(prompt -> enrichPromptFromOpenSearchBatch(prompt, nicknameMap, finalLikedMap, finalBookmarkedMap))
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "prompts", enrichedResults,
-            "count", enrichedResults.size()
-        ));
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("prompts", enrichedResults);
+        response.put("count", enrichedResults.size());
+        response.put("hasNext", pagedResult.isHasNext());
+        if (pagedResult.getNextCursor() != null) {
+            response.put("nextCursor", pagedResult.getNextCursor());
+        }
+        
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -140,10 +149,13 @@ public class SearchController {
      */
     @GetMapping("/all")
     public ResponseEntity<Map<String, Object>> getAllPrompts(
-            @RequestParam(defaultValue = "50") int size,
-            @RequestParam(required = false) String userId) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String userId,
+            @RequestParam(required = false) String cursor) {
 
-        List<PromptDocument> results = searchService.getAllPrompts(size);
+        // 페이지네이션 적용
+        SearchService.PagedSearchResult pagedResult = searchService.getAllPromptsPaged(size, cursor);
+        List<PromptDocument> results = pagedResult.getItems();
         
         // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
         List<String> userIdsNeedingNickname = results.stream()
@@ -175,11 +187,16 @@ public class SearchController {
                 .map(prompt -> enrichPromptFromOpenSearchBatch(prompt, nicknameMap, finalLikedMap, finalBookmarkedMap))
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "prompts", enrichedResults,
-            "count", enrichedResults.size()
-        ));
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("prompts", enrichedResults);
+        response.put("count", enrichedResults.size());
+        response.put("hasNext", pagedResult.isHasNext());
+        if (pagedResult.getNextCursor() != null) {
+            response.put("nextCursor", pagedResult.getNextCursor());
+        }
+        
+        return ResponseEntity.ok(response);
     }
 
     /**

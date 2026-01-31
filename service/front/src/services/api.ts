@@ -151,17 +151,19 @@ export const promptApi = {
     examples: data.examples,
   }),
 
-  // 모든 프롬프트 목록 조회 (search-service - 인증 불필요)
-  getAllPrompts: (limit: number = 50, userId?: string) => {
+  // 모든 프롬프트 목록 조회 (search-service - 인증 불필요, 페이지네이션 지원)
+  getAllPrompts: (limit: number = 20, userId?: string, cursor?: string) => {
     const params = new URLSearchParams({ size: limit.toString() });
     if (userId) params.append('userId', userId);
+    if (cursor) params.append('cursor', cursor);
     return api.get(`/api/search/all?${params.toString()}&_t=${Date.now()}`);
   },
 
-  // 키워드 검색 (search-service)
-  searchPrompts: (keyword: string, userId?: string) => {
-    const params = new URLSearchParams({ keyword });
+  // 키워드 검색 (search-service, 페이지네이션 지원)
+  searchPrompts: (keyword: string, userId?: string, size: number = 20, cursor?: string) => {
+    const params = new URLSearchParams({ keyword, size: size.toString() });
     if (userId) params.append('userId', userId);
+    if (cursor) params.append('cursor', cursor);
     return api.get(`/api/search?${params.toString()}`);
   },
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { categories, promptTypeToCategory } from '../services/dummyData';
 import { promptApi, interactionApi } from '../services/api';
@@ -16,6 +16,9 @@ const isMyPrompt = (promptUserId: string | undefined, userSub: string | undefine
 import SplitText from '../components/SplitText';
 import AnimatedContent from '../components/AnimatedContent';
 import TiltCard from '../components/TiltCard';
+
+// 페이지 크기
+const PAGE_SIZE = 20;
 
 // 프롬프트 타입 정의 (새로운 API 응답 구조)
 interface PromptItem {
@@ -56,11 +59,17 @@ const MarketplacePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [prompts, setPrompts] = useState<PromptItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasNext, setHasNext] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const { addToCart, removeFromCart, isInCart } = useCartStore();
   const { isPurchased } = usePurchaseStore();
   const { user, userInfo } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // 무한 스크롤을 위한 ref
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const isLoggedIn = () => !!localStorage.getItem('accessToken');
 
@@ -88,25 +97,77 @@ const MarketplacePage = () => {
     return modelMap[model] || model;
   };
 
-  // 프롬프트 목록 가져오기
-  useEffect(() => {
-    const fetchPrompts = async () => {
+  // 프롬프트 목록 가져오기 (첫 페이지)
+  const fetchPrompts = useCallback(async (reset: boolean = false) => {
+    if (reset) {
       setIsLoading(true);
-      try {
-        // 로그인한 경우 userId 전달하여 좋아요/북마크 여부 확인
-        const userId = user?.id;
-        const response = await promptApi.getAllPrompts(50, userId);
-        if (response.data.success) {
-          setPrompts(response.data.prompts || []);
-        }
-      } catch (error) {
-        console.error('Failed to fetch prompts:', error);
-      } finally {
-        setIsLoading(false);
+      setPrompts([]);
+      setNextCursor(null);
+    }
+    
+    try {
+      const userId = user?.id;
+      const cursor = reset ? undefined : (nextCursor || undefined);
+      const response = await promptApi.getAllPrompts(PAGE_SIZE, userId, cursor);
+      
+      if (response.data.success) {
+        const newPrompts = response.data.prompts || [];
+        setPrompts(prev => reset ? newPrompts : [...prev, ...newPrompts]);
+        setHasNext(response.data.hasNext || false);
+        setNextCursor(response.data.nextCursor || null);
       }
-    };
-    fetchPrompts();
+    } catch (error) {
+      console.error('Failed to fetch prompts:', error);
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  }, [user, nextCursor]);
+
+  // 더 불러오기
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasNext || !nextCursor) return;
+    
+    setIsLoadingMore(true);
+    try {
+      const userId = user?.id;
+      const response = await promptApi.getAllPrompts(PAGE_SIZE, userId, nextCursor);
+      
+      if (response.data.success) {
+        const newPrompts = response.data.prompts || [];
+        setPrompts(prev => [...prev, ...newPrompts]);
+        setHasNext(response.data.hasNext || false);
+        setNextCursor(response.data.nextCursor || null);
+      }
+    } catch (error) {
+      console.error('Failed to load more prompts:', error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [user, nextCursor, hasNext, isLoadingMore]);
+
+  // 초기 로딩
+  useEffect(() => {
+    fetchPrompts(true);
   }, [user]);
+
+  // 무한 스크롤 - IntersectionObserver
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNext && !isLoadingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasNext, isLoadingMore, loadMore]);
 
   const handleAddToCart = (prompt: PromptItem, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -494,6 +555,24 @@ const MarketplacePage = () => {
                 );
               })}
             </div>
+
+            {/* 무한 스크롤 트리거 */}
+            {filteredPrompts.length > 0 && (
+              <div 
+                ref={loadMoreRef} 
+                className="flex justify-center items-center py-8"
+              >
+                {isLoadingMore && (
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-gray-500 mt-2 text-sm">더 불러오는 중...</p>
+                  </div>
+                )}
+                {!hasNext && !isLoadingMore && prompts.length > PAGE_SIZE && (
+                  <p className="text-gray-400 text-sm">모든 프롬프트를 불러왔습니다</p>
+                )}
+              </div>
+            )}
 
             {/* 결과 없음 */}
             {filteredPrompts.length === 0 && (

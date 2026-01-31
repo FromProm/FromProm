@@ -453,8 +453,8 @@ const MyprofilePage = () => {
                     ))}
                   </nav>
                   {/* 모바일에서 오른쪽 스크롤 힌트 */}
-                  <div className="absolute right-0 top-0 bottom-2 w-8 bg-gradient-to-l from-blue-50 to-transparent pointer-events-none flex items-center justify-end pr-1 lg:hidden">
-                    <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="absolute right-0 top-0 bottom-2 w-12 bg-gradient-to-l from-blue-100 via-blue-100/80 to-transparent pointer-events-none flex items-center justify-end pr-2 lg:hidden">
+                    <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>

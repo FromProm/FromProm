@@ -155,7 +155,7 @@ const LandingPage = () => {
                 </div>
                 <span className="text-xl font-semibold text-white tracking-tight">FromProm</span>
               </div>
-              <nav className="hidden md:flex items-center space-x-8 ml-16">
+              <nav className="hidden md:flex items-center space-x-8 ml-[52px]">
                 <Link to="/marketplace" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
                   마켓
                 </Link>

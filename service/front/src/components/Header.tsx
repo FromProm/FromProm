@@ -11,6 +11,21 @@ const Header = () => {
   const cartItemCount = getItemCount();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // 현재 페이지 확인 함수
+  const isCurrentPage = (path: string) => {
+    if (path === '/dashboard') {
+      return location.pathname === '/dashboard' || location.pathname.startsWith('/dashboard');
+    }
+    return location.pathname === path;
+  };
+
+  // 메뉴 스타일 (현재 페이지면 파란색)
+  const getMenuStyle = (path: string) => {
+    return isCurrentPage(path)
+      ? 'text-blue-600 font-bold'
+      : 'text-gray-600 hover:text-gray-900 font-medium';
+  };
+
   // 로그인 상태 확인 및 사용자 정보 가져오기
   useEffect(() => {
     checkAuth();
@@ -67,45 +82,37 @@ const Header = () => {
           <div className="hidden md:flex items-center justify-between flex-1 ml-8">
             {isAuthenticated ? (
               <>
-                {/* 왼쪽 메뉴들 */}
+                {/* 왼쪽 메뉴들 - 항상 모두 표시 */}
                 <div className="flex items-center space-x-6">
-                  {location.pathname !== '/dashboard' && !location.pathname.startsWith('/dashboard') && (
-                    <Link
-                      to="/dashboard"
-                      className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-                    >
-                      마이페이지
-                    </Link>
-                  )}
-                  {location.pathname !== '/cart' && (
-                    <Link
-                      to="/cart"
-                      className="relative text-gray-600 hover:text-gray-900 font-medium transition-colors"
-                    >
-                      장바구니
-                      {cartItemCount > 0 && (
-                        <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                          {cartItemCount > 9 ? '9+' : cartItemCount}
-                        </span>
-                      )}
-                    </Link>
-                  )}
-                  {location.pathname !== '/prompt/create' && (
-                    <Link
-                      to="/prompt/create"
-                      className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-                    >
-                      등록
-                    </Link>
-                  )}
-                  {location.pathname !== '/marketplace' && (
-                    <Link
-                      to="/marketplace"
-                      className="text-gray-600 hover:text-gray-900 font-medium transition-colors"
-                    >
-                      마켓
-                    </Link>
-                  )}
+                  <Link
+                    to="/dashboard"
+                    className={`${getMenuStyle('/dashboard')} transition-colors`}
+                  >
+                    마이페이지
+                  </Link>
+                  <Link
+                    to="/cart"
+                    className={`relative ${getMenuStyle('/cart')} transition-colors`}
+                  >
+                    장바구니
+                    {cartItemCount > 0 && (
+                      <span className="absolute -top-2 -right-3 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                        {cartItemCount > 9 ? '9+' : cartItemCount}
+                      </span>
+                    )}
+                  </Link>
+                  <Link
+                    to="/prompt/create"
+                    className={`${getMenuStyle('/prompt/create')} transition-colors`}
+                  >
+                    등록
+                  </Link>
+                  <Link
+                    to="/marketplace"
+                    className={`${getMenuStyle('/marketplace')} transition-colors`}
+                  >
+                    마켓
+                  </Link>
                 </div>
                 
                 {/* 오른쪽: 환영 메시지 + 로그아웃 */}
@@ -169,13 +176,13 @@ const Header = () => {
                 )}
                 <Link
                   to="/dashboard"
-                  className="block px-2 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium transition-colors"
+                  className={`block px-2 py-2 ${isCurrentPage('/dashboard') ? 'text-blue-600 bg-blue-50 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'} rounded-lg transition-colors`}
                 >
                   마이페이지
                 </Link>
                 <Link
                   to="/cart"
-                  className="flex items-center justify-between px-2 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium transition-colors"
+                  className={`flex items-center justify-between px-2 py-2 ${isCurrentPage('/cart') ? 'text-blue-600 bg-blue-50 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'} rounded-lg transition-colors`}
                 >
                   <span>장바구니</span>
                   {cartItemCount > 0 && (
@@ -186,9 +193,15 @@ const Header = () => {
                 </Link>
                 <Link
                   to="/prompt/create"
-                  className="block px-2 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg font-medium transition-colors"
+                  className={`block px-2 py-2 ${isCurrentPage('/prompt/create') ? 'text-blue-600 bg-blue-50 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'} rounded-lg transition-colors`}
                 >
                   등록
+                </Link>
+                <Link
+                  to="/marketplace"
+                  className={`block px-2 py-2 ${isCurrentPage('/marketplace') ? 'text-blue-600 bg-blue-50 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'} rounded-lg transition-colors`}
+                >
+                  마켓
                 </Link>
                 <button
                   onClick={handleLogout}

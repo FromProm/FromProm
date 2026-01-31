@@ -396,6 +396,52 @@ public class InteractionService {
     }
 
     /**
+     * 프롬프트 예시 입출력(examples) 조회
+     */
+    public List<Map<String, Object>> getPromptExamples(String promptId) {
+        String promptPK = "PROMPT#" + promptId;
+        List<Map<String, Object>> examples = new ArrayList<>();
+
+        try {
+            GetItemResponse response = dynamoDbClient.getItem(GetItemRequest.builder()
+                    .tableName(tableName)
+                    .key(Map.of(
+                            "PK", AttributeValue.builder().s(promptPK).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()
+                    ))
+                    .projectionExpression("examples")
+                    .build());
+
+            if (response.hasItem() && response.item().containsKey("examples")) {
+                AttributeValue examplesAttr = response.item().get("examples");
+                if (examplesAttr.l() != null) {
+                    for (AttributeValue exampleAttr : examplesAttr.l()) {
+                        if (exampleAttr.m() != null) {
+                            Map<String, Object> example = new HashMap<>();
+                            Map<String, AttributeValue> exampleMap = exampleAttr.m();
+                            
+                            if (exampleMap.containsKey("input") && exampleMap.get("input").s() != null) {
+                                example.put("input", exampleMap.get("input").s());
+                            }
+                            if (exampleMap.containsKey("output") && exampleMap.get("output").s() != null) {
+                                example.put("output", exampleMap.get("output").s());
+                            }
+                            
+                            if (!example.isEmpty()) {
+                                examples.add(example);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("프롬프트 예시 조회 실패: {}", e.getMessage());
+        }
+
+        return examples;
+    }
+
+    /**
      * 사용자 닉네임 조회 (userId로)
      */
     public String getUserNickname(String userId) {

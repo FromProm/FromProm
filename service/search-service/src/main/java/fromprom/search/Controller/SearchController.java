@@ -247,9 +247,10 @@ public class SearchController {
             return ResponseEntity.notFound().build();
         }
         
-        // DynamoDB에서 통계 및 댓글 가져오기
+        // DynamoDB에서 통계, 댓글, 예시 입출력 가져오기
         PromptStats stats = interactionService.getPromptStats(promptId);
         List<Comment> comments = interactionService.getComments(promptId);
+        List<Map<String, Object>> examples = interactionService.getPromptExamples(promptId);
         
         // 닉네임 조회
         Map<String, String> nicknameMap = new HashMap<>();
@@ -261,6 +262,11 @@ public class SearchController {
         }
         
         Map<String, Object> enrichedPrompt = enrichPromptWithStats(prompt, stats, userId, nicknameMap);
+        
+        // examples를 enrichedPrompt에 추가 (DynamoDB에서 가져온 데이터 우선)
+        if (!examples.isEmpty()) {
+            enrichedPrompt.put("examples", examples);
+        }
         
         return ResponseEntity.ok(Map.of(
             "success", true,

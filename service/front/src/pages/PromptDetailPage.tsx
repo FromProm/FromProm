@@ -42,11 +42,11 @@ interface PromptDetail {
     promptType?: string;
     overallFeedback?: string;
   };
-  // 예시
+  // 예시 (DynamoDB에서 가져온 형식 또는 기존 형식)
   examples?: Array<{
-    index: number;
-    input: { inputType: string; content: string };
-    output: string;
+    index?: number;
+    input?: string | { inputType: string; content: string };
+    output?: string;
   }>;
 }
 
@@ -210,14 +210,40 @@ const PromptDetailPage = () => {
     if (!newComment.trim() || !prompt) return;
 
     setIsSubmittingComment(true);
+    const commentContent = newComment.trim();
+    
     try {
-      await interactionApi.addComment(prompt.promptId, newComment.trim());
-      // 댓글 목록 새로고침
-      const response = await promptApi.getPromptComments(prompt.promptId);
-      if (response.data.success) {
-        setComments(response.data.comments || []);
-      }
+      await interactionApi.addComment(prompt.promptId, commentContent);
+      
+      // 낙관적 업데이트: 즉시 UI에 반영
+      const optimisticComment: Comment = {
+        commentId: `COMMENT#${new Date().toISOString()}#temp`,
+        content: commentContent,
+        userId: userInfo?.sub || '',
+        nickname: userInfo?.nickname || '나',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      setComments(prev => [optimisticComment, ...prev]);
+      setPrompt(prev => prev ? { 
+        ...prev, 
+        commentCount: (prev.commentCount || 0) + 1 
+      } : null);
       setNewComment('');
+      
+      // 백그라운드에서 실제 데이터로 동기화 (약간의 딜레이 후)
+      setTimeout(async () => {
+        try {
+          const response = await promptApi.getPromptComments(prompt.promptId);
+          if (response.data.success) {
+            setComments(response.data.comments || []);
+          }
+        } catch (e) {
+          console.error('Failed to refresh comments:', e);
+        }
+      }, 500);
+      
     } catch (error) {
       console.error('Failed to submit comment:', error);
       alert('댓글 작성에 실패했습니다.');
@@ -560,14 +586,26 @@ const PromptDetailPage = () => {
           <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">예시 입력/출력</h2>
           <div className="space-y-6 sm:space-y-8">
             {prompt.examples.map((example, index) => {
+              // input 값 추출 (두 형식 모두 지원)
+              const getInputContent = (): string | undefined => {
+                if (!example.input) return undefined;
+                if (typeof example.input === 'string') return example.input;
+                if (typeof example.input === 'object' && 'content' in example.input) {
+                  return example.input.content;
+                }
+                return undefined;
+              };
+              
+              const inputContent = getInputContent();
+              
               // 프롬프트 내용에서 {{변수}}를 실제 값으로 치환하여 강조 표시
-              const renderPromptWithValues = (promptContent: string, inputContent: string | undefined): React.ReactNode => {
+              const renderPromptWithValues = (promptContent: string, inputStr: string | undefined): React.ReactNode => {
                 if (!promptContent) return '프롬프트 내용이 없습니다.';
                 
                 let inputValues: Record<string, string> = {};
-                if (inputContent) {
+                if (inputStr) {
                   try {
-                    inputValues = JSON.parse(inputContent);
+                    inputValues = JSON.parse(inputStr);
                   } catch {
                     // JSON 파싱 실패 시 빈 객체
                   }
@@ -625,7 +663,7 @@ const PromptDetailPage = () => {
                     <h4 className="text-sm font-medium text-gray-700 mb-2">입력</h4>
                     <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-100">
                       <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed break-words">
-                        {renderPromptWithValues(prompt.content || '', example.input?.content)}
+                        {renderPromptWithValues(prompt.content || '', inputContent)}
                       </div>
                     </div>
                   </div>

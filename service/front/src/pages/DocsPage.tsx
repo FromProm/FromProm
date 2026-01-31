@@ -19,7 +19,7 @@ const DocsPage = () => {
           pillarRotation={25}
           interactive={false}
           mixBlendMode="screen"
-          quality="high"
+          quality="medium"
         />
       </div>
 

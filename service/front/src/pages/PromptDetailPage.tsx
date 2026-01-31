@@ -571,9 +571,23 @@ const PromptDetailPage = () => {
                 });
               };
 
-              // 이미지 타입인지 확인 (http 또는 /로 시작하는 경우)
-              const isImageOutput = prompt.category === 'type_b_image' && 
-                (example.output?.startsWith('http') || example.output?.startsWith('/'));
+              // 이미지 타입인지 확인
+              const isImageType = prompt.category === 'type_b_image';
+              
+              // S3 이미지 URL 생성 (output이 null이거나 없을 때 S3 URL에서 가져옴)
+              const getImageUrl = () => {
+                // output이 이미 URL인 경우 그대로 사용
+                if (example.output?.startsWith('http') || example.output?.startsWith('/')) {
+                  return example.output;
+                }
+                // S3 URL에서 이미지 URL 생성
+                if (prompt.promptId) {
+                  return `https://fromprom-s3.s3.ap-northeast-2.amazonaws.com/prompts/${prompt.promptId}/images/output_${index}.png`;
+                }
+                return null;
+              };
+              
+              const imageUrl = isImageType ? getImageUrl() : null;
 
               return (
               <div key={index} className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
@@ -590,11 +604,16 @@ const PromptDetailPage = () => {
                   <div className="w-full sm:w-1/2 flex flex-col">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">출력</h4>
                     <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-100">
-                      {isImageOutput ? (
+                      {isImageType && imageUrl ? (
                         <img 
-                          src={example.output} 
+                          src={imageUrl} 
                           alt={`예시 출력 ${index + 1}`}
                           className="max-w-[450px] h-auto rounded-lg"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.parentElement!.innerHTML = '<span class="text-gray-500 text-sm">이미지를 불러올 수 없습니다.</span>';
+                          }}
                         />
                       ) : (
                         <pre className="text-gray-700 whitespace-pre-wrap text-xs sm:text-sm break-words">

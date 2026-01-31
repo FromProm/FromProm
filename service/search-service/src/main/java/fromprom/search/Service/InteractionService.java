@@ -265,6 +265,110 @@ public class InteractionService {
         return false;
     }
 
+    /**
+     * 특정 사용자가 여러 프롬프트에 좋아요 했는지 일괄 확인
+     * @return promptId -> isLiked 맵
+     */
+    public Map<String, Boolean> hasUserLikedBatch(String userId, List<String> promptIds) {
+        Map<String, Boolean> likedMap = new HashMap<>();
+        
+        if (userId == null || userId.isEmpty() || promptIds == null || promptIds.isEmpty()) {
+            return likedMap;
+        }
+
+        // 기본값 false로 초기화
+        promptIds.forEach(id -> likedMap.put(id, false));
+
+        String userPK = "USER#" + userId;
+
+        try {
+            // BatchGetItem 요청 생성 (최대 100개 제한)
+            List<String> targetIds = promptIds.stream().distinct().limit(100).collect(Collectors.toList());
+            
+            List<Map<String, AttributeValue>> keys = targetIds.stream()
+                    .map(promptId -> Map.of(
+                            "PK", AttributeValue.builder().s(userPK).build(),
+                            "SK", AttributeValue.builder().s("LIKE#PROMPT#" + promptId).build()
+                    ))
+                    .collect(Collectors.toList());
+
+            KeysAndAttributes keysAndAttributes = KeysAndAttributes.builder()
+                    .keys(keys)
+                    .projectionExpression("SK")
+                    .build();
+
+            BatchGetItemResponse response = dynamoDbClient.batchGetItem(BatchGetItemRequest.builder()
+                    .requestItems(Map.of(tableName, keysAndAttributes))
+                    .build());
+
+            // 결과 파싱 - 존재하는 항목만 true로 설정
+            List<Map<String, AttributeValue>> items = response.responses().get(tableName);
+            if (items != null) {
+                for (Map<String, AttributeValue> item : items) {
+                    String sk = item.get("SK").s();
+                    String promptId = sk.replace("LIKE#PROMPT#", "");
+                    likedMap.put(promptId, true);
+                }
+            }
+        } catch (Exception e) {
+            log.error("좋아요 일괄 확인 실패: {}", e.getMessage());
+        }
+
+        return likedMap;
+    }
+
+    /**
+     * 특정 사용자가 여러 프롬프트를 북마크 했는지 일괄 확인
+     * @return promptId -> isBookmarked 맵
+     */
+    public Map<String, Boolean> hasUserBookmarkedBatch(String userId, List<String> promptIds) {
+        Map<String, Boolean> bookmarkedMap = new HashMap<>();
+        
+        if (userId == null || userId.isEmpty() || promptIds == null || promptIds.isEmpty()) {
+            return bookmarkedMap;
+        }
+
+        // 기본값 false로 초기화
+        promptIds.forEach(id -> bookmarkedMap.put(id, false));
+
+        String userPK = "USER#" + userId;
+
+        try {
+            // BatchGetItem 요청 생성 (최대 100개 제한)
+            List<String> targetIds = promptIds.stream().distinct().limit(100).collect(Collectors.toList());
+            
+            List<Map<String, AttributeValue>> keys = targetIds.stream()
+                    .map(promptId -> Map.of(
+                            "PK", AttributeValue.builder().s(userPK).build(),
+                            "SK", AttributeValue.builder().s("BOOKMARK#PROMPT#" + promptId).build()
+                    ))
+                    .collect(Collectors.toList());
+
+            KeysAndAttributes keysAndAttributes = KeysAndAttributes.builder()
+                    .keys(keys)
+                    .projectionExpression("SK")
+                    .build();
+
+            BatchGetItemResponse response = dynamoDbClient.batchGetItem(BatchGetItemRequest.builder()
+                    .requestItems(Map.of(tableName, keysAndAttributes))
+                    .build());
+
+            // 결과 파싱 - 존재하는 항목만 true로 설정
+            List<Map<String, AttributeValue>> items = response.responses().get(tableName);
+            if (items != null) {
+                for (Map<String, AttributeValue> item : items) {
+                    String sk = item.get("SK").s();
+                    String promptId = sk.replace("BOOKMARK#PROMPT#", "");
+                    bookmarkedMap.put(promptId, true);
+                }
+            }
+        } catch (Exception e) {
+            log.error("북마크 일괄 확인 실패: {}", e.getMessage());
+        }
+
+        return bookmarkedMap;
+    }
+
     private Comment convertToComment(Map<String, AttributeValue> item) {
         return Comment.builder()
                 .commentId(item.get("SK").s())

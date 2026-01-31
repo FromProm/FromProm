@@ -50,9 +50,23 @@ public class SearchController {
                 ? new HashMap<>() 
                 : interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
         
+        // 좋아요/북마크 여부 일괄 조회
+        List<String> promptIds = results.stream()
+                .map(PromptDocument::getPromptId)
+                .filter(id -> id != null)
+                .collect(Collectors.toList());
+        Map<String, Boolean> likedMap = new HashMap<>();
+        Map<String, Boolean> bookmarkedMap = new HashMap<>();
+        if (userId != null && !userId.isEmpty() && !promptIds.isEmpty()) {
+            likedMap = interactionService.hasUserLikedBatch(userId, promptIds);
+            bookmarkedMap = interactionService.hasUserBookmarkedBatch(userId, promptIds);
+        }
+        
         // OpenSearch 데이터 기반으로 결과 생성
+        final Map<String, Boolean> finalLikedMap = likedMap;
+        final Map<String, Boolean> finalBookmarkedMap = bookmarkedMap;
         List<Map<String, Object>> enrichedResults = results.stream()
-                .map(prompt -> enrichPromptFromOpenSearch(prompt, userId, nicknameMap))
+                .map(prompt -> enrichPromptFromOpenSearchBatch(prompt, nicknameMap, finalLikedMap, finalBookmarkedMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -142,9 +156,23 @@ public class SearchController {
                 ? new HashMap<>() 
                 : interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
         
+        // 좋아요/북마크 여부 일괄 조회 (로그인한 경우만)
+        List<String> promptIds = results.stream()
+                .map(PromptDocument::getPromptId)
+                .filter(id -> id != null)
+                .collect(Collectors.toList());
+        Map<String, Boolean> likedMap = new HashMap<>();
+        Map<String, Boolean> bookmarkedMap = new HashMap<>();
+        if (userId != null && !userId.isEmpty() && !promptIds.isEmpty()) {
+            likedMap = interactionService.hasUserLikedBatch(userId, promptIds);
+            bookmarkedMap = interactionService.hasUserBookmarkedBatch(userId, promptIds);
+        }
+        
         // OpenSearch 데이터 기반으로 결과 생성 (통계는 OpenSearch에서 가져옴)
+        final Map<String, Boolean> finalLikedMap = likedMap;
+        final Map<String, Boolean> finalBookmarkedMap = bookmarkedMap;
         List<Map<String, Object>> enrichedResults = results.stream()
-                .map(prompt -> enrichPromptFromOpenSearch(prompt, userId, nicknameMap))
+                .map(prompt -> enrichPromptFromOpenSearchBatch(prompt, nicknameMap, finalLikedMap, finalBookmarkedMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -307,8 +335,22 @@ public class SearchController {
                 ? new HashMap<>() 
                 : interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
         
+        // 좋아요/북마크 여부 일괄 조회
+        List<String> promptIds = results.stream()
+                .map(PromptDocument::getPromptId)
+                .filter(id -> id != null)
+                .collect(Collectors.toList());
+        Map<String, Boolean> likedMap = new HashMap<>();
+        Map<String, Boolean> bookmarkedMap = new HashMap<>();
+        if (!promptIds.isEmpty()) {
+            likedMap = interactionService.hasUserLikedBatch(userId, promptIds);
+            bookmarkedMap = interactionService.hasUserBookmarkedBatch(userId, promptIds);
+        }
+        
+        final Map<String, Boolean> finalLikedMap = likedMap;
+        final Map<String, Boolean> finalBookmarkedMap = bookmarkedMap;
         List<Map<String, Object>> enrichedResults = results.stream()
-                .map(prompt -> enrichPromptFromOpenSearch(prompt, userId, nicknameMap))
+                .map(prompt -> enrichPromptFromOpenSearchBatch(prompt, nicknameMap, finalLikedMap, finalBookmarkedMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -347,8 +389,22 @@ public class SearchController {
                 ? new HashMap<>() 
                 : interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
         
+        // 좋아요/북마크 여부 일괄 조회
+        List<String> promptIds = prompts.stream()
+                .map(PromptDocument::getPromptId)
+                .filter(id -> id != null)
+                .collect(Collectors.toList());
+        Map<String, Boolean> likedMap = new HashMap<>();
+        Map<String, Boolean> bookmarkedMap = new HashMap<>();
+        if (!promptIds.isEmpty()) {
+            likedMap = interactionService.hasUserLikedBatch(userId, promptIds);
+            bookmarkedMap = interactionService.hasUserBookmarkedBatch(userId, promptIds);
+        }
+        
+        final Map<String, Boolean> finalLikedMap = likedMap;
+        final Map<String, Boolean> finalBookmarkedMap = bookmarkedMap;
         List<Map<String, Object>> enrichedResults = prompts.stream()
-                .map(prompt -> enrichPromptFromOpenSearch(prompt, userId, nicknameMap))
+                .map(prompt -> enrichPromptFromOpenSearchBatch(prompt, nicknameMap, finalLikedMap, finalBookmarkedMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -387,8 +443,22 @@ public class SearchController {
                 ? new HashMap<>() 
                 : interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
         
+        // 좋아요/북마크 여부 일괄 조회
+        List<String> promptIds = prompts.stream()
+                .map(PromptDocument::getPromptId)
+                .filter(id -> id != null)
+                .collect(Collectors.toList());
+        Map<String, Boolean> likedMap = new HashMap<>();
+        Map<String, Boolean> bookmarkedMap = new HashMap<>();
+        if (!promptIds.isEmpty()) {
+            likedMap = interactionService.hasUserLikedBatch(userId, promptIds);
+            bookmarkedMap = interactionService.hasUserBookmarkedBatch(userId, promptIds);
+        }
+        
+        final Map<String, Boolean> finalLikedMap = likedMap;
+        final Map<String, Boolean> finalBookmarkedMap = bookmarkedMap;
         List<Map<String, Object>> enrichedResults = prompts.stream()
-                .map(prompt -> enrichPromptFromOpenSearch(prompt, userId, nicknameMap))
+                .map(prompt -> enrichPromptFromOpenSearchBatch(prompt, nicknameMap, finalLikedMap, finalBookmarkedMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -474,6 +544,7 @@ public class SearchController {
     /**
      * OpenSearch 데이터만으로 프롬프트 정보 구성 (최적화됨)
      * 목록 조회용 - DynamoDB 통계 조회 없이 OpenSearch 데이터 사용
+     * @deprecated enrichPromptFromOpenSearchBatch 사용 권장
      */
     private Map<String, Object> enrichPromptFromOpenSearch(PromptDocument prompt, String userId, Map<String, String> nicknameMap) {
         Map<String, Object> result = new HashMap<>();
@@ -519,6 +590,65 @@ public class SearchController {
         if (userId != null && !userId.isEmpty() && prompt.getPromptId() != null) {
             result.put("isLiked", interactionService.hasUserLiked(userId, prompt.getPromptId()));
             result.put("isBookmarked", interactionService.hasUserBookmarked(userId, prompt.getPromptId()));
+        }
+        
+        return result;
+    }
+
+    /**
+     * OpenSearch 데이터 + 일괄 조회된 좋아요/북마크 정보로 프롬프트 구성 (완전 최적화)
+     * N+1 문제 해결 - 모든 데이터를 미리 일괄 조회하여 전달
+     */
+    private Map<String, Object> enrichPromptFromOpenSearchBatch(
+            PromptDocument prompt, 
+            Map<String, String> nicknameMap,
+            Map<String, Boolean> likedMap,
+            Map<String, Boolean> bookmarkedMap) {
+        
+        Map<String, Object> result = new HashMap<>();
+        
+        result.put("promptId", prompt.getPromptId());
+        result.put("title", prompt.getTitle() != null ? prompt.getTitle() : "제목 없음");
+        result.put("description", prompt.getDescription() != null ? prompt.getDescription() : "");
+        result.put("content", prompt.getContent());
+        result.put("category", prompt.getCategory());
+        result.put("model", prompt.getModel() != null ? prompt.getModel() : "AI Model");
+        result.put("promptType", prompt.getPromptType());
+        result.put("userId", prompt.getUserId());
+        
+        // 닉네임: OpenSearch에 있으면 사용, 없으면 nicknameMap에서 조회
+        String nickname = prompt.getNickname();
+        if ((nickname == null || nickname.isEmpty()) && nicknameMap != null) {
+            String promptUserId = prompt.getUserId();
+            if (promptUserId != null) {
+                nickname = nicknameMap.get(promptUserId);
+                if (nickname == null) {
+                    nickname = nicknameMap.get(promptUserId.replace("USER#", ""));
+                }
+            }
+        }
+        result.put("nickname", nickname);
+        
+        result.put("status", prompt.getStatus());
+        result.put("price", prompt.getPrice());
+        result.put("createdAt", prompt.getCreatedAt());
+        result.put("evaluationMetrics", prompt.getEvaluationMetrics());
+        result.put("isPublic", prompt.getIsPublic());
+        
+        if (prompt.getScore() != null) {
+            result.put("score", prompt.getScore());
+        }
+        
+        // OpenSearch에서 통계 데이터 가져오기
+        result.put("likeCount", prompt.getLikeCount() != null ? prompt.getLikeCount() : 0);
+        result.put("bookmarkCount", prompt.getBookmarkCount() != null ? prompt.getBookmarkCount() : 0);
+        result.put("commentCount", prompt.getCommentCount() != null ? prompt.getCommentCount() : 0);
+        
+        // 일괄 조회된 좋아요/북마크 여부 사용 (N+1 문제 해결)
+        String promptId = prompt.getPromptId();
+        if (promptId != null) {
+            result.put("isLiked", likedMap.getOrDefault(promptId, false));
+            result.put("isBookmarked", bookmarkedMap.getOrDefault(promptId, false));
         }
         
         return result;

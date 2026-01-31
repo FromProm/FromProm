@@ -270,10 +270,10 @@ const LandingPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              {/* 사용 가이드 버튼 - 위에 긴 버튼 (프롬프트 성능 검증 플랫폼과 동일한 스타일) */}
+              {/* 사용 가이드 버튼 - 위에 긴 버튼 */}
               <Link
                 to="/docs"
-                className="px-8 py-3 rounded-full bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 text-blue-300 font-bold text-base text-center hover:from-blue-600/30 hover:to-purple-600/30 hover:border-blue-400/50 transition-all animate-bounce-subtle"
+                className="px-8 py-3 rounded-lg bg-blue-900/40 border border-blue-400/50 text-blue-200 font-bold text-base text-center hover:bg-blue-800/50 hover:border-blue-300/60 transition-all animate-bounce-subtle sm:min-w-[340px]"
               >
                 FromProm 사용 가이드 보기
               </Link>

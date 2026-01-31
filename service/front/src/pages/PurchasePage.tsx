@@ -112,7 +112,7 @@ const PurchasePage = () => {
         title: prompt.title,
         price: prompt.price,
         category: category,
-        sellerName: '판매자',
+        sellerName: prompt.nickname || '판매자',
         description: prompt.description,
         rating: 4.5,
         content: prompt.content

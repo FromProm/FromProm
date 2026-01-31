@@ -2,35 +2,47 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePurchaseStore } from '../../store/purchaseStore';
 import { promptApi } from '../../services/api';
-import { promptTypeToCategory } from '../../services/dummyData';
+import { promptTypeToCategory, categories } from '../../services/dummyData';
 import AnimatedContent from '../../components/AnimatedContent';
 
 // 카드 색상 설정 함수 (마켓페이지와 동일)
 const getCardColors = (category: string) => {
   const type = promptTypeToCategory[category] || category;
-  if (type === '사실 근거 기반' || category === 'type_a') {
+  if (type === '사실/정보/근거 요구' || category === 'type_a' || category === '사실/정보/근거 요구') {
     return {
       gradient: 'from-rose-50 via-rose-25 to-white',
       border: 'border-rose-200',
       tag: 'text-gray-700 bg-white border border-rose-400',
       barGradient: 'from-rose-200 to-rose-500',
       dotColor: 'bg-rose-500',
+      tagLabel: '사실/정보/근거 요구',
     };
-  } else if (type === '글 창작 및 생성' || category === 'type_b_text') {
+  } else if (type === '글 창작 및 생성' || category === 'type_b_text' || category === '글 창작 및 생성') {
     return {
       gradient: 'from-emerald-50 via-emerald-25 to-white',
       border: 'border-emerald-200',
       tag: 'text-gray-700 bg-white border border-emerald-400',
       barGradient: 'from-emerald-200 to-emerald-500',
       dotColor: 'bg-emerald-500',
+      tagLabel: '글 창작 및 생성',
     };
-  } else {
+  } else if (type === '이미지 창작 및 생성' || category === 'type_b_image' || category === '이미지 창작 및 생성') {
     return {
       gradient: 'from-blue-50 via-blue-25 to-white',
       border: 'border-blue-200',
       tag: 'text-gray-700 bg-white border border-blue-400',
       barGradient: 'from-blue-200 to-blue-500',
       dotColor: 'bg-blue-500',
+      tagLabel: '이미지 창작 및 생성',
+    };
+  } else {
+    return {
+      gradient: 'from-gray-50 via-gray-25 to-white',
+      border: 'border-gray-200',
+      tag: 'text-gray-700 bg-white border border-gray-400',
+      barGradient: 'from-gray-200 to-gray-500',
+      dotColor: 'bg-gray-500',
+      tagLabel: category,
     };
   }
 };
@@ -51,14 +63,16 @@ const PurchasedPromptsPage = () => {
   };
   
   const filteredPrompts = purchasedPrompts.filter(prompt => {
-    const matchesCategory = selectedCategory === 'All' || prompt.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'All' || 
+      prompt.category === selectedCategory ||
+      promptTypeToCategory[prompt.category] === selectedCategory;
     const matchesSearch = prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          prompt.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
-  // 카테고리 목록 (영어 키 유지, 표시는 한국어)
-  const categoryKeys = ['All', ...Array.from(new Set(purchasedPrompts.map(p => p.category)))];
+  // 카테고리 목록 (마켓페이지와 동일하게 고정)
+  const categoryList = ['All', '사실/정보/근거 요구', '글 창작 및 생성', '이미지 창작 및 생성'];
 
   // 프롬프트 내용 가져오기
   const fetchPromptContent = async (promptId: string) => {
@@ -112,7 +126,7 @@ const PurchasedPromptsPage = () => {
     const element = document.createElement('a');
     const file = new Blob([content], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
-    element.download = `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+    element.download = `${title}(FromProm).txt`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -185,7 +199,7 @@ const PurchasedPromptsPage = () => {
 
         {/* 카테고리 필터 */}
         <div className="flex flex-wrap gap-2">
-          {categoryKeys.map((category) => (
+          {categoryList.map((category) => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
@@ -195,7 +209,7 @@ const PurchasedPromptsPage = () => {
                   : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-900 hover:text-blue-900'
               }`}
             >
-              {category === 'All' ? '전체' : getCategoryLabel(category)}
+              {category === 'All' ? '전체' : category}
             </button>
           ))}
         </div>
@@ -213,7 +227,7 @@ const PurchasedPromptsPage = () => {
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <span className={`text-xs px-2 py-1 rounded ${colors.tag}`}>
-                  {getCategoryLabel(prompt.category)}
+                  {colors.tagLabel}
                 </span>
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 <span className="text-xs text-green-600 font-medium">구매완료</span>
@@ -232,24 +246,24 @@ const PurchasedPromptsPage = () => {
             </p>
 
             {/* 성능 점수 */}
-            {prompt.finalScore && (
+            {prompt.rating && prompt.rating > 0 && (
               <div className="bg-white/60 rounded-lg p-3 mb-4">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-medium text-gray-700">AI 성능 점수</span>
                   <span className="text-lg font-black text-gray-800">
-                    {Math.round(prompt.finalScore)}
+                    {Math.round(prompt.rating)}
                     <span className="text-xs font-normal text-gray-400">/100</span>
                   </span>
                 </div>
                 <div className="relative w-full h-2.5 bg-gray-100 rounded-full">
                   <div 
                     className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${colors.barGradient}`}
-                    style={{ width: `${prompt.finalScore}%` }}
+                    style={{ width: `${prompt.rating}%` }}
                   />
                   <div 
                     className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 ${colors.dotColor} rounded-full`}
                     style={{ 
-                      left: `calc(${prompt.finalScore}% - 6px)`,
+                      left: `calc(${prompt.rating}% - 6px)`,
                       boxShadow: `0 0 8px 3px rgba(255, 255, 255, 0.9), 0 0 12px 5px rgba(255, 255, 255, 0.5)`
                     }}
                   />

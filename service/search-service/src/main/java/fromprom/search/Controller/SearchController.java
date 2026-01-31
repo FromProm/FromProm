@@ -23,7 +23,7 @@ public class SearchController {
     private final InteractionService interactionService;
 
     /**
-     * 키워드 검색
+     * 키워드 검색 - 최적화됨
      * GET /api/search?keyword=마케팅
      */
     @GetMapping
@@ -39,23 +39,20 @@ public class SearchController {
 
         List<PromptDocument> results = searchService.searchPrompts(keyword.trim());
         
-        // DynamoDB에서 통계 정보 가져오기
-        List<String> promptIds = results.stream()
-                .map(PromptDocument::getPromptId)
-                .collect(Collectors.toList());
-        Map<String, PromptStats> statsMap = interactionService.getPromptStatsBatch(promptIds);
-        
         // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
         List<String> userIdsNeedingNickname = results.stream()
                 .filter(p -> p.getNickname() == null || p.getNickname().isEmpty())
                 .map(PromptDocument::getUserId)
                 .filter(id -> id != null && !id.isEmpty())
+                .distinct()
                 .collect(Collectors.toList());
-        Map<String, String> nicknameMap = interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
+        Map<String, String> nicknameMap = userIdsNeedingNickname.isEmpty() 
+                ? new HashMap<>() 
+                : interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
         
-        // 결과에 통계 정보 및 닉네임 병합
+        // OpenSearch 데이터 기반으로 결과 생성
         List<Map<String, Object>> enrichedResults = results.stream()
-                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId, nicknameMap))
+                .map(prompt -> enrichPromptFromOpenSearch(prompt, userId, nicknameMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -123,7 +120,8 @@ public class SearchController {
     }
 
     /**
-     * 전체 프롬프트 목록 (마켓플레이스용)
+     * 전체 프롬프트 목록 (마켓플레이스용) - 최적화됨
+     * OpenSearch에서 통계 데이터 포함하여 조회 (DynamoDB 조회 최소화)
      * GET /api/search/all
      */
     @GetMapping("/all")
@@ -133,23 +131,20 @@ public class SearchController {
 
         List<PromptDocument> results = searchService.getAllPrompts(size);
         
-        // DynamoDB에서 통계 정보 가져오기
-        List<String> promptIds = results.stream()
-                .map(PromptDocument::getPromptId)
-                .collect(Collectors.toList());
-        Map<String, PromptStats> statsMap = interactionService.getPromptStatsBatch(promptIds);
-        
         // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
         List<String> userIdsNeedingNickname = results.stream()
                 .filter(p -> p.getNickname() == null || p.getNickname().isEmpty())
                 .map(PromptDocument::getUserId)
                 .filter(id -> id != null && !id.isEmpty())
+                .distinct()
                 .collect(Collectors.toList());
-        Map<String, String> nicknameMap = interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
+        Map<String, String> nicknameMap = userIdsNeedingNickname.isEmpty() 
+                ? new HashMap<>() 
+                : interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
         
-        // 결과에 통계 정보 및 닉네임 병합
+        // OpenSearch 데이터 기반으로 결과 생성 (통계는 OpenSearch에서 가져옴)
         List<Map<String, Object>> enrichedResults = results.stream()
-                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId, nicknameMap))
+                .map(prompt -> enrichPromptFromOpenSearch(prompt, userId, nicknameMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -291,7 +286,7 @@ public class SearchController {
     }
 
     /**
-     * 사용자별 프롬프트 조회
+     * 사용자별 프롬프트 조회 - 최적화됨
      * GET /api/search/user/{userId}
      */
     @GetMapping("/user/{userId}")
@@ -301,22 +296,19 @@ public class SearchController {
 
         List<PromptDocument> results = searchService.getPromptsByUserId(userId, size);
         
-        // DynamoDB에서 통계 정보 가져오기
-        List<String> promptIds = results.stream()
-                .map(PromptDocument::getPromptId)
-                .collect(Collectors.toList());
-        Map<String, PromptStats> statsMap = interactionService.getPromptStatsBatch(promptIds);
-        
         // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
         List<String> userIdsNeedingNickname = results.stream()
                 .filter(p -> p.getNickname() == null || p.getNickname().isEmpty())
                 .map(PromptDocument::getUserId)
                 .filter(id -> id != null && !id.isEmpty())
+                .distinct()
                 .collect(Collectors.toList());
-        Map<String, String> nicknameMap = interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
+        Map<String, String> nicknameMap = userIdsNeedingNickname.isEmpty() 
+                ? new HashMap<>() 
+                : interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
         
         List<Map<String, Object>> enrichedResults = results.stream()
-                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId, nicknameMap))
+                .map(prompt -> enrichPromptFromOpenSearch(prompt, userId, nicknameMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -344,20 +336,19 @@ public class SearchController {
                 .filter(p -> p != null)
                 .collect(Collectors.toList());
         
-        // 통계 정보 병합
-        Map<String, PromptStats> statsMap = interactionService.getPromptStatsBatch(
-                prompts.stream().map(PromptDocument::getPromptId).collect(Collectors.toList()));
-        
         // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
         List<String> userIdsNeedingNickname = prompts.stream()
                 .filter(p -> p.getNickname() == null || p.getNickname().isEmpty())
                 .map(PromptDocument::getUserId)
                 .filter(id -> id != null && !id.isEmpty())
+                .distinct()
                 .collect(Collectors.toList());
-        Map<String, String> nicknameMap = interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
+        Map<String, String> nicknameMap = userIdsNeedingNickname.isEmpty() 
+                ? new HashMap<>() 
+                : interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
         
         List<Map<String, Object>> enrichedResults = prompts.stream()
-                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId, nicknameMap))
+                .map(prompt -> enrichPromptFromOpenSearch(prompt, userId, nicknameMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -385,20 +376,19 @@ public class SearchController {
                 .filter(p -> p != null)
                 .collect(Collectors.toList());
         
-        // 통계 정보 병합
-        Map<String, PromptStats> statsMap = interactionService.getPromptStatsBatch(
-                prompts.stream().map(PromptDocument::getPromptId).collect(Collectors.toList()));
-        
         // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
         List<String> userIdsNeedingNickname = prompts.stream()
                 .filter(p -> p.getNickname() == null || p.getNickname().isEmpty())
                 .map(PromptDocument::getUserId)
                 .filter(id -> id != null && !id.isEmpty())
+                .distinct()
                 .collect(Collectors.toList());
-        Map<String, String> nicknameMap = interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
+        Map<String, String> nicknameMap = userIdsNeedingNickname.isEmpty() 
+                ? new HashMap<>() 
+                : interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
         
         List<Map<String, Object>> enrichedResults = prompts.stream()
-                .map(prompt -> enrichPromptWithStats(prompt, statsMap.get(prompt.getPromptId()), userId, nicknameMap))
+                .map(prompt -> enrichPromptFromOpenSearch(prompt, userId, nicknameMap))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of(
@@ -411,6 +401,7 @@ public class SearchController {
     /**
      * OpenSearch 프롬프트 데이터에 DynamoDB 통계 및 기본 정보 병합
      * DynamoDB 데이터를 우선 사용 (더 정확한 원본 데이터)
+     * @deprecated 상세 페이지용으로만 사용, 목록 조회는 enrichPromptFromOpenSearch 사용
      */
     private Map<String, Object> enrichPromptWithStats(PromptDocument prompt, PromptStats stats, String userId, Map<String, String> nicknameMap) {
         Map<String, Object> result = new HashMap<>();
@@ -466,12 +457,65 @@ public class SearchController {
             result.put("bookmarkCount", stats.getBookmarkCount());
             result.put("commentCount", stats.getCommentCount());
         } else {
-            result.put("likeCount", prompt.getLikeCount() != null ? prompt.getLikeCount() : "0");
-            result.put("bookmarkCount", prompt.getBookmarkCount() != null ? prompt.getBookmarkCount() : "0");
-            result.put("commentCount", prompt.getCommentCount() != null ? prompt.getCommentCount() : "0");
+            result.put("likeCount", prompt.getLikeCount() != null ? prompt.getLikeCount() : 0);
+            result.put("bookmarkCount", prompt.getBookmarkCount() != null ? prompt.getBookmarkCount() : 0);
+            result.put("commentCount", prompt.getCommentCount() != null ? prompt.getCommentCount() : 0);
         }
         
         // 사용자별 좋아요/북마크 여부
+        if (userId != null && !userId.isEmpty() && prompt.getPromptId() != null) {
+            result.put("isLiked", interactionService.hasUserLiked(userId, prompt.getPromptId()));
+            result.put("isBookmarked", interactionService.hasUserBookmarked(userId, prompt.getPromptId()));
+        }
+        
+        return result;
+    }
+
+    /**
+     * OpenSearch 데이터만으로 프롬프트 정보 구성 (최적화됨)
+     * 목록 조회용 - DynamoDB 통계 조회 없이 OpenSearch 데이터 사용
+     */
+    private Map<String, Object> enrichPromptFromOpenSearch(PromptDocument prompt, String userId, Map<String, String> nicknameMap) {
+        Map<String, Object> result = new HashMap<>();
+        
+        result.put("promptId", prompt.getPromptId());
+        result.put("title", prompt.getTitle() != null ? prompt.getTitle() : "제목 없음");
+        result.put("description", prompt.getDescription() != null ? prompt.getDescription() : "");
+        result.put("content", prompt.getContent());
+        result.put("category", prompt.getCategory());
+        result.put("model", prompt.getModel() != null ? prompt.getModel() : "AI Model");
+        result.put("promptType", prompt.getPromptType());
+        result.put("userId", prompt.getUserId());
+        
+        // 닉네임: OpenSearch에 있으면 사용, 없으면 nicknameMap에서 조회
+        String nickname = prompt.getNickname();
+        if ((nickname == null || nickname.isEmpty()) && nicknameMap != null) {
+            String promptUserId = prompt.getUserId();
+            if (promptUserId != null) {
+                nickname = nicknameMap.get(promptUserId);
+                if (nickname == null) {
+                    nickname = nicknameMap.get(promptUserId.replace("USER#", ""));
+                }
+            }
+        }
+        result.put("nickname", nickname);
+        
+        result.put("status", prompt.getStatus());
+        result.put("price", prompt.getPrice());
+        result.put("createdAt", prompt.getCreatedAt());
+        result.put("evaluationMetrics", prompt.getEvaluationMetrics());
+        result.put("isPublic", prompt.getIsPublic());
+        
+        if (prompt.getScore() != null) {
+            result.put("score", prompt.getScore());
+        }
+        
+        // OpenSearch에서 통계 데이터 가져오기 (Lambda에서 동기화됨)
+        result.put("likeCount", prompt.getLikeCount() != null ? prompt.getLikeCount() : 0);
+        result.put("bookmarkCount", prompt.getBookmarkCount() != null ? prompt.getBookmarkCount() : 0);
+        result.put("commentCount", prompt.getCommentCount() != null ? prompt.getCommentCount() : 0);
+        
+        // 사용자별 좋아요/북마크 여부 (DynamoDB 조회 필요)
         if (userId != null && !userId.isEmpty() && prompt.getPromptId() != null) {
             result.put("isLiked", interactionService.hasUserLiked(userId, prompt.getPromptId()));
             result.put("isBookmarked", interactionService.hasUserBookmarked(userId, prompt.getPromptId()));

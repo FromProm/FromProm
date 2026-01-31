@@ -1,14 +1,12 @@
 package fromprom.search.DTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 
 @Data
 @Builder
@@ -50,10 +48,10 @@ public class PromptDocument {
     // OpenSearch 매핑: examplesS3Url (camelCase)
     private String examplesS3Url;
 
-    // 통계 필드 (DynamoDB에서 가져옴, OpenSearch에는 없을 수 있음)
-    private String likeCount;
-    private String commentCount;
-    private String bookmarkCount;
+    // 통계 필드 (OpenSearch에 저장됨, Lambda에서 동기화)
+    private Integer likeCount;
+    private Integer bookmarkCount;
+    private Integer commentCount;
     
     private Boolean isPublic;
     

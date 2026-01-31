@@ -435,6 +435,18 @@ const PromptDetailPage = () => {
         </div>
         </AnimatedContent>
 
+         {/* 프롬프트 설명 */}
+        <AnimatedContent once distance={50} duration={0.6} delay={0.3}>
+        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-4 sm:p-8">
+          <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">프롬프트 설명</h2>
+          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-100">
+            <p className="text-gray-700 whitespace-pre-wrap text-sm sm:text-base leading-relaxed">
+              {prompt.description || '설명이 없습니다.'}
+            </p>
+          </div>
+        </div>
+        </AnimatedContent>
+
         {/* 성능 지표 */}
         {performanceMetrics && performanceMetrics.finalScore > 0 && (
         <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
@@ -563,21 +575,6 @@ const PromptDetailPage = () => {
         </div>
         </AnimatedContent>
         )}
-
-        {/* 프롬프트 미리보기 */}
-        <AnimatedContent once distance={50} duration={0.6} delay={0.3}>
-        <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-4 sm:p-8">
-          <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">프롬프트 미리보기</h2>
-          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-100">
-            <pre className="text-gray-700 whitespace-pre-wrap font-mono text-xs sm:text-sm">
-              {prompt.content ? prompt.content.substring(0, 200) + '...' : '프롬프트 내용이 없습니다.'}
-            </pre>
-          </div>
-          <p className="text-sm text-gray-500 mt-4">
-            💡 전체 프롬프트는 구매 후 확인할 수 있습니다.
-          </p>
-        </div>
-        </AnimatedContent>
 
         {/* 예시 입력/출력 */}
         {prompt.examples && prompt.examples.length > 0 && (

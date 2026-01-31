@@ -5,6 +5,7 @@ import { promptTypeToCategory } from '../services/dummyData';
 import { usePurchaseStore } from '../store/purchaseStore';
 import { creditApi, promptApi } from '../services/api';
 import AnimatedContent from '../components/AnimatedContent';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
 
 // 프롬프트 상세 타입
 interface PromptDetail {
@@ -119,8 +120,7 @@ const PurchasePage = () => {
 
       setPurchaseComplete(true);
     } catch (error: any) {
-      const message = error.response?.data?.message || '구매 처리 중 오류가 발생했습니다.';
-      alert(message);
+      alert(getFriendlyErrorMessage(error));
     } finally {
       setIsProcessing(false);
     }

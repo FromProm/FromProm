@@ -4,6 +4,7 @@ import { userApi } from '../../services/api';
 import LightPillar from '../../components/LightPillar';
 import SplitText from '../../components/SplitText';
 import AnimatedContent from '../../components/AnimatedContent';
+import { getFriendlyErrorMessage } from '../../utils/errorMessages';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -32,8 +33,7 @@ const LoginPage = () => {
       const redirectTo = from.startsWith('/auth') ? '/marketplace' : from;
       navigate(redirectTo);
     } catch (error: any) {
-      const message = error.response?.data || '로그인에 실패했습니다.';
-      alert(message);
+      alert(getFriendlyErrorMessage(error));
     } finally {
       setIsLoading(false);
     }

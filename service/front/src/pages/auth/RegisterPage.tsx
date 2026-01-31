@@ -4,42 +4,7 @@ import { userApi } from '../../services/api';
 import LightPillar from '../../components/LightPillar';
 import SplitText from '../../components/SplitText';
 import AnimatedContent from '../../components/AnimatedContent';
-
-// Cognito 에러 메시지를 사용자 친화적으로 변환
-const getErrorMessage = (error: any): string => {
-  const rawMessage = error.response?.data || error.message || '';
-  
-  // Cognito 에러 코드/메시지 매핑
-  if (rawMessage.includes('UsernameExistsException') || rawMessage.includes('already exists')) {
-    return '이미 등록된 이메일입니다.';
-  }
-  if (rawMessage.includes('InvalidPasswordException') || rawMessage.includes('Password did not conform')) {
-    return '비밀번호는 8자 이상, 대문자, 소문자, 숫자, 특수문자를 포함해야 합니다.';
-  }
-  if (rawMessage.includes('InvalidParameterException')) {
-    return '입력 정보가 올바르지 않습니다.';
-  }
-  if (rawMessage.includes('CodeMismatchException') || rawMessage.includes('Invalid verification code')) {
-    return '인증 코드가 올바르지 않습니다.';
-  }
-  if (rawMessage.includes('ExpiredCodeException')) {
-    return '인증 코드가 만료되었습니다. 재전송해주세요.';
-  }
-  if (rawMessage.includes('LimitExceededException')) {
-    return '요청 횟수가 초과되었습니다. 잠시 후 다시 시도해주세요.';
-  }
-  if (rawMessage.includes('TooManyRequestsException')) {
-    return '너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.';
-  }
-  if (rawMessage.includes('UserNotFoundException')) {
-    return '사용자를 찾을 수 없습니다.';
-  }
-  if (rawMessage.includes('NotAuthorizedException')) {
-    return '인증에 실패했습니다.';
-  }
-  
-  return '오류가 발생했습니다. 다시 시도해주세요.';
-};
+import { getFriendlyErrorMessage } from '../../utils/errorMessages';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -73,7 +38,7 @@ const RegisterPage = () => {
       setIsSignUpComplete(true);
       alert('회원가입이 완료되었습니다. 이메일로 전송된 인증 코드를 입력해주세요.');
     } catch (error: any) {
-      alert(getErrorMessage(error));
+      alert(getFriendlyErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +60,7 @@ const RegisterPage = () => {
       alert('이메일 인증이 완료되었습니다! 로그인 페이지로 이동합니다.');
       navigate('/auth/login');
     } catch (error: any) {
-      alert(getErrorMessage(error));
+      alert(getFriendlyErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +72,7 @@ const RegisterPage = () => {
       await userApi.resendCode(formData.email);
       alert('인증 코드가 재전송되었습니다.');
     } catch (error: any) {
-      alert(getErrorMessage(error));
+      alert(getFriendlyErrorMessage(error));
     }
   };
 

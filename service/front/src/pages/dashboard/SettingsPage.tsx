@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { userApi } from '../../services/api';
 import AnimatedContent from '../../components/AnimatedContent';
 import SplitText from '../../components/SplitText';
+import { getFriendlyErrorMessage } from '../../utils/errorMessages';
 
 const SettingsPage = () => {
   const navigate = useNavigate();
@@ -38,7 +39,7 @@ const SettingsPage = () => {
       await userApi.updateProfile({ nickname });
       setMessage({ type: 'success', text: '닉네임이 변경되었습니다.' });
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.response?.data?.message || '닉네임 변경에 실패했습니다.' });
+      setMessage({ type: 'error', text: getFriendlyErrorMessage(error) });
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +69,7 @@ const SettingsPage = () => {
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.response?.data?.message || '비밀번호 변경에 실패했습니다.' });
+      setMessage({ type: 'error', text: getFriendlyErrorMessage(error) });
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +93,7 @@ const SettingsPage = () => {
       alert('회원 탈퇴가 완료되었습니다.');
       navigate('/');
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.response?.data?.message || '회원 탈퇴에 실패했습니다.' });
+      setMessage({ type: 'error', text: getFriendlyErrorMessage(error) });
     } finally {
       setIsLoading(false);
     }

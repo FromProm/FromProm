@@ -68,8 +68,15 @@ const PromptDetailPage = () => {
 
   const isAlreadyInCart = prompt ? isInCart(prompt.promptId) : false;
   const isAlreadyPurchased = prompt ? isPurchased(prompt.promptId) : false;
-  // 내가 등록한 프롬프트인지 확인
-  const isMyPrompt = prompt && userInfo?.sub ? prompt.userId === userInfo.sub : false;
+  
+  // 내가 등록한 프롬프트인지 확인 (userId가 USER#uuid 형식일 수 있음)
+  const isMyPrompt = (() => {
+    if (!prompt || !userInfo?.sub) return false;
+    const promptUserId = prompt.userId?.startsWith('USER#') 
+      ? prompt.userId.substring(5) 
+      : prompt.userId;
+    return promptUserId === userInfo.sub;
+  })();
 
   const isLoggedIn = () => !!localStorage.getItem('accessToken');
 
@@ -516,7 +523,7 @@ const PromptDetailPage = () => {
           </div>
 
           {/* AI 피드백 - 프롬프트 등록자에게만 표시 */}
-          {performanceMetrics.feedback && userInfo?.sub === prompt.userId && (
+          {performanceMetrics.feedback && isMyPrompt && (
             <div className="mt-6 bg-white rounded-lg p-6 border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <span className="mr-2">🤖</span> AI 평가 피드백

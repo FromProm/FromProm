@@ -384,7 +384,7 @@ const MarketplacePage = () => {
                 className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                   selectedCategory === category
                     ? 'bg-blue-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-900 hover:text-blue-900'
+                    : 'bg-white text-gray-700 border border-gray-300 sm:hover:border-blue-900 sm:hover:text-blue-900'
                 }`}
               >
                 {category}

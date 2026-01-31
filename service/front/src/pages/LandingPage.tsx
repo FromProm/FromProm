@@ -152,6 +152,14 @@ const LandingPage = () => {
                 </div>
               </div>
               <span className="text-xl font-semibold text-white tracking-tight">FromProm</span>
+              <nav className="hidden md:flex items-center space-x-8 ml-8">
+                <Link to="/marketplace" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
+                  마켓
+                </Link>
+                <Link to="/docs" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
+                  사용 가이드
+                </Link>
+              </nav>
             </motion.div>
 
             <motion.div
@@ -160,22 +168,13 @@ const LandingPage = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <nav className="hidden md:flex items-center space-x-8">
-                <Link to="/marketplace" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
-                  Market
-                </Link>
-                <Link to="/docs" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
-                  Guide
-                </Link>
-              </nav>
-
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={handleLogout}
                     className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors"
                   >
-                    Logout
+                    로그아웃
                   </button>
                 </div>
               ) : (
@@ -219,7 +218,7 @@ const LandingPage = () => {
                   text={["FROMPROM"]}
                   className="text-white drop-shadow-2xl"
                   style={{ 
-                    fontFamily: 'system-ui, -apple-system, sans-serif', 
+                    fontFamily: "'Gowun Dodum', system-ui, -apple-system, sans-serif", 
                     letterSpacing: '-0.05em',
                     fontWeight: 900,
                     fontSize: '8vw',

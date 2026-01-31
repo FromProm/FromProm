@@ -257,6 +257,29 @@ const MyprofilePage = () => {
 
   const purchasedPrompts = getPurchasedPrompts();
 
+  // 영어 크레딧 설명을 한국어로 변환
+  const translateCreditDescription = (description: string): string => {
+    if (!description) return description;
+    
+    // 일반적인 영어 패턴을 한국어로 변환
+    let translated = description
+      .replace(/^Credit charge$/i, '크레딧 충전')
+      .replace(/^Credit Charge$/i, '크레딧 충전')
+      .replace(/^Charge$/i, '충전')
+      .replace(/^Purchase:/i, '구매:')
+      .replace(/^Prompt purchase:/i, '프롬프트 구매:')
+      .replace(/^Prompt Purchase:/i, '프롬프트 구매:')
+      .replace(/^Cart purchase$/i, '장바구니 구매')
+      .replace(/^Cart Purchase$/i, '장바구니 구매')
+      .replace(/^Refund:/i, '환불:')
+      .replace(/^Bonus$/i, '보너스')
+      .replace(/^Welcome bonus$/i, '가입 보너스')
+      .replace(/^Sign up bonus$/i, '가입 보너스')
+      .replace(/^Signup bonus$/i, '가입 보너스');
+    
+    return translated;
+  };
+
   // 판매 프롬프트 수에 따른 배지 계산
   const getSellerBadge = (count: number) => {
     if (count >= 50) return { label: '프롬프트 마스터', color: 'from-purple-500 to-pink-500', icon: '👑' };
@@ -438,10 +461,11 @@ const MyprofilePage = () => {
                       ) : creditHistory.length > 0 ? (
                         <div className="space-y-2">
                           {creditHistory.slice(0, 3).map((item, idx) => {
-                            const isExpense = item.user_description?.includes('구매') || item.user_description?.includes('Purchase');
+                            const description = translateCreditDescription(item.user_description);
+                            const isExpense = description?.includes('구매') || item.user_description?.includes('Purchase');
                             return (
                               <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                                <span className="text-xs sm:text-sm text-gray-700 truncate mr-2">{item.user_description}</span>
+                                <span className="text-xs sm:text-sm text-gray-700 truncate mr-2">{description}</span>
                                 <span className={`text-xs sm:text-sm font-medium whitespace-nowrap ${isExpense ? 'text-red-600' : 'text-green-600'}`}>
                                   {isExpense ? '' : '+'}{item.amount.toLocaleString()}P
                                 </span>

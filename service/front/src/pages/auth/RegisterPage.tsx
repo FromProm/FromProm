@@ -13,6 +13,8 @@ const RegisterPage = () => {
     password: '',
     confirmPassword: '',
   });
+  const [termsAgreed, setTermsAgreed] = useState(false);
+  const [termsError, setTermsError] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUpComplete, setIsSignUpComplete] = useState(false);
@@ -21,6 +23,12 @@ const RegisterPage = () => {
   // 회원가입 요청
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!termsAgreed) {
+      setTermsError(true);
+      return;
+    }
+    setTermsError(false);
     
     if (formData.password !== formData.confirmPassword) {
       alert('비밀번호가 일치하지 않습니다.');
@@ -310,18 +318,27 @@ const RegisterPage = () => {
                   </div>
 
                   {/* 약관 동의 */}
-                  <div className="flex items-start">
-                    <input
-                      id="terms"
-                      name="terms"
-                      type="checkbox"
-                      required
-                      className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="terms" className="ml-3 text-sm text-gray-300">
-                      <span className="font-medium text-blue-400">이용약관</span> 및{' '}
-                      <span className="font-medium text-blue-400">개인정보처리방침</span>에 동의합니다 *
-                    </label>
+                  <div className="space-y-2">
+                    <div className="flex items-start">
+                      <input
+                        id="terms"
+                        name="terms"
+                        type="checkbox"
+                        checked={termsAgreed}
+                        onChange={(e) => {
+                          setTermsAgreed(e.target.checked);
+                          if (e.target.checked) setTermsError(false);
+                        }}
+                        className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="terms" className="ml-3 text-sm text-gray-300">
+                        <span className="font-medium text-blue-400">이용약관</span> 및{' '}
+                        <span className="font-medium text-blue-400">개인정보처리방침</span>에 동의합니다 *
+                      </label>
+                    </div>
+                    {termsError && (
+                      <p className="text-red-400 text-sm">약관에 동의해주세요.</p>
+                    )}
                   </div>
 
                   <button

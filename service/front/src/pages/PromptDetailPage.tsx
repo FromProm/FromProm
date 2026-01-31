@@ -593,6 +593,27 @@ const PromptDetailPage = () => {
                 }
               }
 
+              // 프롬프트 템플릿에서 변수 순서 추출 ({변수명} 형태)
+              const templateVariableOrder: string[] = [];
+              const variableRegex = /\{([^}]+)\}/g;
+              let match;
+              while ((match = variableRegex.exec(prompt.content)) !== null) {
+                if (!templateVariableOrder.includes(match[1])) {
+                  templateVariableOrder.push(match[1]);
+                }
+              }
+
+              // 템플릿 순서대로 변수 정렬
+              const sortedVariableEntries = Object.entries(inputVariables).sort((a, b) => {
+                const indexA = templateVariableOrder.indexOf(a[0]);
+                const indexB = templateVariableOrder.indexOf(b[0]);
+                // 템플릿에 없는 변수는 뒤로
+                if (indexA === -1 && indexB === -1) return 0;
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+              });
+
               // 이미지 타입인지 확인
               const isImageType = prompt.category === 'type_b_image';
               
@@ -618,9 +639,9 @@ const PromptDetailPage = () => {
                   <div className="w-full sm:w-1/2 flex flex-col">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">입력 변수</h4>
                     <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-100">
-                      {Object.keys(inputVariables).length > 0 ? (
+                      {sortedVariableEntries.length > 0 ? (
                         <div className="space-y-2">
-                          {Object.entries(inputVariables).map(([key, value]) => (
+                          {sortedVariableEntries.map(([key, value]) => (
                             <div key={key} className="flex items-center gap-2">
                               <span className="text-gray-500 text-sm">{key}:</span>
                               <span className="font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded text-sm">

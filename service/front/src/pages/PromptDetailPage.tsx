@@ -334,7 +334,6 @@ const PromptDetailPage = () => {
                 )}
               </div>
               <h1 className="text-xl sm:text-3xl font-extrabold text-gray-900 mb-4">{prompt.title || '제목 없음'}</h1>
-              <p className="text-gray-600 text-sm sm:text-lg leading-relaxed mb-6">{prompt.description || '설명 없음'}</p>
 
               <div className="flex items-center flex-wrap gap-2 text-sm text-gray-500">
                 <button 

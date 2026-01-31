@@ -38,6 +38,10 @@
   .animate-slide-down {
     animation: slideDown 0.3s ease-out;
   }
+  
+  .animate-bounce-subtle {
+    animation: bounceSubtle 2s ease-in-out infinite;
+  }
 }
 
 @keyframes fadeIn {
@@ -63,5 +67,14 @@
     max-height: 200px;
     padding-top: 1rem;
     padding-bottom: 1rem;
+  }
+}
+
+@keyframes bounceSubtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
   }
 }

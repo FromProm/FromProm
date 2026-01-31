@@ -317,6 +317,10 @@ const MyprofilePage = () => {
       // 판매 수익
       .replace(/^Prompt Sale$/i, '판매 수익')
       .replace(/^Prompt sale$/i, '판매 수익')
+      .replace(/^Prompt Sales$/i, '판매 수익')
+      .replace(/^Prompt sales$/i, '판매 수익')
+      .replace(/^Sale$/i, '판매 수익')
+      .replace(/^Sales$/i, '판매 수익')
       .replace(/^프롬프트 판매$/i, '판매 수익')
       // 기타
       .replace(/^Refund:/i, '환불')

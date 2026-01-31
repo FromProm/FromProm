@@ -82,7 +82,7 @@ const Header = () => {
           <div className="hidden md:flex items-center justify-between flex-1 ml-8">
             {isAuthenticated ? (
               <>
-                {/* 왼쪽 메뉴들 - 가이드 > 마켓 > 등록 > 장바구니 > 마이페이지 순서 */}
+                {/* 왼쪽 메뉴들 - 가이드 > 마켓 > 장바구니 > 마이페이지 순서 */}
                 <div className="flex items-center space-x-6">
                   <Link
                     to="/docs"
@@ -95,16 +95,6 @@ const Header = () => {
                     className={`${getMenuStyle('/marketplace')} transition-colors`}
                   >
                     마켓
-                  </Link>
-                  <Link
-                    to="/prompt/create"
-                    className={`px-3 py-1.5 rounded-md transition-all ${
-                      isCurrentPage('/prompt/create')
-                        ? 'border-2 border-blue-900 text-blue-900 font-bold'
-                        : 'bg-blue-900 text-white font-medium hover:bg-blue-800'
-                    }`}
-                  >
-                    ✏️ 프롬프트 등록
                   </Link>
                   <Link
                     to="/cart"
@@ -125,8 +115,18 @@ const Header = () => {
                   </Link>
                 </div>
                 
-                {/* 오른쪽: 환영 메시지 + 로그아웃 */}
+                {/* 오른쪽: 프롬프트 등록 + 환영 메시지 + 로그아웃 */}
                 <div className="flex items-center space-x-4">
+                  <Link
+                    to="/prompt/create"
+                    className={`px-3 py-1.5 rounded-md transition-all ${
+                      isCurrentPage('/prompt/create')
+                        ? 'bg-blue-900 text-white font-bold'
+                        : 'bg-blue-200 text-blue-900 font-medium hover:bg-blue-900 hover:text-white animate-bounce-subtle'
+                    }`}
+                  >
+                    ✏️ 프롬프트 등록
+                  </Link>
                   {userInfo?.nickname && (
                     <span className="text-sm text-gray-700">
                       환영합니다. {userInfo.nickname}님
@@ -200,8 +200,8 @@ const Header = () => {
                   to="/prompt/create"
                   className={`block px-2 py-2 text-center rounded-lg transition-all ${
                     isCurrentPage('/prompt/create')
-                      ? 'border-2 border-blue-900 text-blue-900 font-bold'
-                      : 'bg-blue-900 text-white font-medium'
+                      ? 'bg-blue-900 text-white font-bold'
+                      : 'bg-blue-200 text-blue-900 font-medium animate-bounce-subtle'
                   }`}
                 >
                   ✏️ 프롬프트 등록

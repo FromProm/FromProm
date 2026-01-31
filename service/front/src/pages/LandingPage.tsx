@@ -155,7 +155,7 @@ const LandingPage = () => {
                 </div>
                 <span className="text-xl font-semibold text-white tracking-tight">FromProm</span>
               </div>
-              {/* 메뉴 순서: 사용 가이드 > 마켓 > 프롬프트 등록 > 장바구니 > 마이페이지 */}
+              {/* 메뉴 순서: 사용 가이드 > 마켓 > 장바구니 > 마이페이지 (프롬프트 등록은 우측으로) */}
               <nav className="hidden md:flex items-center space-x-6 ml-6">
                 <Link to="/docs" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
                   사용 가이드
@@ -165,9 +165,6 @@ const LandingPage = () => {
                 </Link>
                 {isAuthenticated && (
                   <>
-                    <Link to="/prompt/create" className="bg-white text-black font-medium px-3 py-1.5 rounded-md text-sm hover:bg-gray-100 transition-colors">
-                      ✏️ 프롬프트 등록
-                    </Link>
                     <Link to="/cart" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
                       장바구니
                     </Link>
@@ -187,6 +184,9 @@ const LandingPage = () => {
             >
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
+                  <Link to="/prompt/create" className="bg-blue-200 text-blue-900 font-medium px-3 py-1.5 rounded-md text-sm hover:bg-blue-900 hover:text-white transition-colors animate-bounce-subtle">
+                    ✏️ 프롬프트 등록
+                  </Link>
                   <button
                     onClick={handleLogout}
                     className="text-red-400 hover:text-red-300 font-medium text-sm transition-colors"
@@ -265,24 +265,35 @@ const LandingPage = () => {
 
             {/* CTA 버튼 */}
             <motion.div
-              className="flex flex-col sm:flex-row justify-center items-center gap-6 mb-32"
+              className="flex flex-col justify-center items-center gap-4 mb-32"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
+              {/* 사용 가이드 버튼 - 위에 긴 버튼 */}
               <Link
-                to="/marketplace"
-                className="bg-white text-black font-bold px-6 py-2.5 rounded-lg hover:bg-gray-100 transition-all text-base shadow-lg hover:shadow-xl hover:scale-105"
+                to="/docs"
+                className="w-full max-w-md bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold px-8 py-3 rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all text-base shadow-lg hover:shadow-xl hover:scale-105 text-center"
               >
-                프롬프트 둘러보기
+                📖 FromProm 사용 가이드 보기
               </Link>
+              
+              {/* 아래 두 버튼 */}
+              <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+                <Link
+                  to="/marketplace"
+                  className="bg-white text-black font-bold px-6 py-2.5 rounded-lg hover:bg-gray-100 transition-all text-base shadow-lg hover:shadow-xl hover:scale-105"
+                >
+                  프롬프트 둘러보기
+                </Link>
 
-              <Link
-                to="/prompt/create"
-                className="border-2 border-slate-500 text-white font-semibold px-6 py-2.5 rounded-lg hover:border-white hover:bg-white/10 transition-all text-base"
-              >
-                프롬프트 등록하기
-              </Link>
+                <Link
+                  to="/prompt/create"
+                  className="border-2 border-slate-500 text-white font-semibold px-6 py-2.5 rounded-lg hover:border-white hover:bg-white/10 transition-all text-base"
+                >
+                  프롬프트 등록하기
+                </Link>
+              </div>
             </motion.div>
 
           </div>

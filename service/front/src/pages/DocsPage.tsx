@@ -43,20 +43,39 @@ const DocsPage = () => {
                 </div>
                 <span className="text-xl font-semibold text-white">FromProm</span>
               </Link>
-              <nav className="hidden md:flex items-center space-x-8 ml-12">
+              {/* 메뉴 순서: 사용 가이드 > 마켓 > 장바구니 > 마이페이지 */}
+              <nav className="hidden md:flex items-center space-x-6 ml-6">
+                <Link to="/docs" className="text-blue-400 font-bold text-sm transition-colors">
+                  사용 가이드
+                </Link>
                 <Link to="/marketplace" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
                   마켓
                 </Link>
+                {isAuthenticated && (
+                  <>
+                    <Link to="/cart" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
+                      장바구니
+                    </Link>
+                    <Link to="/dashboard" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
+                      마이페이지
+                    </Link>
+                  </>
+                )}
               </nav>
             </div>
             <div className="flex items-center space-x-4">
               {isAuthenticated ? (
-                <button
-                  onClick={handleLogout}
-                  className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors"
-                >
-                  로그아웃
-                </button>
+                <div className="flex items-center space-x-4">
+                  <Link to="/prompt/create" className="bg-blue-200 text-blue-900 font-medium px-3 py-1.5 rounded-md text-sm hover:bg-blue-900 hover:text-white transition-colors animate-bounce-subtle">
+                    ✏️ 프롬프트 등록
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="text-red-400 hover:text-red-300 font-medium text-sm transition-colors"
+                  >
+                    로그아웃
+                  </button>
+                </div>
               ) : (
                 <>
                   <Link to="/auth/login" className="text-gray-300 hover:text-white font-medium text-sm transition-colors">

@@ -92,18 +92,18 @@ const CreditPage = () => {
     <div className="min-h-screen bg-white">
 
       {/* 메인 콘텐츠 */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
           {/* 페이지 헤더 */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <div>
               <SplitText
                 text="크레딧 충전"
-                className="text-3xl font-bold text-gray-900 mb-2"
+                className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2"
                 delay={50}
                 duration={0.6}
                 ease="power3.out"
@@ -119,7 +119,7 @@ const CreditPage = () => {
             <div>
               <SplitText
                 text="FromProm 크레딧을 충전하여 프롬프트를 구매하세요"
-                className="text-gray-600"
+                className="text-gray-600 text-sm sm:text-base"
                 delay={30}
                 duration={0.5}
                 ease="power3.out"
@@ -136,51 +136,51 @@ const CreditPage = () => {
 
           {/* 현재 크레딧 표시 */}
           <AnimatedContent once distance={50} duration={0.6} delay={0}>
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 mb-8 text-white shadow-lg shadow-blue-500/20">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8 text-white shadow-lg shadow-blue-500/20">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-medium mb-1">현재 보유 크레딧</h2>
-                <p className="text-3xl font-bold">{currentCredits.toLocaleString()}P</p>
+                <h2 className="text-sm sm:text-lg font-medium mb-1">현재 보유 크레딧</h2>
+                <p className="text-2xl sm:text-3xl font-bold">{currentCredits.toLocaleString()}P</p>
               </div>
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="text-2xl">💎</span>
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-full flex items-center justify-center">
+                <span className="text-xl sm:text-2xl">💎</span>
               </div>
             </div>
           </div>
           </AnimatedContent>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
             {/* 충전 금액 선택 */}
             <div className="lg:col-span-2">
               <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
-              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-8 shadow-lg shadow-blue-500/10">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">충전 금액 선택</h2>
+              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-4 sm:p-8 shadow-lg shadow-blue-500/10">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">충전 금액 선택</h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
                   {creditPackages.map((pkg) => (
                     <div
                       key={pkg.credits}
                       onClick={() => setSelectedAmount(pkg.credits)}
-                      className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                      className={`relative border-2 rounded-lg p-3 sm:p-4 cursor-pointer transition-all ${
                         selectedAmount === pkg.credits
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       {pkg.popular && (
-                        <div className="absolute -top-2 left-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold px-2 py-1 rounded">
+                        <div className="absolute -top-2 left-2 sm:left-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                           인기
                         </div>
                       )}
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-1 sm:mb-2">
                         <div>
-                          <div className="text-lg font-bold text-gray-900">{pkg.credits.toLocaleString()}P</div>
+                          <div className="text-base sm:text-lg font-bold text-gray-900">{pkg.credits.toLocaleString()}P</div>
                           {pkg.bonus > 0 && (
-                            <div className="text-sm text-green-600 font-medium">+{pkg.bonus}P 보너스</div>
+                            <div className="text-xs sm:text-sm text-green-600 font-medium">+{pkg.bonus}P 보너스</div>
                           )}
                         </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-blue-600">₩{pkg.price.toLocaleString()}</div>
+                        <div className="sm:text-right mt-1 sm:mt-0">
+                          <div className="text-base sm:text-lg font-bold text-blue-600">₩{pkg.price.toLocaleString()}</div>
                           {pkg.bonus > 0 && (
                             <div className="text-xs text-gray-500">총 {(pkg.credits + pkg.bonus).toLocaleString()}P</div>
                           )}
@@ -196,24 +196,24 @@ const CreditPage = () => {
             {/* 결제 정보 */}
             <div className="lg:col-span-1">
               <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
-              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-6 shadow-lg shadow-blue-500/10 sticky top-24">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">결제 정보</h3>
+              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-4 sm:p-6 shadow-lg shadow-blue-500/10 sticky top-24">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">결제 정보</h3>
                 
                 {/* 주문 요약 */}
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between">
+                <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
+                  <div className="flex justify-between text-sm">
                     <span className="text-gray-600">크레딧</span>
                     <span className="font-medium">
                       {selectedAmount === 0 ? (customAmount || '0') : selectedAmount.toLocaleString()}P
                     </span>
                   </div>
                   {(selectedAmount > 0 && getBonus(selectedAmount) > 0) && (
-                    <div className="flex justify-between text-green-600">
+                    <div className="flex justify-between text-green-600 text-sm">
                       <span>보너스</span>
                       <span className="font-medium">+{getBonus(selectedAmount)}P</span>
                     </div>
                   )}
-                  <div className="border-t border-gray-200 pt-3 flex justify-between text-lg font-bold">
+                  <div className="border-t border-gray-200 pt-2 sm:pt-3 flex justify-between text-base sm:text-lg font-bold">
                     <span>총 결제금액</span>
                     <span className="text-blue-600">
                       ₩{selectedAmount === 0 
@@ -222,7 +222,7 @@ const CreditPage = () => {
                       }
                     </span>
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-xs sm:text-sm text-gray-500">
                     받을 크레딧: {
                       selectedAmount === 0 
                         ? (customAmount || '0')
@@ -232,23 +232,23 @@ const CreditPage = () => {
                 </div>
 
                 {/* 결제 방법 */}
-                <div className="mb-6">
-                  <h4 className="font-medium text-gray-900 mb-3">결제 방법</h4>
+                <div className="mb-4 sm:mb-6">
+                  <h4 className="font-medium text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base">결제 방법</h4>
                   <div className="space-y-2">
-                    <label className="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                    <label className="flex items-center p-2.5 sm:p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
                       <input 
                         type="radio" 
                         name="payment" 
                         value="card" 
                         checked={paymentMethod === 'card'}
                         onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="mr-3" 
+                        className="mr-2 sm:mr-3" 
                       />
                       <div className="flex items-center">
-                        <span className="text-sm font-medium">신용카드</span>
+                        <span className="text-xs sm:text-sm font-medium">신용카드</span>
                         <div className="ml-2 flex space-x-1">
-                          <div className="w-6 h-4 bg-blue-600 rounded text-white text-xs flex items-center justify-center">V</div>
-                          <div className="w-6 h-4 bg-red-600 rounded text-white text-xs flex items-center justify-center">M</div>
+                          <div className="w-5 h-3 sm:w-6 sm:h-4 bg-blue-600 rounded text-white text-xs flex items-center justify-center">V</div>
+                          <div className="w-5 h-3 sm:w-6 sm:h-4 bg-red-600 rounded text-white text-xs flex items-center justify-center">M</div>
                         </div>
                       </div>
                     </label>
@@ -259,7 +259,7 @@ const CreditPage = () => {
                 <button
                   onClick={handlePurchase}
                   disabled={isProcessing || (selectedAmount === 0 && !customAmount) || (selectedAmount === 0 && parseInt(customAmount) < 100)}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-2.5 sm:py-3 px-4 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
                 >
                   {isProcessing ? '처리 중...' : '크레딧 충전하기'}
                 </button>
@@ -270,9 +270,9 @@ const CreditPage = () => {
 
           {/* 크레딧 사용 안내 */}
           <AnimatedContent once distance={50} duration={0.6} delay={0.3}>
-          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 크레딧 사용 안내</h3>
-            <ul className="space-y-2 text-sm text-blue-800">
+          <div className="mt-6 sm:mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold text-blue-900 mb-2 sm:mb-3">💡 크레딧 사용 안내</h3>
+            <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-blue-800">
               <li>• 1P = 1원으로 충전됩니다</li>
               <li>• 충전된 크레딧은 프롬프트 구매에 사용할 수 있습니다</li>
               <li>• 보너스 크레딧은 일정 금액 이상 충전 시 제공됩니다</li>
@@ -291,28 +291,28 @@ const CreditPage = () => {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 text-center"
+            className="bg-white rounded-xl shadow-2xl max-w-md w-full p-4 sm:p-6 text-center"
           >
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">충전 완료!</h3>
-            <p className="text-gray-600 mb-6">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">충전 완료!</h3>
+            <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">
               크레딧이 성공적으로 충전되었습니다.<br />
               현재 보유 크레딧: <span className="font-bold text-blue-600">{currentCredits.toLocaleString()}P</span>
             </p>
-            <div className="flex space-x-3">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
               <button
                 onClick={() => setShowSuccessModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
               >
                 닫기
               </button>
               <Link
                 to="/marketplace"
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center text-sm sm:text-base"
               >
                 프롬프트 구매하기
               </Link>

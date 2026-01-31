@@ -111,12 +111,12 @@ const RegisterPage = () => {
         }}
       />
 
-      <div className="relative z-10 flex flex-col justify-center py-12 sm:px-6 lg:px-8 min-h-screen">
+      <div className="relative z-10 flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 min-h-screen">
         {/* 상단 로고와 제목 */}
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center justify-center mb-6 sm:mb-8">
             <Link to="/" className="flex items-center space-x-2 mr-4">
-              <div className="w-11 h-10 rounded-md overflow-hidden flex items-center justify-center shadow-lg">
+              <div className="w-9 h-8 sm:w-11 sm:h-10 rounded-md overflow-hidden flex items-center justify-center shadow-lg">
                 <img 
                   src="/logo.png" 
                   alt="FromProm Logo" 
@@ -131,14 +131,14 @@ const RegisterPage = () => {
                   <span className="text-black font-bold text-base">P</span>
                 </div>
               </div>
-              <h2 className="text-2xl font-bold text-white">FromProm</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">FromProm</h2>
             </Link>
           </div>
           
           <div className="flex justify-center items-center space-x-3 mb-3">
             <SplitText
               text="회원가입"
-              className="text-3xl font-bold text-white"
+              className="text-2xl sm:text-3xl font-bold text-white"
               delay={50}
               duration={0.6}
               ease="power3.out"
@@ -154,7 +154,7 @@ const RegisterPage = () => {
           <div className="text-center">
             <SplitText
               text="FromProm과 함께 시작하세요"
-              className="text-gray-300"
+              className="text-gray-300 text-sm sm:text-base"
               delay={30}
               duration={0.5}
               ease="power3.out"
@@ -169,7 +169,7 @@ const RegisterPage = () => {
           </div>
         </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <AnimatedContent
             distance={100}
             direction="vertical"
@@ -182,10 +182,10 @@ const RegisterPage = () => {
             threshold={0.1}
             delay={0.2}
           >
-            <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 py-8 px-4 shadow-2xl sm:rounded-xl sm:px-10">
+            <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 py-6 sm:py-8 px-4 shadow-2xl sm:rounded-xl sm:px-10">
               {/* 회원가입 완료 후 인증 코드 입력 화면 */}
               {isSignUpComplete ? (
-                <div className="space-y-6">
+                <div className="space-y-5 sm:space-y-6">
                   <div className="text-center">
                     <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                       <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,7 +231,7 @@ const RegisterPage = () => {
                   </button>
                 </div>
               ) : (
-                <form className="space-y-6" onSubmit={handleSignUp}>
+                <form className="space-y-5 sm:space-y-6" onSubmit={handleSignUp}>
                   {/* 닉네임 */}
                   <div>
                     <label htmlFor="nickname" className="block text-sm font-medium text-gray-300">

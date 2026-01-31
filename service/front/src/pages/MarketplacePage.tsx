@@ -226,10 +226,10 @@ const MarketplacePage = () => {
       {/* 메인 콘텐츠 */}
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* 페이지 헤더 */}
-        <div className="mb-8 text-center flex flex-col items-center">
+        <div className="mb-6 sm:mb-8 text-center flex flex-col items-center">
           <SplitText
             text="프롬프트 마켓플레이스"
-            className="text-3xl font-bold text-gray-900 mb-2"
+            className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2"
             delay={50}
             duration={0.6}
             ease="power3.out"
@@ -243,7 +243,7 @@ const MarketplacePage = () => {
           />
           <SplitText
             text="검증된 고품질 AI 프롬프트를 찾아보세요"
-            className="text-gray-600"
+            className="text-gray-600 text-sm sm:text-base"
             delay={30}
             duration={0.5}
             ease="power3.out"
@@ -258,7 +258,7 @@ const MarketplacePage = () => {
         </div>
 
         {/* 검색 및 필터 */}
-        <div className="mb-8 space-y-4 flex flex-col items-center">
+        <div className="mb-6 sm:mb-8 space-y-3 sm:space-y-4 flex flex-col items-center">
           {/* 검색바 */}
           <div className="relative w-full max-w-md">
             <input
@@ -266,22 +266,22 @@ const MarketplacePage = () => {
               placeholder="프롬프트 검색..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-900 focus:ring-1 focus:ring-blue-900 transition-colors shadow-lg shadow-blue-500/20"
+              className="w-full bg-white border border-gray-300 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-900 focus:ring-1 focus:ring-blue-900 transition-colors shadow-lg shadow-blue-500/20"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
           </div>
 
           {/* 카테고리 필터 */}
-          <div className="flex flex-wrap justify-center gap-2">
+          <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
             {categories.map((category) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedCategory === category
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${selectedCategory === category
                   ? 'bg-blue-900 text-white'
                   : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-900 hover:text-blue-900'
                   }`}
@@ -294,14 +294,14 @@ const MarketplacePage = () => {
 
         {/* 로딩 상태 */}
         {isLoading ? (
-          <div className="text-center py-12">
-            <div className="w-12 h-12 mx-auto border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-gray-500 mt-4">프롬프트를 불러오는 중...</p>
+          <div className="text-center py-8 sm:py-12">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-gray-500 mt-3 sm:mt-4 text-sm sm:text-base">프롬프트를 불러오는 중...</p>
           </div>
         ) : (
           <>
             {/* 프롬프트 그리드 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {filteredPrompts.map((prompt, index) => {
                 // 타입별 카드 색상 설정
                 const getCardColors = (category: string) => {
@@ -366,57 +366,57 @@ const MarketplacePage = () => {
                     delay={index * 0.1}
                   >
                     <TiltCard
-                      className={`relative bg-gradient-to-br ${colors.gradient} border-2 ${colors.border} ${colors.hoverBorder} rounded-xl p-5 shadow-lg ${colors.shadow} cursor-pointer group flex flex-col transition-colors duration-300`}
+                      className={`relative bg-gradient-to-br ${colors.gradient} border-2 ${colors.border} ${colors.hoverBorder} rounded-xl p-4 sm:p-5 shadow-lg ${colors.shadow} cursor-pointer group flex flex-col transition-colors duration-300`}
                       onClick={() => navigate(`/prompt/${prompt.promptId}`)}
                       rotateAmplitude={8}
                       scaleOnHover={1.03}
                     >
                     {/* 상단: 카테고리 + 가격 */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-2">
-                        <span className={`text-xs ${colors.tag} px-2 py-1 rounded-full font-medium`}>
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <div className="flex items-center space-x-1.5 sm:space-x-2">
+                        <span className={`text-xs ${colors.tag} px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium`}>
                           {promptTypeToCategory[prompt.category] || prompt.category}
                         </span>
                         {prompt.status === 'ACTIVE' && (
                           <span className="text-xs text-green-600 font-medium flex items-center gap-1">
                             <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                            Verified
+                            <span className="hidden sm:inline">Verified</span>
                           </span>
                         )}
                       </div>
-                      <div className="text-xl font-bold text-gray-900">{prompt.price}P</div>
+                      <div className="text-lg sm:text-xl font-bold text-gray-900">{prompt.price}P</div>
                     </div>
 
                     {/* 제목 */}
-                    <h3 className="text-gray-900 text-lg font-bold mb-2 group-hover:text-blue-900 transition-colors line-clamp-1">
+                    <h3 className="text-gray-900 text-base sm:text-lg font-bold mb-1.5 sm:mb-2 group-hover:text-blue-900 transition-colors line-clamp-1">
                       {prompt.title || '제목 없음'}
                     </h3>
 
                     {/* 설명 */}
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                    <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">
                       {prompt.description || '설명 없음'}
                     </p>
 
                     {/* 성능 점수 섹션 - 크게 강조 */}
                     {prompt.evaluationMetrics?.finalScore && (
-                      <div className="bg-white/60 rounded-lg p-4 mb-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-700">AI 성능 점수</span>
-                          <span className="text-2xl font-black text-gray-800">
+                      <div className="bg-white/60 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4">
+                        <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                          <span className="text-xs sm:text-sm font-medium text-gray-700">AI 성능 점수</span>
+                          <span className="text-xl sm:text-2xl font-black text-gray-800">
                             {Math.round(prompt.evaluationMetrics.finalScore)}
-                            <span className="text-sm font-normal text-gray-400">/100</span>
+                            <span className="text-xs sm:text-sm font-normal text-gray-400">/100</span>
                           </span>
                         </div>
-                        <div className="relative w-full h-3 bg-gray-100 rounded-full">
+                        <div className="relative w-full h-2.5 sm:h-3 bg-gray-100 rounded-full">
                           <div 
                             className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${colors.barGradient}`}
                             style={{ width: `${prompt.evaluationMetrics.finalScore}%` }}
                           />
                           {/* Glow dot at the end - 바 밖으로 튀어나옴 */}
                           <div 
-                            className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 ${colors.dotColor} rounded-full`}
+                            className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 ${colors.dotColor} rounded-full`}
                             style={{ 
-                              left: `calc(${prompt.evaluationMetrics.finalScore}% - 8px)`,
+                              left: `calc(${prompt.evaluationMetrics.finalScore}% - 6px)`,
                               boxShadow: `0 0 8px 3px rgba(255, 255, 255, 0.9), 0 0 12px 5px rgba(255, 255, 255, 0.5)`
                             }}
                           />
@@ -425,14 +425,14 @@ const MarketplacePage = () => {
                     )}
 
                     {/* 모델 + 작성자 */}
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                      <span className="bg-gray-50 border border-gray-200 px-2.5 py-1 rounded text-xs font-medium text-gray-700">{formatModelName(prompt.model)}</span>
-                      <span className="text-xs">by {prompt.nickname || '익명'}</span>
+                    <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3">
+                      <span className="bg-gray-50 border border-gray-200 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded text-xs font-medium text-gray-700 truncate max-w-[120px] sm:max-w-none">{formatModelName(prompt.model)}</span>
+                      <span className="text-xs truncate ml-2">by {prompt.nickname || '익명'}</span>
                     </div>
 
                     {/* 통계 정보 */}
-                    <div className={`flex items-center justify-between text-xs text-gray-500 border-t ${colors.borderBottom} pt-3`}>
-                      <div className="flex items-center space-x-4">
+                    <div className={`flex items-center justify-between text-xs text-gray-500 border-t ${colors.borderBottom} pt-2 sm:pt-3`}>
+                      <div className="flex items-center space-x-3 sm:space-x-4">
                         <button 
                           onClick={(e) => handleLikeToggle(prompt, e)}
                           className="flex items-center space-x-1 hover:scale-110 transition-transform"
@@ -453,7 +453,7 @@ const MarketplacePage = () => {
                         </span>
                       </div>
                       {(prompt.likeCount || 0) >= 50 && (
-                        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
                           🔥 HOT
                         </div>
                       )}
@@ -497,9 +497,9 @@ const MarketplacePage = () => {
 
             {/* 결과 없음 */}
             {filteredPrompts.length === 0 && (
-              <div className="text-center py-12">
-                <div className="text-gray-600 text-lg mb-2">검색 결과가 없습니다</div>
-                <p className="text-gray-500 text-sm">다른 키워드나 카테고리를 시도해보세요</p>
+              <div className="text-center py-8 sm:py-12">
+                <div className="text-gray-600 text-base sm:text-lg mb-2">검색 결과가 없습니다</div>
+                <p className="text-gray-500 text-xs sm:text-sm">다른 키워드나 카테고리를 시도해보세요</p>
               </div>
             )}
           </>

@@ -67,12 +67,12 @@ const LoginPage = () => {
         }}
       />
 
-      <div className="relative z-10 flex flex-col justify-center py-12 sm:px-6 lg:px-8 min-h-screen">
+      <div className="relative z-10 flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 min-h-screen">
         {/* 상단 로고와 제목 */}
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center justify-center mb-6 sm:mb-8">
             <Link to="/" className="flex items-center space-x-2 mr-4">
-              <div className="w-11 h-10 rounded-md overflow-hidden flex items-center justify-center shadow-lg">
+              <div className="w-9 h-8 sm:w-11 sm:h-10 rounded-md overflow-hidden flex items-center justify-center shadow-lg">
                 {/* 이미지가 있으면 이미지를 사용하고, 없으면 기본 아이콘 사용 */}
                 <img
                   src="/logo.png"
@@ -89,7 +89,7 @@ const LoginPage = () => {
                   <span className="text-black font-bold text-base">P</span>
                 </div>
               </div>
-              <h2 className="text-2xl font-bold text-white">
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
                 FromProm
               </h2>
             </Link>
@@ -98,7 +98,7 @@ const LoginPage = () => {
           <div className="flex justify-center items-center space-x-3 mb-3">
             <SplitText
               text="로그인"
-              className="text-3xl font-bold text-white"
+              className="text-2xl sm:text-3xl font-bold text-white"
               delay={50}
               duration={0.6}
               ease="power3.out"
@@ -115,7 +115,7 @@ const LoginPage = () => {
           <div className="text-center">
             <SplitText
               text="FromProm에 오신 것을 환영합니다"
-              className="text-gray-300"
+              className="text-gray-300 text-sm sm:text-base"
               delay={30}
               duration={0.5}
               ease="power3.out"
@@ -130,7 +130,7 @@ const LoginPage = () => {
           </div>
         </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <AnimatedContent
             distance={100}
             direction="vertical"
@@ -143,8 +143,8 @@ const LoginPage = () => {
             threshold={0.1}
             delay={0.2}
           >
-            <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 py-8 px-4 shadow-2xl sm:rounded-xl sm:px-10">
-              <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 py-6 sm:py-8 px-4 shadow-2xl sm:rounded-xl sm:px-10">
+              <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-300">
                   이메일

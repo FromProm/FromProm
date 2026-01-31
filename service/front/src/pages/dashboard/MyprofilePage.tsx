@@ -566,7 +566,7 @@ const MyprofilePage = () => {
                       {purchasedPrompts.length > 0 && (
                         <Link 
                           to="/dashboard/purchased"
-                          className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                          className="bg-blue-200 text-blue-900 font-medium px-3 py-1.5 rounded-md text-sm hover:bg-blue-900 hover:text-white transition-colors"
                         >
                           상세하게 보기 →
                         </Link>

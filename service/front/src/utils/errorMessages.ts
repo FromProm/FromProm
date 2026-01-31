@@ -90,7 +90,7 @@ export const getFriendlyErrorMessage = (error: any): string => {
   if (status) {
     switch (status) {
       case 400:
-        return '이미 가입된 이메일이거나 입력 정보가 올바르지 않습니다.';
+        return '이미 가입된 이메일입니다. 로그인을 시도해주세요.';
       case 401:
         return '인증이 필요합니다. 다시 로그인해주세요.';
       case 403:

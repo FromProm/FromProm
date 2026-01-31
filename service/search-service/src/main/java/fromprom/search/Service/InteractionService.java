@@ -397,6 +397,7 @@ public class InteractionService {
 
     /**
      * 프롬프트 예시 입출력(examples) 조회
+     * DynamoDB 구조: examples[].input.content (JSON string), examples[].output (string)
      */
     public List<Map<String, Object>> getPromptExamples(String promptId) {
         String promptPK = "PROMPT#" + promptId;
@@ -420,9 +421,29 @@ public class InteractionService {
                             Map<String, Object> example = new HashMap<>();
                             Map<String, AttributeValue> exampleMap = exampleAttr.m();
                             
-                            if (exampleMap.containsKey("input") && exampleMap.get("input").s() != null) {
-                                example.put("input", exampleMap.get("input").s());
+                            // index 추출
+                            if (exampleMap.containsKey("index") && exampleMap.get("index").n() != null) {
+                                example.put("index", Integer.parseInt(exampleMap.get("index").n()));
                             }
+                            
+                            // input 추출 (중첩 구조: input.content, input.input_type)
+                            if (exampleMap.containsKey("input") && exampleMap.get("input").m() != null) {
+                                Map<String, AttributeValue> inputMap = exampleMap.get("input").m();
+                                Map<String, Object> inputObj = new HashMap<>();
+                                
+                                if (inputMap.containsKey("content") && inputMap.get("content").s() != null) {
+                                    inputObj.put("content", inputMap.get("content").s());
+                                }
+                                if (inputMap.containsKey("input_type") && inputMap.get("input_type").s() != null) {
+                                    inputObj.put("inputType", inputMap.get("input_type").s());
+                                }
+                                
+                                if (!inputObj.isEmpty()) {
+                                    example.put("input", inputObj);
+                                }
+                            }
+                            
+                            // output 추출
                             if (exampleMap.containsKey("output") && exampleMap.get("output").s() != null) {
                                 example.put("output", exampleMap.get("output").s());
                             }

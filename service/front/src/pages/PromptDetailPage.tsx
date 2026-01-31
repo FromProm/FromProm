@@ -42,10 +42,10 @@ interface PromptDetail {
     promptType?: string;
     overallFeedback?: string;
   };
-  // 예시 (DynamoDB에서 가져온 형식 또는 기존 형식)
+  // 예시 (DynamoDB에서 가져온 형식)
   examples?: Array<{
     index?: number;
-    input?: string | { inputType: string; content: string };
+    input?: { content?: string; inputType?: string };
     output?: string;
   }>;
 }
@@ -586,56 +586,16 @@ const PromptDetailPage = () => {
           <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-6 pb-4 border-b border-gray-200">예시 입력/출력</h2>
           <div className="space-y-6 sm:space-y-8">
             {prompt.examples.map((example, index) => {
-              // input 값 추출 (두 형식 모두 지원)
-              const getInputContent = (): string | undefined => {
-                if (!example.input) return undefined;
-                if (typeof example.input === 'string') return example.input;
-                if (typeof example.input === 'object' && 'content' in example.input) {
-                  return example.input.content;
+              // input.content에서 변수 값 추출
+              const inputContent = example.input?.content;
+              let inputVariables: Record<string, string> = {};
+              if (inputContent) {
+                try {
+                  inputVariables = JSON.parse(inputContent);
+                } catch {
+                  // JSON 파싱 실패
                 }
-                return undefined;
-              };
-              
-              const inputContent = getInputContent();
-              
-              // 프롬프트 내용에서 {{변수}}를 실제 값으로 치환하여 강조 표시
-              const renderPromptWithValues = (promptContent: string, inputStr: string | undefined): React.ReactNode => {
-                if (!promptContent) return '프롬프트 내용이 없습니다.';
-                
-                let inputValues: Record<string, string> = {};
-                if (inputStr) {
-                  try {
-                    inputValues = JSON.parse(inputStr);
-                  } catch {
-                    // JSON 파싱 실패 시 빈 객체
-                  }
-                }
-                
-                // {{변수}} 패턴을 찾아서 분리
-                const parts = promptContent.split(/(\{\{[^}]+\}\})/g);
-                
-                return parts.map((part, i) => {
-                  const match = part.match(/^\{\{([^}]+)\}\}$/);
-                  if (match) {
-                    const key = match[1];
-                    const value = inputValues[key];
-                    if (value) {
-                      return (
-                        <span key={i} className="font-bold text-blue-700 text-[15px] sm:text-base bg-blue-100 px-1 rounded">
-                          {value}
-                        </span>
-                      );
-                    }
-                    // 값이 없으면 원래 플레이스홀더 표시
-                    return (
-                      <span key={i} className="text-gray-400">
-                        {part}
-                      </span>
-                    );
-                  }
-                  return <span key={i}>{part}</span>;
-                });
-              };
+              }
 
               // 이미지 타입인지 확인
               const isImageType = prompt.category === 'type_b_image';
@@ -660,11 +620,22 @@ const PromptDetailPage = () => {
                 <h3 className="text-sm sm:text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-100">예시 {index + 1}</h3>
                 <div className="flex flex-col sm:flex-row gap-4 items-start">
                   <div className="w-full sm:w-1/2 flex flex-col">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">입력</h4>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">입력 변수</h4>
                     <div className="bg-blue-50 rounded-lg p-3 sm:p-4 border border-blue-100">
-                      <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed break-words">
-                        {renderPromptWithValues(prompt.content || '', inputContent)}
-                      </div>
+                      {Object.keys(inputVariables).length > 0 ? (
+                        <div className="space-y-2">
+                          {Object.entries(inputVariables).map(([key, value]) => (
+                            <div key={key} className="flex items-center gap-2">
+                              <span className="text-gray-500 text-sm">{key}:</span>
+                              <span className="font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded text-sm">
+                                {value}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-sm">입력 변수 없음</span>
+                      )}
                     </div>
                   </div>
                   <div className="w-full sm:w-1/2 flex flex-col">

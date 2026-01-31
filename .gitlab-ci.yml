@@ -258,7 +258,6 @@ deploy-ai-agentcore:
     - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"'
       changes:
         - "service/ai-service/**/*"
-  when: manual
 
 # ==========================================
 # 11-13. Update Manifests (Using Template)

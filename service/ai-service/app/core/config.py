@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     # Judge Model (저렴한 모델)
     judge_model: str = "anthropic.claude-3-haiku-20240307-v1:0"
     
-    # Scoring Weights (token_usage는 최종 점수 계산에서 제외)
+    # Scoring Weights
     weights: Dict[str, Dict[str, float]] = {
         "type_a": {
             "information_density": 0.20,

@@ -94,7 +94,7 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden" style={{ background: 'linear-gradient(180deg, #05050A 0%, #020204 100%)' }}>
+    <div className="relative min-h-screen overflow-hidden" style={{ background: 'linear-gradient(180deg, #05050A 0%, #020204 100%)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* LightPillar 배경 효과 */}
       <div className="absolute top-0 left-0 right-0 z-0 opacity-30" style={{ height: '150vh' }}>
         <LightPillar
@@ -218,7 +218,7 @@ const LandingPage = () => {
                   text={["FROMPROM"]}
                   className="text-white drop-shadow-2xl"
                   style={{ 
-                    fontFamily: "'Gowun Dodum', system-ui, -apple-system, sans-serif", 
+                    fontFamily: 'system-ui, -apple-system, sans-serif', 
                     letterSpacing: '-0.05em',
                     fontWeight: 900,
                     fontSize: '8vw',

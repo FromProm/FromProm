@@ -2,35 +2,47 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePurchaseStore } from '../../store/purchaseStore';
 import { promptApi } from '../../services/api';
-import { promptTypeToCategory, categories } from '../../services/dummyData';
+import { promptTypeToCategory } from '../../services/dummyData';
 import AnimatedContent from '../../components/AnimatedContent';
 
 // 카드 색상 설정 함수 (마켓페이지와 동일)
 const getCardColors = (category: string) => {
   const type = promptTypeToCategory[category] || category;
-  if (type === '사실/정보/근거 요구' || category === 'type_a' || category === '사실/정보/근거 요구') {
+  // type_a 또는 사실/정보/근거 요구
+  if (type === '사실/정보/근거 요구' || category === 'type_a') {
     return {
       gradient: 'from-rose-50 via-rose-25 to-white',
-      border: 'border-rose-200',
+      border: 'border-rose-100',
+      hoverBorder: 'hover:border-rose-500',
+      shadow: 'shadow-rose-500/5 hover:shadow-rose-500/30',
       tag: 'text-gray-700 bg-white border border-rose-400',
+      borderBottom: 'border-rose-100',
       barGradient: 'from-rose-200 to-rose-500',
       dotColor: 'bg-rose-500',
       tagLabel: '사실/정보/근거 요구',
     };
-  } else if (type === '글 창작 및 생성' || category === 'type_b_text' || category === '글 창작 및 생성') {
+  // type_b_text 또는 글 창작 및 생성
+  } else if (type === '글 창작 및 생성' || category === 'type_b_text') {
     return {
       gradient: 'from-emerald-50 via-emerald-25 to-white',
-      border: 'border-emerald-200',
+      border: 'border-emerald-100',
+      hoverBorder: 'hover:border-emerald-500',
+      shadow: 'shadow-emerald-500/5 hover:shadow-emerald-500/30',
       tag: 'text-gray-700 bg-white border border-emerald-400',
+      borderBottom: 'border-emerald-100',
       barGradient: 'from-emerald-200 to-emerald-500',
       dotColor: 'bg-emerald-500',
       tagLabel: '글 창작 및 생성',
     };
-  } else if (type === '이미지 창작 및 생성' || category === 'type_b_image' || category === '이미지 창작 및 생성') {
+  // type_b_image 또는 이미지 창작 및 생성
+  } else if (type === '이미지 창작 및 생성' || category === 'type_b_image') {
     return {
       gradient: 'from-blue-50 via-blue-25 to-white',
-      border: 'border-blue-200',
+      border: 'border-blue-100',
+      hoverBorder: 'hover:border-blue-500',
+      shadow: 'shadow-blue-500/5 hover:shadow-blue-500/30',
       tag: 'text-gray-700 bg-white border border-blue-400',
+      borderBottom: 'border-blue-100',
       barGradient: 'from-blue-200 to-blue-500',
       dotColor: 'bg-blue-500',
       tagLabel: '이미지 창작 및 생성',
@@ -38,8 +50,11 @@ const getCardColors = (category: string) => {
   } else {
     return {
       gradient: 'from-gray-50 via-gray-25 to-white',
-      border: 'border-gray-200',
+      border: 'border-gray-100',
+      hoverBorder: 'hover:border-gray-500',
+      shadow: 'shadow-gray-500/5 hover:shadow-gray-500/30',
       tag: 'text-gray-700 bg-white border border-gray-400',
+      borderBottom: 'border-gray-100',
       barGradient: 'from-gray-200 to-gray-500',
       dotColor: 'bg-gray-500',
       tagLabel: category,
@@ -222,48 +237,51 @@ const PurchasedPromptsPage = () => {
           return (
           <AnimatedContent key={prompt.id} once distance={50} duration={0.6} delay={index * 0.1}>
           <div
-            className={`bg-gradient-to-br ${colors.gradient} border ${colors.border} rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300`}
+            className={`bg-gradient-to-br ${colors.gradient} border-2 ${colors.border} rounded-xl p-5 shadow-lg ${colors.shadow} transition-all duration-300`}
           >
-            <div className="flex items-start justify-between mb-4">
+            {/* 상단: 카테고리 + 가격 */}
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-2">
-                <span className={`text-xs px-2 py-1 rounded ${colors.tag}`}>
+                <span className={`text-xs ${colors.tag} px-2 py-1 rounded-full font-medium`}>
                   {colors.tagLabel}
                 </span>
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-xs text-green-600 font-medium">구매완료</span>
+                <span className="text-xs text-green-600 font-medium flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                  구매완료
+                </span>
               </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-gray-900">{prompt.price}P</div>
-              </div>
+              <div className="text-xl font-bold text-gray-900">{prompt.price}P</div>
             </div>
 
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            {/* 제목 */}
+            <h3 className="text-gray-900 text-lg font-bold mb-2 line-clamp-1">
               {prompt.title}
             </h3>
             
+            {/* 설명 */}
             <p className="text-gray-600 text-sm mb-4 line-clamp-2">
               {prompt.description}
             </p>
 
-            {/* 성능 점수 */}
-            {prompt.rating && prompt.rating > 0 && (
-              <div className="bg-white/60 rounded-lg p-3 mb-4">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium text-gray-700">AI 성능 점수</span>
-                  <span className="text-lg font-black text-gray-800">
+            {/* 성능 점수 섹션 (마켓페이지와 동일) */}
+            {prompt.rating && prompt.rating > 5 && (
+              <div className="bg-white/60 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">AI 성능 점수</span>
+                  <span className="text-2xl font-black text-gray-800">
                     {Math.round(prompt.rating)}
-                    <span className="text-xs font-normal text-gray-400">/100</span>
+                    <span className="text-sm font-normal text-gray-400">/100</span>
                   </span>
                 </div>
-                <div className="relative w-full h-2.5 bg-gray-100 rounded-full">
+                <div className="relative w-full h-3 bg-gray-100 rounded-full">
                   <div 
                     className={`h-full rounded-full transition-all duration-500 bg-gradient-to-r ${colors.barGradient}`}
                     style={{ width: `${prompt.rating}%` }}
                   />
                   <div 
-                    className={`absolute top-1/2 -translate-y-1/2 w-3 h-3 ${colors.dotColor} rounded-full`}
+                    className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 ${colors.dotColor} rounded-full`}
                     style={{ 
-                      left: `calc(${prompt.rating}% - 6px)`,
+                      left: `calc(${prompt.rating}% - 8px)`,
                       boxShadow: `0 0 8px 3px rgba(255, 255, 255, 0.9), 0 0 12px 5px rgba(255, 255, 255, 0.5)`
                     }}
                   />
@@ -271,12 +289,13 @@ const PurchasedPromptsPage = () => {
               </div>
             )}
 
-            <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-              <span>by {prompt.sellerName}</span>
+            {/* 작성자 */}
+            <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+              <span className="text-xs">by {prompt.sellerName}</span>
             </div>
 
             {/* 구매 정보 */}
-            <div className="border-t border-gray-200 pt-4 mb-4">
+            <div className={`border-t ${colors.borderBottom} pt-3 mb-4`}>
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <span>구매일: {new Date(prompt.purchasedAt).toLocaleDateString()}</span>
                 <span>다운로드: {prompt.downloadCount}회</span>

@@ -33,12 +33,13 @@ const CreditHistoryPage = () => {
     fetchHistory();
   }, []);
 
-  // 날짜 포맷팅 함수
+  // 날짜 포맷팅 함수 (UTC -> 한국 시간 KST 변환)
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     try {
       const date = new Date(dateString);
       return date.toLocaleString('ko-KR', {
+        timeZone: 'Asia/Seoul',
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { promptApi, userApi, creditApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { usePurchaseStore } from '../../store/purchaseStore';
@@ -47,10 +47,22 @@ type ModalType = 'likes' | 'comments' | 'bookmarks' | null;
 
 const MyprofilePage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { userInfo, fetchUserInfo, updateUserInfo, isAuthenticated, logout } = useAuthStore();
   const { getPurchasedPrompts } = usePurchaseStore();
   const { items: cartItems, getTotalPrice: getCartTotalPrice } = useCartStore();
-  const [activeTab, setActiveTab] = useState<MenuTab>('profile');
+  
+  // URL 쿼리 파라미터에서 탭 설정 (예: ?tab=selling)
+  const getInitialTab = (): MenuTab => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'selling') return 'selling';
+    if (tabParam === 'purchased') return 'purchased';
+    if (tabParam === 'analytics') return 'analytics';
+    if (tabParam === 'settings') return 'settings';
+    return 'profile';
+  };
+  
+  const [activeTab, setActiveTab] = useState<MenuTab>(getInitialTab());
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [editBio, setEditBio] = useState('');
   const [isSaving, setIsSaving] = useState(false);

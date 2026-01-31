@@ -159,7 +159,7 @@ const PromptCreatePage = () => {
       
       console.log('프롬프트 등록 응답:', response.data);
       setShowSuccessModal(true);
-      navigate('/dashboard');
+      // 모달에서 버튼 클릭 시 이동하도록 여기서는 navigate 제거
     } catch (error: any) {
       console.error('프롬프트 등록 실패:', error);
       const message = error.response?.data?.message || error.response?.data || '프롬프트 등록에 실패했습니다.';
@@ -507,10 +507,10 @@ const PromptCreatePage = () => {
               </div>
             </div>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/dashboard?tab=selling')}
               className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
             >
-              마이페이지로 이동
+              판매 중인 프롬프트 확인하기
             </button>
           </motion.div>
         </div>

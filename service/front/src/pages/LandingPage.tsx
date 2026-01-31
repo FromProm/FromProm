@@ -130,30 +130,32 @@ const LandingPage = () => {
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14">
             <motion.div
-              className="flex items-center space-x-3"
+              className="flex items-center"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="w-10 h-9 rounded-md overflow-hidden flex items-center justify-center">
-                {/* 이미지가 있으면 이미지를 사용하고, 없으면 기본 아이콘 사용 */}
-                <img 
-                  src="/logo.png" 
-                  alt="FromProm Logo" 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    // 이미지 로드 실패 시 기본 아이콘으로 대체
-                    e.currentTarget.style.display = 'none';
-                    const sibling = e.currentTarget.nextElementSibling as HTMLElement;
-                    if (sibling) sibling.style.display = 'flex';
-                  }}
-                />
-                <div className="w-10 h-9 bg-white rounded-md flex items-center justify-center" style={{display: 'none'}}>
-                  <span className="text-black font-bold text-base">P</span>
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-9 rounded-md overflow-hidden flex items-center justify-center">
+                  {/* 이미지가 있으면 이미지를 사용하고, 없으면 기본 아이콘 사용 */}
+                  <img 
+                    src="/logo.png" 
+                    alt="FromProm Logo" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // 이미지 로드 실패 시 기본 아이콘으로 대체
+                      e.currentTarget.style.display = 'none';
+                      const sibling = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (sibling) sibling.style.display = 'flex';
+                    }}
+                  />
+                  <div className="w-10 h-9 bg-white rounded-md flex items-center justify-center" style={{display: 'none'}}>
+                    <span className="text-black font-bold text-base">P</span>
+                  </div>
                 </div>
+                <span className="text-xl font-semibold text-white tracking-tight">FromProm</span>
               </div>
-              <span className="text-xl font-semibold text-white tracking-tight">FromProm</span>
-              <nav className="hidden md:flex items-center space-x-8 ml-24">
+              <nav className="hidden md:flex items-center space-x-8 ml-16">
                 <Link to="/marketplace" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
                   마켓
                 </Link>

@@ -357,14 +357,14 @@ const PromptDetailPage = () => {
                 <span className="text-xs">by {prompt.nickname || '익명'}</span>
               </div>
 
-              {/* 모델 정보 */}
-              <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-200">
+              {/* 모델 정보 - 모바일에서는 세로 배치 */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-4 pt-4 border-t border-gray-200">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">추천 모델:</span>
+                  <span className="text-xs text-gray-500 whitespace-nowrap">추천 모델:</span>
                   <span className="text-sm font-medium text-gray-700 bg-gray-100 px-2 py-1 rounded">{prompt.model || 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">상태:</span>
+                  <span className="text-xs text-gray-500 whitespace-nowrap">상태:</span>
                   <span className={`text-sm font-medium px-2 py-1 rounded ${prompt.status === 'ACTIVE' ? 'text-green-700 bg-green-100' : 'text-gray-700 bg-gray-100'}`}>
                     {prompt.status === 'ACTIVE' ? '검증 완료' : prompt.status === 'processing' ? '처리 중' : prompt.status}
                   </span>

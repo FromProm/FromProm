@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { usePurchaseStore } from '../../store/purchaseStore';
+import { promptApi } from '../../services/api';
 import AnimatedContent from '../../components/AnimatedContent';
 
 const PurchasedPromptsPage = () => {
@@ -8,6 +9,8 @@ const PurchasedPromptsPage = () => {
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [promptContents, setPromptContents] = useState<Record<string, string>>({});
+  const [loadingContent, setLoadingContent] = useState<string | null>(null);
 
   const purchasedPrompts = getPurchasedPrompts();
   
@@ -20,7 +23,51 @@ const PurchasedPromptsPage = () => {
 
   const categories = ['All', ...Array.from(new Set(purchasedPrompts.map(p => p.category)))];
 
-  const handleDownload = (promptId: string, content: string, title: string) => {
+  // 프롬프트 내용 가져오기
+  const fetchPromptContent = async (promptId: string) => {
+    // 이미 캐시된 내용이 있으면 사용
+    if (promptContents[promptId]) {
+      return promptContents[promptId];
+    }
+
+    setLoadingContent(promptId);
+    try {
+      const response = await promptApi.getPromptDetail(promptId);
+      if (response.data.success && response.data.prompt?.content) {
+        const content = response.data.prompt.content;
+        setPromptContents(prev => ({ ...prev, [promptId]: content }));
+        return content;
+      }
+    } catch (error) {
+      console.error('Failed to fetch prompt content:', error);
+    } finally {
+      setLoadingContent(null);
+    }
+    return null;
+  };
+
+  // 내용 보기 토글
+  const handleToggleContent = async (promptId: string) => {
+    if (selectedPrompt === promptId) {
+      setSelectedPrompt(null);
+    } else {
+      await fetchPromptContent(promptId);
+      setSelectedPrompt(promptId);
+    }
+  };
+
+  // 프롬프트 내용 가져오기 (다운로드/복사용)
+  const getPromptContent = (promptId: string, fallbackContent: string) => {
+    return promptContents[promptId] || fallbackContent;
+  };
+
+  const handleDownload = async (promptId: string, fallbackContent: string, title: string) => {
+    // 먼저 API에서 최신 내용 가져오기
+    let content = promptContents[promptId];
+    if (!content) {
+      content = await fetchPromptContent(promptId) || fallbackContent;
+    }
+    
     // 다운로드 카운트 증가
     incrementDownloadCount(promptId);
     
@@ -34,7 +81,13 @@ const PurchasedPromptsPage = () => {
     document.body.removeChild(element);
   };
 
-  const handleCopyToClipboard = async (content: string) => {
+  const handleCopyToClipboard = async (promptId: string, fallbackContent: string) => {
+    // 먼저 API에서 최신 내용 가져오기
+    let content = promptContents[promptId];
+    if (!content) {
+      content = await fetchPromptContent(promptId) || fallbackContent;
+    }
+    
     try {
       await navigator.clipboard.writeText(content);
       alert('프롬프트가 클립보드에 복사되었습니다!');
@@ -158,10 +211,11 @@ const PurchasedPromptsPage = () => {
             {/* 액션 버튼 */}
             <div className="space-y-2">
               <button
-                onClick={() => setSelectedPrompt(selectedPrompt === prompt.id ? null : prompt.id)}
-                className="w-full bg-blue-900 text-white font-medium py-2 rounded-lg hover:bg-blue-800 transition-colors text-sm"
+                onClick={() => handleToggleContent(prompt.id)}
+                disabled={loadingContent === prompt.id}
+                className="w-full bg-blue-900 text-white font-medium py-2 rounded-lg hover:bg-blue-800 transition-colors text-sm disabled:opacity-50"
               >
-                {selectedPrompt === prompt.id ? '내용 숨기기' : '내용 보기'}
+                {loadingContent === prompt.id ? '로딩 중...' : selectedPrompt === prompt.id ? '내용 숨기기' : '내용 보기'}
               </button>
               
               <div className="flex space-x-2">
@@ -172,7 +226,7 @@ const PurchasedPromptsPage = () => {
                   다운로드
                 </button>
                 <button
-                  onClick={() => handleCopyToClipboard(prompt.content)}
+                  onClick={() => handleCopyToClipboard(prompt.id, prompt.content)}
                   className="flex-1 border border-gray-300 text-gray-700 font-medium py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                 >
                   복사
@@ -185,7 +239,7 @@ const PurchasedPromptsPage = () => {
               <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 animate-slide-down">
                 <h4 className="font-medium text-gray-900 mb-2">프롬프트 내용:</h4>
                 <div className="text-sm text-gray-700 whitespace-pre-wrap max-h-40 overflow-y-auto">
-                  {prompt.content}
+                  {promptContents[prompt.id] || prompt.content}
                 </div>
               </div>
             )}

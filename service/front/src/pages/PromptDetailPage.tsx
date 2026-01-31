@@ -62,6 +62,7 @@ const PromptDetailPage = () => {
   const [credit, setCredit] = useState<number>(0);
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const { addToCart, isInCart } = useCartStore();
   const { isPurchased, addPurchasedPrompt } = usePurchaseStore();
   const { userInfo, fetchUserInfo } = useAuthStore();
@@ -77,6 +78,19 @@ const PromptDetailPage = () => {
       : prompt.userId;
     return promptUserId === userInfo.sub;
   })();
+
+  // 스크롤 위치 감지
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const isLoggedIn = () => !!localStorage.getItem('accessToken');
 
@@ -837,6 +851,19 @@ const PromptDetailPage = () => {
             </div>
           </motion.div>
         </div>
+      )}
+
+      {/* 스크롤 탑 버튼 */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 w-14 h-14 bg-blue-900 hover:bg-blue-800 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center z-50"
+          aria-label="맨 위로 이동"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
       )}
       </div>
     </div>

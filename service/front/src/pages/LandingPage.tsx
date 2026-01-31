@@ -273,7 +273,7 @@ const LandingPage = () => {
               {/* 사용 가이드 버튼 - 위에 긴 버튼 */}
               <Link
                 to="/docs"
-                className="px-8 py-3 rounded-lg bg-blue-900/40 border border-blue-400/50 text-blue-200 font-bold text-base text-center hover:bg-blue-800/50 hover:border-blue-300/60 transition-all animate-bounce-subtle sm:min-w-[340px]"
+                className="px-8 py-3 rounded-md bg-blue-900/40 border border-blue-400/50 text-blue-200 font-bold text-base text-center hover:bg-blue-800/50 hover:border-blue-300/60 transition-all animate-bounce-subtle sm:min-w-[340px]"
               >
                 FromProm 사용 가이드 보기
               </Link>

@@ -595,6 +595,25 @@ const MarketplacePage = () => {
         )}
       </main>
 
+      {/* Footer */}
+      <footer className="border-t border-gray-200 bg-gray-50 mt-16">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center space-x-3">
+              <img src="/logo.png" alt="FromProm Logo" className="w-8 h-7 rounded-md" />
+              <span className="text-lg font-semibold text-gray-900">FromProm</span>
+            </div>
+            <div className="flex items-center space-x-6 text-sm text-gray-500">
+              <Link to="/docs" className="hover:text-gray-900 transition-colors">사용 가이드</Link>
+              <Link to="/" className="hover:text-gray-900 transition-colors">홈</Link>
+            </div>
+          </div>
+          <div className="mt-8 pt-8 border-t border-gray-200 text-center text-sm text-gray-400">
+            © 2025 FromProm. All rights reserved.
+          </div>
+        </div>
+      </footer>
+
       {/* 스크롤 탑 버튼 */}
       {showScrollTop && (
         <button

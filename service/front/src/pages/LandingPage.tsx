@@ -152,7 +152,7 @@ const LandingPage = () => {
                 </div>
               </div>
               <span className="text-xl font-semibold text-white tracking-tight">FromProm</span>
-              <nav className="hidden md:flex items-center space-x-8 ml-12">
+              <nav className="hidden md:flex items-center space-x-8 ml-16">
                 <Link to="/marketplace" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
                   마켓
                 </Link>
@@ -190,7 +190,7 @@ const LandingPage = () => {
                     to="/auth/register"
                     className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors"
                   >
-                    시작하기
+                    회원가입
                   </Link>
                 </div>
               )}

@@ -64,6 +64,11 @@ const MyprofilePage = () => {
   const [modalData, setModalData] = useState<InteractionPrompt[]>([]);
   const [isLoadingModal, setIsLoadingModal] = useState(false);
 
+  // 회원탈퇴 모달 상태
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawPassword, setWithdrawPassword] = useState('');
+  const [withdrawError, setWithdrawError] = useState('');
+
   // 설정 관련 상태
   const [nickname, setNickname] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -200,10 +205,19 @@ const MyprofilePage = () => {
 
   // 회원 탈퇴
   const handleDeleteAccount = async () => {
-    if (!window.confirm('정말로 회원 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
-    if (!window.confirm('모든 데이터가 삭제됩니다. 계속하시겠습니까?')) return;
+    if (!withdrawPassword) {
+      setWithdrawError('비밀번호를 입력해주세요.');
+      return;
+    }
+    
     setIsSaving(true);
+    setWithdrawError('');
+    
     try {
+      // 먼저 비밀번호 검증 (로그인 API 사용)
+      await userApi.login({ email: userInfo?.email || '', password: withdrawPassword });
+      
+      // 비밀번호가 맞으면 탈퇴 진행
       await userApi.withdraw();
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
@@ -211,7 +225,11 @@ const MyprofilePage = () => {
       alert('회원 탈퇴가 완료되었습니다.');
       navigate('/');
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.response?.data?.message || '회원 탈퇴에 실패했습니다.' });
+      if (error.response?.status === 401 || error.response?.data?.message?.includes('password') || error.response?.data?.message?.includes('Incorrect')) {
+        setWithdrawError('비밀번호가 일치하지 않습니다.');
+      } else {
+        setWithdrawError(error.response?.data?.message || '회원 탈퇴에 실패했습니다.');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -739,9 +757,9 @@ const MyprofilePage = () => {
                     <div className="bg-white rounded-lg p-3 sm:p-4 border border-red-200">
                       <h3 className="font-semibold text-red-600 mb-2 text-sm sm:text-base">회원 탈퇴</h3>
                       <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4">회원 탈퇴 시 모든 데이터가 삭제되며, 되돌릴 수 없습니다.</p>
-                      <button onClick={handleDeleteAccount} disabled={isSaving}
+                      <button onClick={() => { setShowWithdrawModal(true); setWithdrawPassword(''); setWithdrawError(''); }} disabled={isSaving}
                         className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm sm:text-base">
-                        {isSaving ? '처리 중...' : '회원 탈퇴'}
+                        회원 탈퇴
                       </button>
                     </div>
                   </div>
@@ -802,6 +820,47 @@ const MyprofilePage = () => {
                   </Link>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 회원탈퇴 모달 */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowWithdrawModal(false)}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-red-600 mb-4">회원 탈퇴</h3>
+            <p className="text-gray-600 text-sm mb-4">
+              회원 탈퇴 시 모든 데이터가 삭제되며, 되돌릴 수 없습니다.<br/>
+              계속하시려면 비밀번호를 입력해주세요.
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">비밀번호 확인</label>
+              <input
+                type="password"
+                value={withdrawPassword}
+                onChange={(e) => setWithdrawPassword(e.target.value)}
+                placeholder="현재 비밀번호를 입력하세요"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+              {withdrawError && (
+                <p className="mt-2 text-sm text-red-600">{withdrawError}</p>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowWithdrawModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={isSaving}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {isSaving ? '처리 중...' : '탈퇴하기'}
+              </button>
             </div>
           </div>
         </div>

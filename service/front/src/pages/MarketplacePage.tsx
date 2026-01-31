@@ -5,6 +5,14 @@ import { promptApi, interactionApi } from '../services/api';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
 import { useAuthStore } from '../store/authStore';
+
+// 내 프롬프트인지 확인하는 함수
+const isMyPrompt = (promptUserId: string | undefined, userSub: string | undefined): boolean => {
+  if (!promptUserId || !userSub) return false;
+  // userId가 USER#uuid 형식일 수 있으므로 접두사 제거
+  const cleanPromptUserId = promptUserId.replace(/^USER#/, '');
+  return cleanPromptUserId === userSub;
+};
 import SplitText from '../components/SplitText';
 import AnimatedContent from '../components/AnimatedContent';
 import TiltCard from '../components/TiltCard';
@@ -50,7 +58,7 @@ const MarketplacePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { addToCart, removeFromCart, isInCart } = useCartStore();
   const { isPurchased } = usePurchaseStore();
-  const { user } = useAuthStore();
+  const { user, userInfo } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -453,7 +461,11 @@ const MarketplacePage = () => {
 
                     {/* 액션 버튼 */}
                     <div className="mt-4 flex space-x-2">
-                      {isPurchased(prompt.promptId) ? (
+                      {isMyPrompt(prompt.userId, userInfo?.sub) ? (
+                        <div className="flex-1 bg-blue-50 text-blue-700 px-3 py-2 rounded text-xs font-medium text-center">
+                          📝 내가 등록한 프롬프트
+                        </div>
+                      ) : isPurchased(prompt.promptId) ? (
                         <div className="flex-1 bg-green-100 text-green-800 px-3 py-2 rounded text-xs font-medium text-center">
                           ✓ 구매 완료
                         </div>

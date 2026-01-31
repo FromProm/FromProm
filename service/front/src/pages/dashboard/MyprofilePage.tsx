@@ -271,22 +271,22 @@ const MyprofilePage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* 프로필 헤더 */}
         <AnimatedContent once distance={50} duration={0.6} delay={0}>
-          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-xl shadow-lg border border-blue-200 p-8 mb-8">
-            <div className="flex flex-col lg:flex-row items-start gap-6">
+          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-xl shadow-lg border border-blue-200 p-4 sm:p-8 mb-6 sm:mb-8">
+            <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4 sm:gap-6">
               {/* 프로필 아바타 - 닉네임 이니셜 */}
-              <div className="w-28 h-28 rounded-full border-4 border-white shadow-xl flex-shrink-0 bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-                <span className="text-white text-4xl font-bold">
+              <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full border-4 border-white shadow-xl flex-shrink-0 bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
+                <span className="text-white text-2xl sm:text-4xl font-bold">
                   {(userInfo?.nickname || '사용자').charAt(0)}
                 </span>
               </div>
               {/* 닉네임 & 자기소개 */}
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <h1 className="text-3xl font-bold text-gray-900">{userInfo?.nickname || '사용자'}</h1>
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-white text-sm font-medium bg-gradient-to-r ${sellerBadge.color}`}>
+              <div className="flex-1 text-center lg:text-left w-full">
+                <div className="flex flex-col sm:flex-row items-center lg:items-start gap-2 sm:gap-3 mb-3">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{userInfo?.nickname || '사용자'}</h1>
+                  <span className={`inline-flex items-center gap-1 px-2 sm:px-3 py-1 rounded-full text-white text-xs sm:text-sm font-medium bg-gradient-to-r ${sellerBadge.color}`}>
                     <span>{sellerBadge.icon}</span>
                     {sellerBadge.label}
                   </span>
@@ -295,43 +295,43 @@ const MyprofilePage = () => {
                   <div>
                     <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)}
                       placeholder="자기소개를 입력하세요..." maxLength={200} rows={3}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none text-sm sm:text-base"
                     />
                     <div className="flex items-center justify-between mt-3">
-                      <span className="text-sm text-gray-500">{editBio.length}/200</span>
-                      <div className="flex gap-3">
-                        <button onClick={handleCancelEdit} className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">취소</button>
+                      <span className="text-xs sm:text-sm text-gray-500">{editBio.length}/200</span>
+                      <div className="flex gap-2 sm:gap-3">
+                        <button onClick={handleCancelEdit} className="px-3 sm:px-4 py-2 text-gray-600 hover:text-gray-800 font-medium text-sm">취소</button>
                         <button onClick={handleSaveBio} disabled={isSaving}
-                          className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50 font-medium">
+                          className="px-3 sm:px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50 font-medium text-sm">
                           {isSaving ? '저장 중...' : '저장'}
                         </button>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2">
-                    <p className="text-gray-600 leading-relaxed">{userInfo?.bio || '자기소개가 없습니다. 클릭하여 추가해보세요!'}</p>
-                    <button onClick={() => setIsEditingBio(true)} className="self-start px-3 py-1.5 text-sm text-blue-900 hover:text-white hover:bg-blue-900 rounded-lg transition-colors border border-blue-900">
+                  <div className="flex flex-col gap-2 items-center lg:items-start">
+                    <p className="text-gray-600 leading-relaxed text-sm sm:text-base">{userInfo?.bio || '자기소개가 없습니다. 클릭하여 추가해보세요!'}</p>
+                    <button onClick={() => setIsEditingBio(true)} className="px-3 py-1.5 text-sm text-blue-900 hover:text-white hover:bg-blue-900 rounded-lg transition-colors border border-blue-900">
                       수정
                     </button>
                   </div>
                 )}
               </div>
               {/* 크레딧 & 장바구니 카드 */}
-              <div className="flex flex-row gap-4">
+              <div className="flex flex-row gap-3 sm:gap-4 w-full lg:w-auto">
                 {/* 크레딧 */}
-                <Link to="/credit" className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-xl px-6 py-5 text-white min-w-[180px] shadow-lg flex flex-col transition-all">
-                  <p className="text-sm opacity-80 mb-1">보유 크레딧</p>
-                  <p className="text-3xl font-bold mb-3">{(userInfo?.credit || 0).toLocaleString()}P</p>
-                  <div className="mt-auto bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg text-center">
+                <Link to="/credit" className="flex-1 lg:flex-none bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-xl px-4 sm:px-6 py-4 sm:py-5 text-white lg:min-w-[180px] shadow-lg flex flex-col transition-all">
+                  <p className="text-xs sm:text-sm opacity-80 mb-1">보유 크레딧</p>
+                  <p className="text-xl sm:text-3xl font-bold mb-2 sm:mb-3">{(userInfo?.credit || 0).toLocaleString()}P</p>
+                  <div className="mt-auto bg-white/20 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-center">
                     충전하기
                   </div>
                 </Link>
                 {/* 장바구니 */}
-                <Link to="/cart" className="bg-gradient-to-r from-orange-400 to-red-400 rounded-xl px-6 py-5 text-white hover:from-orange-500 hover:to-red-500 transition-all min-w-[180px] shadow-lg flex flex-col">
-                  <p className="text-sm opacity-80 mb-1">장바구니</p>
-                  <p className="text-3xl font-bold mb-3">{cartItems.length}개</p>
-                  <div className="mt-auto bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg text-center">
+                <Link to="/cart" className="flex-1 lg:flex-none bg-gradient-to-r from-orange-400 to-red-400 rounded-xl px-4 sm:px-6 py-4 sm:py-5 text-white hover:from-orange-500 hover:to-red-500 transition-all lg:min-w-[180px] shadow-lg flex flex-col">
+                  <p className="text-xs sm:text-sm opacity-80 mb-1">장바구니</p>
+                  <p className="text-xl sm:text-3xl font-bold mb-2 sm:mb-3">{cartItems.length}개</p>
+                  <div className="mt-auto bg-white/20 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-center">
                     {cartItems.length > 0 ? `${getCartTotalPrice().toLocaleString()}P` : '비어있음'}
                   </div>
                 </Link>
@@ -342,21 +342,21 @@ const MyprofilePage = () => {
 
         {/* 메시지 표시 */}
         {message.text && (
-          <div className={`mb-6 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg text-sm sm:text-base ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
             {message.text}
           </div>
         )}
 
         {/* 메인 컨텐츠 영역 */}
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* 좌측 메뉴 */}
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+          {/* 좌측 메뉴 - 모바일에서는 가로 스크롤 */}
           <div className="lg:w-64 flex-shrink-0">
             <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
-              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-xl shadow-lg border border-blue-200 p-4">
-                <nav className="space-y-1">
+              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-xl shadow-lg border border-blue-200 p-2 sm:p-4">
+                <nav className="flex lg:flex-col gap-1 sm:gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
                   {menuItems.map((item) => (
                     <button key={item.id} onClick={() => setActiveTab(item.id)}
-                      className={`w-full px-4 py-2.5 rounded-lg text-left transition-all ${
+                      className={`whitespace-nowrap px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-left transition-all text-sm sm:text-base ${
                         activeTab === item.id 
                           ? 'bg-white border-2 border-blue-900 text-gray-900 font-bold' 
                           : 'text-gray-700 hover:bg-white hover:shadow-sm font-medium'
@@ -372,66 +372,66 @@ const MyprofilePage = () => {
           {/* 우측 컨텐츠 */}
           <div className="flex-1">
             <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
-              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-xl shadow-lg border border-blue-200 p-8 min-h-[500px]">
+              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-xl shadow-lg border border-blue-200 p-4 sm:p-8 min-h-[400px] sm:min-h-[500px]">
                 {/* 내 프로필 탭 */}
                 {activeTab === 'profile' && (
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-8">내 프로필</h2>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8">내 프로필</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                       {/* 좋아요 누른 프롬프트 */}
-                      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                            <span className="text-xl">❤️</span>
+                      <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-100 rounded-full flex items-center justify-center">
+                            <span className="text-lg sm:text-xl">❤️</span>
                           </div>
-                          <h3 className="font-semibold text-gray-900">좋아요 누른 프롬프트</h3>
+                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">좋아요 누른 프롬프트</h3>
                         </div>
-                        <div className="flex items-baseline justify-center gap-1.5 py-4 mb-4">
-                          <span className="text-5xl font-bold text-red-500">0</span>
-                          <span className="text-gray-500 self-end pb-1">개의 프롬프트</span>
+                        <div className="flex items-baseline justify-center gap-1.5 py-3 sm:py-4 mb-3 sm:mb-4">
+                          <span className="text-4xl sm:text-5xl font-bold text-red-500">0</span>
+                          <span className="text-gray-500 self-end pb-1 text-sm sm:text-base">개의 프롬프트</span>
                         </div>
-                        <button onClick={() => openModal('likes')} className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2.5 rounded-lg transition-colors">
+                        <button onClick={() => openModal('likes')} className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2 sm:py-2.5 rounded-lg transition-colors text-sm sm:text-base">
                           모두 보기
                         </button>
                       </div>
                       {/* 댓글 남긴 프롬프트 */}
-                      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-xl">💬</span>
+                      <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-lg sm:text-xl">💬</span>
                           </div>
-                          <h3 className="font-semibold text-gray-900">댓글 남긴 프롬프트</h3>
+                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">댓글 남긴 프롬프트</h3>
                         </div>
-                        <div className="flex items-baseline justify-center gap-1.5 py-4 mb-4">
-                          <span className="text-5xl font-bold text-blue-500">0</span>
-                          <span className="text-gray-500 self-end pb-1">개의 프롬프트</span>
+                        <div className="flex items-baseline justify-center gap-1.5 py-3 sm:py-4 mb-3 sm:mb-4">
+                          <span className="text-4xl sm:text-5xl font-bold text-blue-500">0</span>
+                          <span className="text-gray-500 self-end pb-1 text-sm sm:text-base">개의 프롬프트</span>
                         </div>
-                        <button onClick={() => openModal('comments')} className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium py-2.5 rounded-lg transition-colors">
+                        <button onClick={() => openModal('comments')} className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium py-2 sm:py-2.5 rounded-lg transition-colors text-sm sm:text-base">
                           모두 보기
                         </button>
                       </div>
                       {/* 북마크한 프롬프트 */}
-                      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                            <span className="text-xl">🔖</span>
+                      <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <span className="text-lg sm:text-xl">🔖</span>
                           </div>
-                          <h3 className="font-semibold text-gray-900">북마크한 프롬프트</h3>
+                          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">북마크한 프롬프트</h3>
                         </div>
-                        <div className="flex items-baseline justify-center gap-1.5 py-4 mb-4">
-                          <span className="text-5xl font-bold text-yellow-500">0</span>
-                          <span className="text-gray-500 self-end pb-1">개의 프롬프트</span>
+                        <div className="flex items-baseline justify-center gap-1.5 py-3 sm:py-4 mb-3 sm:mb-4">
+                          <span className="text-4xl sm:text-5xl font-bold text-yellow-500">0</span>
+                          <span className="text-gray-500 self-end pb-1 text-sm sm:text-base">개의 프롬프트</span>
                         </div>
-                        <button onClick={() => openModal('bookmarks')} className="w-full bg-yellow-50 hover:bg-yellow-100 text-yellow-600 font-medium py-2.5 rounded-lg transition-colors">
+                        <button onClick={() => openModal('bookmarks')} className="w-full bg-yellow-50 hover:bg-yellow-100 text-yellow-600 font-medium py-2 sm:py-2.5 rounded-lg transition-colors text-sm sm:text-base">
                           모두 보기
                         </button>
                       </div>
                     </div>
                     {/* 크레딧 히스토리 */}
-                    <div className="mt-8 bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
-                      <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-semibold text-gray-900">📜 최근 크레딧 내역</h3>
-                        <Link to="/dashboard/credit-history" className="text-blue-600 font-medium hover:underline">전체 보기 →</Link>
+                    <div className="mt-6 sm:mt-8 bg-white rounded-xl p-4 sm:p-6 border border-gray-100 shadow-sm">
+                      <div className="flex justify-between items-center mb-4 sm:mb-6">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900">📜 최근 크레딧 내역</h3>
+                        <Link to="/dashboard/credit-history" className="text-blue-600 font-medium hover:underline text-sm sm:text-base">전체 보기 →</Link>
                       </div>
                       {isLoadingHistory ? (
                         <div className="text-center py-4"><div className="w-6 h-6 mx-auto border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>
@@ -441,8 +441,8 @@ const MyprofilePage = () => {
                             const isExpense = item.user_description?.includes('구매') || item.user_description?.includes('Purchase');
                             return (
                               <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                                <span className="text-sm text-gray-700">{item.user_description}</span>
-                                <span className={`text-sm font-medium ${isExpense ? 'text-red-600' : 'text-green-600'}`}>
+                                <span className="text-xs sm:text-sm text-gray-700 truncate mr-2">{item.user_description}</span>
+                                <span className={`text-xs sm:text-sm font-medium whitespace-nowrap ${isExpense ? 'text-red-600' : 'text-green-600'}`}>
                                   {isExpense ? '' : '+'}{item.amount.toLocaleString()}P
                                 </span>
                               </div>
@@ -459,37 +459,37 @@ const MyprofilePage = () => {
                 {/* 구매한 프롬프트 탭 */}
                 {activeTab === 'purchased' && (
                   <div>
-                    <div className="mb-6">
-                      <h2 className="text-xl font-bold text-gray-900">구매한 프롬프트</h2>
-                      <p className="text-sm text-gray-500 mt-1">총 {purchasedPrompts.length}개의 프롬프트</p>
+                    <div className="mb-4 sm:mb-6">
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-900">구매한 프롬프트</h2>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1">총 {purchasedPrompts.length}개의 프롬프트</p>
                     </div>
                     {purchasedPrompts.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                         {purchasedPrompts.map((prompt) => (
                           <Link key={prompt.id} to={`/prompt/${prompt.id}`} 
-                            className="bg-white rounded-xl p-5 border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all group">
-                            <div className="flex justify-between items-start mb-3">
-                              <h3 className="font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">{prompt.title}</h3>
-                              <span className="text-blue-900 font-bold text-lg">{prompt.price}P</span>
+                            className="bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all group">
+                            <div className="flex justify-between items-start mb-2 sm:mb-3">
+                              <h3 className="font-semibold text-gray-900 group-hover:text-blue-900 transition-colors text-sm sm:text-base line-clamp-1 flex-1 mr-2">{prompt.title}</h3>
+                              <span className="text-blue-900 font-bold text-base sm:text-lg whitespace-nowrap">{prompt.price}P</span>
                             </div>
-                            <p className="text-gray-600 text-sm mb-4 line-clamp-2">{prompt.description}</p>
+                            <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">{prompt.description}</p>
                             <div className="flex justify-between items-center">
                               <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">{prompt.category}</span>
-                              <span className="text-xs text-gray-500">by {prompt.sellerName}</span>
+                              <span className="text-xs text-gray-500 truncate ml-2">by {prompt.sellerName}</span>
                             </div>
                           </Link>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
-                        <div className="w-20 h-20 mx-auto mb-6 bg-blue-50 rounded-full flex items-center justify-center">
-                          <svg className="w-10 h-10 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="text-center py-10 sm:py-16 bg-white rounded-xl border border-gray-100">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-blue-50 rounded-full flex items-center justify-center">
+                          <svg className="w-8 h-8 sm:w-10 sm:h-10 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                           </svg>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">아직 구매한 프롬프트가 없어요</h3>
-                        <p className="text-gray-500 mb-6">마켓플레이스에서 다양한 프롬프트를 둘러보세요</p>
-                        <Link to="/marketplace" className="inline-flex items-center px-6 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 font-medium transition-colors">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">아직 구매한 프롬프트가 없어요</h3>
+                        <p className="text-gray-500 mb-4 sm:mb-6 text-sm sm:text-base px-4">마켓플레이스에서 다양한 프롬프트를 둘러보세요</p>
+                        <Link to="/marketplace" className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 font-medium transition-colors text-sm sm:text-base">
                           마켓플레이스 둘러보기
                         </Link>
                       </div>
@@ -500,29 +500,29 @@ const MyprofilePage = () => {
                 {/* 판매 중인 프롬프트 탭 */}
                 {activeTab === 'selling' && (
                   <div>
-                    <div className="mb-6">
-                      <h2 className="text-xl font-bold text-gray-900">판매 중인 프롬프트</h2>
-                      <p className="text-sm text-gray-500 mt-1">총 {myPrompts.length}개의 프롬프트</p>
+                    <div className="mb-4 sm:mb-6">
+                      <h2 className="text-lg sm:text-xl font-bold text-gray-900">판매 중인 프롬프트</h2>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1">총 {myPrompts.length}개의 프롬프트</p>
                     </div>
                     {isLoadingPrompts ? (
                       <div className="text-center py-12"><div className="w-8 h-8 mx-auto border-2 border-blue-900 border-t-transparent rounded-full animate-spin"></div></div>
                     ) : myPrompts.length > 0 ? (
-                      <div className="space-y-4">
+                      <div className="space-y-3 sm:space-y-4">
                         {myPrompts.map((prompt) => (
                           <Link key={prompt.promptId} to={`/prompt/${prompt.promptId}`}
-                            className="block bg-white rounded-xl p-5 border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all group">
-                            <div className="flex justify-between items-start">
+                            className="block bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all group">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0">
                               <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-3">
-                                  <h3 className="font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">{prompt.title}</h3>
-                                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                                  <h3 className="font-semibold text-gray-900 group-hover:text-blue-900 transition-colors text-sm sm:text-base">{prompt.title}</h3>
+                                  <span className={`text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-medium ${
                                     prompt.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                                   }`}>
                                     {prompt.status === 'completed' ? '검증 완료' : '검증 중'}
                                   </span>
                                 </div>
-                                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{prompt.description}</p>
-                                <div className="flex items-center gap-4 text-sm text-gray-500">
+                                <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">{prompt.description}</p>
+                                <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
                                   <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">{prompt.promptType}</span>
                                   <span className="flex items-center gap-1">
                                     <span className="text-red-400">♥</span> {prompt.likeCount}
@@ -535,24 +535,24 @@ const MyprofilePage = () => {
                                   </span>
                                 </div>
                               </div>
-                              <div className="text-right ml-4">
-                                <p className="text-xl font-bold text-blue-900">{prompt.price}P</p>
-                                <p className="text-xs text-gray-400 mt-1">{new Date(prompt.created_at).toLocaleDateString()}</p>
+                              <div className="flex sm:flex-col justify-between sm:text-right sm:ml-4 items-center sm:items-end">
+                                <p className="text-lg sm:text-xl font-bold text-blue-900">{prompt.price}P</p>
+                                <p className="text-xs text-gray-400 sm:mt-1">{new Date(prompt.created_at).toLocaleDateString()}</p>
                               </div>
                             </div>
                           </Link>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
-                        <div className="w-20 h-20 mx-auto mb-6 bg-blue-50 rounded-full flex items-center justify-center">
-                          <svg className="w-10 h-10 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="text-center py-10 sm:py-16 bg-white rounded-xl border border-gray-100">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-blue-50 rounded-full flex items-center justify-center">
+                          <svg className="w-8 h-8 sm:w-10 sm:h-10 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                           </svg>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">아직 등록한 프롬프트가 없어요</h3>
-                        <p className="text-gray-500 mb-6">나만의 프롬프트를 등록하고 수익을 창출해보세요</p>
-                        <Link to="/prompt/create" className="inline-flex items-center px-6 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 font-medium transition-colors">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">아직 등록한 프롬프트가 없어요</h3>
+                        <p className="text-gray-500 mb-4 sm:mb-6 text-sm sm:text-base px-4">나만의 프롬프트를 등록하고 수익을 창출해보세요</p>
+                        <Link to="/prompt/create" className="inline-flex items-center px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 font-medium transition-colors text-sm sm:text-base">
                           프롬프트 등록하기
                         </Link>
                       </div>
@@ -563,26 +563,26 @@ const MyprofilePage = () => {
                 {/* 판매 분석 탭 */}
                 {activeTab === 'analytics' && (
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">판매 분석</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                      <div className="bg-white rounded-lg p-4 border border-gray-200 text-center">
-                        <p className="text-gray-500 text-sm">총 판매 수</p>
-                        <p className="text-2xl font-bold text-gray-900">0</p>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">판매 분석</h2>
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                      <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 text-center">
+                        <p className="text-gray-500 text-xs sm:text-sm">총 판매 수</p>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900">0</p>
                       </div>
-                      <div className="bg-white rounded-lg p-4 border border-gray-200 text-center">
-                        <p className="text-gray-500 text-sm">총 수익</p>
-                        <p className="text-2xl font-bold text-green-600">0P</p>
+                      <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 text-center">
+                        <p className="text-gray-500 text-xs sm:text-sm">총 수익</p>
+                        <p className="text-xl sm:text-2xl font-bold text-green-600">0P</p>
                       </div>
-                      <div className="bg-white rounded-lg p-4 border border-gray-200 text-center">
-                        <p className="text-gray-500 text-sm">등록 프롬프트</p>
-                        <p className="text-2xl font-bold text-blue-600">{myPrompts.length}</p>
+                      <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 text-center">
+                        <p className="text-gray-500 text-xs sm:text-sm">등록 프롬프트</p>
+                        <p className="text-xl sm:text-2xl font-bold text-blue-600">{myPrompts.length}</p>
                       </div>
                     </div>
-                    <div className="bg-white rounded-lg p-6 border border-gray-200 text-center">
-                      <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                        <span className="text-2xl">📊</span>
+                    <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 text-center">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                        <span className="text-xl sm:text-2xl">📊</span>
                       </div>
-                      <p className="text-gray-500">상세 분석 기능은 준비 중입니다</p>
+                      <p className="text-gray-500 text-sm sm:text-base">상세 분석 기능은 준비 중입니다</p>
                     </div>
                   </div>
                 )}
@@ -590,22 +590,22 @@ const MyprofilePage = () => {
                 {/* 개인정보 설정 탭 */}
                 {activeTab === 'settings' && (
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">개인정보 설정</h2>
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">개인정보 설정</h2>
                     {/* 닉네임 변경 */}
-                    <div className="bg-white rounded-lg p-4 border border-gray-200 mb-4">
-                      <h3 className="font-semibold text-gray-900 mb-4">닉네임 변경</h3>
-                      <form onSubmit={handleNicknameChange} className="flex gap-3">
+                    <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 mb-3 sm:mb-4">
+                      <h3 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">닉네임 변경</h3>
+                      <form onSubmit={handleNicknameChange} className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <input type="text" value={nickname} onChange={(e) => setNickname(e.target.value)}
-                          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-900" required />
+                          className="flex-1 border border-gray-300 rounded-lg px-3 sm:px-4 py-2 focus:outline-none focus:border-blue-900 text-sm sm:text-base" required />
                         <button type="submit" disabled={isSaving}
-                          className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50">
+                          className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50 text-sm sm:text-base whitespace-nowrap">
                           {isSaving ? '변경 중...' : '변경'}
                         </button>
                       </form>
                     </div>
                     {/* 비밀번호 변경 */}
-                    <div className="bg-white rounded-lg p-4 border border-gray-200 mb-4">
-                      <h3 className="font-semibold text-gray-900 mb-4">비밀번호 변경</h3>
+                    <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 mb-3 sm:mb-4">
+                      <h3 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">비밀번호 변경</h3>
                       <form onSubmit={handlePasswordChange} className="space-y-3">
                         {/* 현재 비밀번호 */}
                         <div className="relative">
@@ -614,20 +614,20 @@ const MyprofilePage = () => {
                             placeholder="현재 비밀번호" 
                             value={currentPassword}
                             onChange={(e) => setCurrentPassword(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:border-blue-900" 
+                            className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 pr-10 focus:outline-none focus:border-blue-900 text-sm sm:text-base" 
                             required 
                           />
                           <button
                             type="button"
                             onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
                           >
                             {showCurrentPassword ? (
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                               </svg>
                             ) : (
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
@@ -643,20 +643,20 @@ const MyprofilePage = () => {
                               placeholder="새 비밀번호" 
                               value={newPassword}
                               onChange={(e) => setNewPassword(e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:border-blue-900" 
+                              className="w-full border border-gray-300 rounded-lg px-3 sm:px-4 py-2 pr-10 focus:outline-none focus:border-blue-900 text-sm sm:text-base" 
                               required 
                             />
                             <button
                               type="button"
                               onClick={() => setShowNewPassword(!showNewPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
                             >
                               {showNewPassword ? (
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                                 </svg>
                               ) : (
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
@@ -674,7 +674,7 @@ const MyprofilePage = () => {
                               placeholder="새 비밀번호 확인" 
                               value={confirmPassword}
                               onChange={(e) => setConfirmPassword(e.target.value)}
-                              className={`w-full border rounded-lg px-4 py-2 pr-10 focus:outline-none ${
+                              className={`w-full border rounded-lg px-3 sm:px-4 py-2 pr-10 focus:outline-none text-sm sm:text-base ${
                                 confirmPassword && newPassword !== confirmPassword
                                   ? 'border-red-300 focus:border-red-500'
                                   : 'border-gray-300 focus:border-blue-900'
@@ -684,14 +684,14 @@ const MyprofilePage = () => {
                             <button
                               type="button"
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
                             >
                               {showConfirmPassword ? (
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                                 </svg>
                               ) : (
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                 </svg>
@@ -704,17 +704,17 @@ const MyprofilePage = () => {
                         </div>
                         
                         <button type="submit" disabled={isSaving}
-                          className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50">
+                          className="w-full sm:w-auto px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50 text-sm sm:text-base">
                           {isSaving ? '변경 중...' : '비밀번호 변경'}
                         </button>
                       </form>
                     </div>
                     {/* 회원 탈퇴 */}
-                    <div className="bg-white rounded-lg p-4 border border-red-200">
-                      <h3 className="font-semibold text-red-600 mb-2">회원 탈퇴</h3>
-                      <p className="text-gray-600 text-sm mb-4">회원 탈퇴 시 모든 데이터가 삭제되며, 되돌릴 수 없습니다.</p>
+                    <div className="bg-white rounded-lg p-3 sm:p-4 border border-red-200">
+                      <h3 className="font-semibold text-red-600 mb-2 text-sm sm:text-base">회원 탈퇴</h3>
+                      <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4">회원 탈퇴 시 모든 데이터가 삭제되며, 되돌릴 수 없습니다.</p>
                       <button onClick={handleDeleteAccount} disabled={isSaving}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+                        className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm sm:text-base">
                         {isSaving ? '처리 중...' : '회원 탈퇴'}
                       </button>
                     </div>
@@ -728,50 +728,50 @@ const MyprofilePage = () => {
 
       {/* 모달 */}
       {modalType && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={closeModal}>
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={closeModal}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[85vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
             {/* 모달 헤더 */}
-            <div className="flex items-center justify-between p-4 border-b">
-              <h3 className="text-lg font-semibold text-gray-900">{getModalTitle()}</h3>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">{getModalTitle()}</h3>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 p-1">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
             {/* 모달 내용 */}
-            <div className="p-4 overflow-y-auto max-h-[60vh]">
+            <div className="p-3 sm:p-4 overflow-y-auto max-h-[65vh]">
               {isLoadingModal ? (
-                <div className="text-center py-8">
-                  <div className="w-8 h-8 mx-auto border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <p className="text-gray-500 mt-2">로딩 중...</p>
+                <div className="text-center py-6 sm:py-8">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 mx-auto border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-gray-500 mt-2 text-sm sm:text-base">로딩 중...</p>
                 </div>
               ) : modalData.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {modalData.map((prompt) => (
                     <Link key={prompt.promptId} to={`/prompt/${prompt.promptId}`} onClick={closeModal}
-                      className="block p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      className="block p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       <div className="flex justify-between items-center">
-                        <span className="font-medium text-gray-900">{prompt.title}</span>
-                        <span className="text-blue-600 font-medium">{prompt.price}P</span>
+                        <span className="font-medium text-gray-900 text-sm sm:text-base truncate mr-2">{prompt.title}</span>
+                        <span className="text-blue-600 font-medium text-sm sm:text-base whitespace-nowrap">{prompt.price}P</span>
                       </div>
                     </Link>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">
+                <div className="text-center py-8 sm:py-12">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <span className="text-xl sm:text-2xl">
                       {modalType === 'likes' ? '❤️' : modalType === 'comments' ? '💬' : '🔖'}
                     </span>
                   </div>
-                  <p className="text-gray-500">
+                  <p className="text-gray-500 text-sm sm:text-base">
                     {modalType === 'likes' && '좋아요 누른 프롬프트가 없습니다'}
                     {modalType === 'comments' && '댓글 남긴 프롬프트가 없습니다'}
                     {modalType === 'bookmarks' && '북마크한 프롬프트가 없습니다'}
                   </p>
                   <Link to="/marketplace" onClick={closeModal}
-                    className="inline-block mt-4 text-blue-600 hover:underline">
+                    className="inline-block mt-3 sm:mt-4 text-blue-600 hover:underline text-sm sm:text-base">
                     마켓플레이스 둘러보기 →
                   </Link>
                 </div>

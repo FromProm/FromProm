@@ -595,24 +595,30 @@ const PromptDetailPage = () => {
 
               // 프롬프트 템플릿에서 변수 순서 추출 ({변수명} 형태)
               const templateVariableOrder: string[] = [];
-              const variableRegex = /\{([^}]+)\}/g;
-              let match;
-              while ((match = variableRegex.exec(prompt.content)) !== null) {
-                if (!templateVariableOrder.includes(match[1])) {
-                  templateVariableOrder.push(match[1]);
+              if (prompt.content) {
+                const variableRegex = /\{([^}]+)\}/g;
+                let match;
+                // 정규식 lastIndex 초기화
+                variableRegex.lastIndex = 0;
+                while ((match = variableRegex.exec(prompt.content)) !== null) {
+                  if (!templateVariableOrder.includes(match[1])) {
+                    templateVariableOrder.push(match[1]);
+                  }
                 }
               }
 
-              // 템플릿 순서대로 변수 정렬
-              const sortedVariableEntries = Object.entries(inputVariables).sort((a, b) => {
-                const indexA = templateVariableOrder.indexOf(a[0]);
-                const indexB = templateVariableOrder.indexOf(b[0]);
-                // 템플릿에 없는 변수는 뒤로
-                if (indexA === -1 && indexB === -1) return 0;
-                if (indexA === -1) return 1;
-                if (indexB === -1) return -1;
-                return indexA - indexB;
-              });
+              // 템플릿 순서대로 변수 정렬 (템플릿이 없으면 원래 순서 유지)
+              const sortedVariableEntries = templateVariableOrder.length > 0
+                ? Object.entries(inputVariables).sort((a, b) => {
+                    const indexA = templateVariableOrder.indexOf(a[0]);
+                    const indexB = templateVariableOrder.indexOf(b[0]);
+                    // 템플릿에 없는 변수는 뒤로
+                    if (indexA === -1 && indexB === -1) return 0;
+                    if (indexA === -1) return 1;
+                    if (indexB === -1) return -1;
+                    return indexA - indexB;
+                  })
+                : Object.entries(inputVariables);
 
               // 이미지 타입인지 확인
               const isImageType = prompt.category === 'type_b_image';

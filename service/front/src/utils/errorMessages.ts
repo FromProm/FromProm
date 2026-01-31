@@ -1,13 +1,19 @@
 // AWS Cognito 및 백엔드 에러 메시지를 사용자 친화적으로 변환
 
 const errorMessageMap: Record<string, string> = {
-  // Cognito 인증 관련
-  'NotAuthorizedException': '인증에 실패했습니다. 다시 로그인해주세요.',
-  'UserNotFoundException': '사용자를 찾을 수 없습니다.',
+  // Cognito 인증 관련 - 중복 이메일
   'UsernameExistsException': '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
   'User already exists': '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
   'An account with the given email already exists': '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
   'email already exists': '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
+  'already exists': '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
+  'already registered': '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
+  'duplicate': '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
+  'user exists': '이미 가입된 이메일입니다. 로그인을 시도해주세요.',
+  
+  // Cognito 인증 관련 - 기타
+  'NotAuthorizedException': '인증에 실패했습니다. 다시 로그인해주세요.',
+  'UserNotFoundException': '사용자를 찾을 수 없습니다.',
   'InvalidPasswordException': '비밀번호 형식이 올바르지 않습니다.',
   'CodeMismatchException': '인증 코드가 일치하지 않습니다.',
   'ExpiredCodeException': '인증 코드가 만료되었습니다. 다시 요청해주세요.',
@@ -76,15 +82,15 @@ export const getFriendlyErrorMessage = (error: any): string => {
   const status = error?.response?.status;
   const rawMessageLower = rawMessage.toLowerCase();
   
-  // 회원가입 중복 이메일 체크
-  if (status === 400 && (rawMessageLower.includes('exist') || rawMessageLower.includes('already') || rawMessageLower.includes('duplicate'))) {
+  // 회원가입 중복 이메일 체크 (더 넓은 범위)
+  if (rawMessageLower.includes('exist') || rawMessageLower.includes('already') || rawMessageLower.includes('duplicate') || rawMessageLower.includes('registered')) {
     return '이미 가입된 이메일입니다. 로그인을 시도해주세요.';
   }
   
   if (status) {
     switch (status) {
       case 400:
-        return '잘못된 요청입니다. 입력 정보를 확인해주세요.';
+        return '이미 가입된 이메일이거나 입력 정보가 올바르지 않습니다.';
       case 401:
         return '인증이 필요합니다. 다시 로그인해주세요.';
       case 403:

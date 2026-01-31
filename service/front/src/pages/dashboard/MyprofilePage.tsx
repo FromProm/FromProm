@@ -124,7 +124,7 @@ const MyprofilePage = () => {
 
   // 크레딧 히스토리 가져오기
   useEffect(() => {
-    if (activeTab === 'profile') {
+    if (activeTab === 'profile' || activeTab === 'analytics') {
       const fetchHistory = async () => {
         setIsLoadingHistory(true);
         try {
@@ -284,20 +284,31 @@ const MyprofilePage = () => {
   const translateCreditDescription = (description: string): string => {
     if (!description) return description;
     
-    // 일반적인 영어 패턴을 한국어로 변환
+    // 일반적인 영어 패턴을 한국어로 변환 (판매 수익 / 구매 / 충전 으로 통일)
     let translated = description
-      .replace(/^Credit charge$/i, '크레딧 충전')
-      .replace(/^Credit Charge$/i, '크레딧 충전')
+      // 충전
+      .replace(/^Credit charge$/i, '충전')
+      .replace(/^Credit Charge$/i, '충전')
       .replace(/^Charge$/i, '충전')
-      .replace(/^Purchase:/i, '프롬프트 구매:')
-      .replace(/^Prompt purchase:/i, '프롬프트 구매:')
-      .replace(/^Prompt Purchase:/i, '프롬프트 구매:')
-      .replace(/^Prompt Sale$/i, '프롬프트 판매')
-      .replace(/^Prompt sale$/i, '프롬프트 판매')
-      .replace(/^Cart purchase$/i, '프롬프트 구매')
-      .replace(/^Cart Purchase$/i, '프롬프트 구매')
-      .replace(/^장바구니 구매$/i, '프롬프트 구매')
-      .replace(/^Refund:/i, '환불:')
+      .replace(/^크레딧 충전$/i, '충전')
+      // 구매
+      .replace(/^Purchase:/i, '구매')
+      .replace(/^Prompt purchase:/i, '구매')
+      .replace(/^Prompt Purchase:/i, '구매')
+      .replace(/^Prompt purchase$/i, '구매')
+      .replace(/^Prompt Purchase$/i, '구매')
+      .replace(/^Cart purchase$/i, '구매')
+      .replace(/^Cart Purchase$/i, '구매')
+      .replace(/^장바구니 구매$/i, '구매')
+      .replace(/^프롬프트 구매$/i, '구매')
+      .replace(/^프롬프트 구매:/i, '구매')
+      // 판매 수익
+      .replace(/^Prompt Sale$/i, '판매 수익')
+      .replace(/^Prompt sale$/i, '판매 수익')
+      .replace(/^프롬프트 판매$/i, '판매 수익')
+      // 기타
+      .replace(/^Refund:/i, '환불')
+      .replace(/^Refund$/i, '환불')
       .replace(/^Bonus$/i, '보너스')
       .replace(/^Welcome bonus$/i, '가입 보너스')
       .replace(/^Sign up bonus$/i, '가입 보너스')
@@ -316,6 +327,20 @@ const MyprofilePage = () => {
     return { label: '초보 판매자', color: 'from-gray-300 to-gray-400', icon: '🌟' };
   };
 
+  // 판매 통계 계산 (크레딧 히스토리에서 판매 수익 집계)
+  const getSalesStats = () => {
+    const salesHistory = creditHistory.filter(item => {
+      const desc = item.user_description?.toLowerCase() || '';
+      return desc.includes('sale') || desc.includes('판매');
+    });
+    
+    const totalSales = salesHistory.length;
+    const totalRevenue = salesHistory.reduce((sum, item) => sum + (item.amount || 0), 0);
+    
+    return { totalSales, totalRevenue };
+  };
+
+  const salesStats = getSalesStats();
   const sellerBadge = getSellerBadge(myPrompts.length);
 
   return (
@@ -656,11 +681,11 @@ const MyprofilePage = () => {
                     <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
                       <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 text-center">
                         <p className="text-gray-500 text-xs sm:text-sm">총 판매 수</p>
-                        <p className="text-xl sm:text-2xl font-bold text-gray-900">0</p>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900">{salesStats.totalSales}</p>
                       </div>
                       <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 text-center">
                         <p className="text-gray-500 text-xs sm:text-sm">총 수익</p>
-                        <p className="text-xl sm:text-2xl font-bold text-green-600">0P</p>
+                        <p className="text-xl sm:text-2xl font-bold text-green-600">{salesStats.totalRevenue.toLocaleString()}P</p>
                       </div>
                       <div className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 text-center">
                         <p className="text-gray-500 text-xs sm:text-sm">등록 프롬프트</p>

@@ -31,7 +31,7 @@ const Footer = () => {
           <p className="font-medium text-gray-400">FromProm</p>
           <p>대표 신의진</p>
           <p>김영동 이찬종 오지은 고유나</p>
-          <p>이메일 : tlsdmlwls@gmail.com</p>
+          <p>이메일 : tlsdmlwls21@gmail.com</p>
         </div>
       </div>
     </footer>

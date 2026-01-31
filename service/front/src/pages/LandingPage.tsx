@@ -153,7 +153,7 @@ const LandingPage = () => {
                 </div>
               </div>
               <span className="text-xl font-semibold text-white tracking-tight">FromProm</span>
-              <nav className="hidden md:flex items-center space-x-8 ml-16">
+              <nav className="hidden md:flex items-center space-x-8 ml-24">
                 <Link to="/marketplace" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
                   마켓
                 </Link>
@@ -351,7 +351,8 @@ const LandingPage = () => {
         )}
       </main>
 
-      <div className="relative z-10 mt-20">
+      {/* Footer - 스크롤 시 자연스럽게 나타남 */}
+      <div className="relative z-10 mt-40">
         <Footer />
       </div>
     </div>

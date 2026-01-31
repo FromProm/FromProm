@@ -525,7 +525,7 @@ const MarketplacePage = () => {
                             <span>{prompt.commentCount || 0}</span>
                           </span>
                         </div>
-                        {(prompt.likeCount || 0) >= 50 && (
+                        {(prompt.likeCount || 0) >= 3 && (
                           <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
                             🔥 HOT
                           </div>

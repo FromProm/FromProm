@@ -68,23 +68,33 @@ const CreditHistoryPage = () => {
     return description?.includes('Purchase') || description?.includes('구매');
   };
 
-  // 영어 설명을 한국어로 변환
+  // 영어 설명을 한국어로 변환 (판매 수익 / 구매 / 충전 으로 통일)
   const translateDescription = (description: string): string => {
     if (!description) return description;
     return description
-      .replace(/^Credit charge$/i, '크레딧 충전')
+      // 충전
+      .replace(/^Credit charge$/i, '충전')
+      .replace(/^Credit Charge$/i, '충전')
       .replace(/^Charge$/i, '충전')
-      .replace(/^Cart Purchase$/i, '프롬프트 구매')
-      .replace(/^Cart purchase$/i, '프롬프트 구매')
-      .replace(/^장바구니 구매$/i, '프롬프트 구매')
-      .replace(/^Prompt Purchase:/i, '프롬프트 구매:')
-      .replace(/^Prompt purchase:/i, '프롬프트 구매:')
-      .replace(/^Prompt Purchase$/i, '프롬프트 구매')
-      .replace(/^Prompt purchase$/i, '프롬프트 구매')
-      .replace(/^Purchase:/i, '프롬프트 구매:')
-      .replace(/^Prompt Sale$/i, '프롬프트 판매')
-      .replace(/^Prompt sale$/i, '프롬프트 판매')
-      .replace(/^Refund:/i, '환불:')
+      .replace(/^크레딧 충전$/i, '충전')
+      // 구매
+      .replace(/^Purchase:/i, '구매')
+      .replace(/^Prompt purchase:/i, '구매')
+      .replace(/^Prompt Purchase:/i, '구매')
+      .replace(/^Prompt purchase$/i, '구매')
+      .replace(/^Prompt Purchase$/i, '구매')
+      .replace(/^Cart purchase$/i, '구매')
+      .replace(/^Cart Purchase$/i, '구매')
+      .replace(/^장바구니 구매$/i, '구매')
+      .replace(/^프롬프트 구매$/i, '구매')
+      .replace(/^프롬프트 구매:/i, '구매')
+      // 판매 수익
+      .replace(/^Prompt Sale$/i, '판매 수익')
+      .replace(/^Prompt sale$/i, '판매 수익')
+      .replace(/^프롬프트 판매$/i, '판매 수익')
+      // 기타
+      .replace(/^Refund:/i, '환불')
+      .replace(/^Refund$/i, '환불')
       .replace(/^Bonus$/i, '보너스')
       .replace(/^Welcome bonus$/i, '가입 보너스')
       .replace(/^Sign up bonus$/i, '가입 보너스');

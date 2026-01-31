@@ -1,15 +1,27 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { usePurchaseStore } from '../../store/purchaseStore';
+import { creditApi, promptApi } from '../../services/api';
 import { promptTypeToCategory } from '../../services/dummyData';
 import AnimatedContent from '../../components/AnimatedContent';
 
+// 프롬프트 타입 정의
+interface PurchasedPrompt {
+  promptId: string;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  nickname: string;
+  model: string;
+  content: string;
+  purchasedAt: string;
+}
+
 // 카드 색상 설정 함수 (마켓페이지와 동일)
 const getCardColors = (category: string) => {
-  // category가 이미 한국어로 변환된 값일 수도 있고, 영어 키일 수도 있음
   const type = promptTypeToCategory[category] || category;
   
-  if (type === '사실/정보/근거 요구' || type === '사실 근거 기반' || category === 'type_a' || category === '사실/정보/근거 요구' || category === '사실 근거 기반') {
+  if (type === '사실/정보/근거 요구' || type === '사실 근거 기반' || category === 'type_a') {
     return {
       gradient: 'from-rose-50 via-rose-25 to-white',
       border: 'border-rose-100',
@@ -17,11 +29,9 @@ const getCardColors = (category: string) => {
       shadow: 'shadow-rose-500/5 hover:shadow-rose-500/30',
       tag: 'text-gray-700 bg-white border border-rose-400',
       borderBottom: 'border-rose-100',
-      barGradient: 'from-rose-200 to-rose-500',
-      dotColor: 'bg-rose-500',
       tagLabel: '사실/정보/근거 요구',
     };
-  } else if (type === '글 창작 및 생성' || category === 'type_b_text' || category === '글 창작 및 생성') {
+  } else if (type === '글 창작 및 생성' || category === 'type_b_text') {
     return {
       gradient: 'from-emerald-50 via-emerald-25 to-white',
       border: 'border-emerald-100',
@@ -29,11 +39,9 @@ const getCardColors = (category: string) => {
       shadow: 'shadow-emerald-500/5 hover:shadow-emerald-500/30',
       tag: 'text-gray-700 bg-white border border-emerald-400',
       borderBottom: 'border-emerald-100',
-      barGradient: 'from-emerald-200 to-emerald-500',
-      dotColor: 'bg-emerald-500',
       tagLabel: '글 창작 및 생성',
     };
-  } else if (type === '이미지 창작 및 생성' || category === 'type_b_image' || category === '이미지 창작 및 생성') {
+  } else if (type === '이미지 창작 및 생성' || category === 'type_b_image') {
     return {
       gradient: 'from-blue-50 via-blue-25 to-white',
       border: 'border-blue-100',
@@ -41,8 +49,6 @@ const getCardColors = (category: string) => {
       shadow: 'shadow-blue-500/5 hover:shadow-blue-500/30',
       tag: 'text-gray-700 bg-white border border-blue-400',
       borderBottom: 'border-blue-100',
-      barGradient: 'from-blue-200 to-blue-500',
-      dotColor: 'bg-blue-500',
       tagLabel: '이미지 창작 및 생성',
     };
   } else {
@@ -53,20 +59,63 @@ const getCardColors = (category: string) => {
       shadow: 'shadow-gray-500/5 hover:shadow-gray-500/30',
       tag: 'text-gray-700 bg-white border border-gray-400',
       borderBottom: 'border-gray-100',
-      barGradient: 'from-gray-200 to-gray-500',
-      dotColor: 'bg-gray-500',
       tagLabel: category || '기타',
     };
   }
 };
 
 const PurchasedPromptsPage = () => {
-  const { getPurchasedPrompts } = usePurchaseStore();
+  const [purchasedPrompts, setPurchasedPrompts] = useState<PurchasedPrompt[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  const purchasedPrompts = getPurchasedPrompts();
+  // API에서 구매한 프롬프트 목록 가져오기
+  useEffect(() => {
+    const fetchPurchasedPrompts = async () => {
+      setIsLoading(true);
+      try {
+        // 구매 내역 가져오기
+        const historyResponse = await creditApi.getPurchaseHistory();
+        const purchases = historyResponse.data.purchases || [];
+        
+        // 각 구매 내역에서 프롬프트 상세 정보 가져오기
+        const promptDetails: PurchasedPrompt[] = [];
+        for (const purchase of purchases) {
+          if (purchase.promptId) {
+            try {
+              const detailResponse = await promptApi.getPromptDetail(purchase.promptId);
+              if (detailResponse.data.success && detailResponse.data.prompt) {
+                const prompt = detailResponse.data.prompt;
+                promptDetails.push({
+                  promptId: prompt.promptId,
+                  title: prompt.title,
+                  description: prompt.description,
+                  price: prompt.price,
+                  category: prompt.promptType || prompt.category,
+                  nickname: prompt.nickname || '익명',
+                  model: prompt.model,
+                  content: prompt.content,
+                  purchasedAt: purchase.created_at || purchase.purchasedAt,
+                });
+              }
+            } catch (err) {
+              console.error(`Failed to fetch prompt ${purchase.promptId}:`, err);
+            }
+          }
+        }
+        
+        setPurchasedPrompts(promptDetails);
+      } catch (error) {
+        console.error('Failed to fetch purchased prompts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPurchasedPrompts();
+  }, []);
 
   const filteredPrompts = purchasedPrompts.filter(prompt => {
     const type = promptTypeToCategory[prompt.category] || prompt.category;
@@ -78,7 +127,7 @@ const PurchasedPromptsPage = () => {
     return matchesCategory && matchesSearch;
   });
 
-  // 카테고리 목록 (마켓페이지와 동일)
+  // 카테고리 목록
   const categoryList = ['All', '사실/정보/근거 요구', '글 창작 및 생성', '이미지 창작 및 생성'];
 
   const handleDownload = (content: string, title: string) => {
@@ -99,6 +148,17 @@ const PurchasedPromptsPage = () => {
       console.error('클립보드 복사 실패:', err);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-600">구매한 프롬프트를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (purchasedPrompts.length === 0) {
     return (
@@ -171,7 +231,7 @@ const PurchasedPromptsPage = () => {
           {filteredPrompts.map((prompt, index) => {
             const colors = getCardColors(prompt.category);
             return (
-              <AnimatedContent key={prompt.id} once distance={50} duration={0.6} delay={index * 0.1}>
+              <AnimatedContent key={prompt.promptId} once distance={50} duration={0.6} delay={index * 0.1}>
                 <div className={`bg-gradient-to-br ${colors.gradient} border-2 ${colors.border} ${colors.hoverBorder} rounded-xl p-5 shadow-lg ${colors.shadow} transition-all duration-300`}>
                   {/* 상단: 카테고리 + 가격 */}
                   <div className="flex items-center justify-between mb-3">
@@ -197,9 +257,12 @@ const PurchasedPromptsPage = () => {
                     {prompt.description}
                   </p>
 
-                  {/* 작성자 */}
+                  {/* 모델 + 작성자 */}
                   <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-                    <span className="text-xs">by {prompt.sellerName}</span>
+                    <span className="bg-gray-50 border border-gray-200 px-2 py-0.5 rounded text-xs font-medium text-gray-700 truncate max-w-[120px]">
+                      {prompt.model}
+                    </span>
+                    <span className="text-xs">by {prompt.nickname}</span>
                   </div>
 
                   {/* 구매 정보 */}
@@ -212,10 +275,10 @@ const PurchasedPromptsPage = () => {
                   {/* 액션 버튼 */}
                   <div className="space-y-2">
                     <button
-                      onClick={() => setSelectedPrompt(selectedPrompt === prompt.id ? null : prompt.id)}
+                      onClick={() => setSelectedPrompt(selectedPrompt === prompt.promptId ? null : prompt.promptId)}
                       className="w-full bg-blue-900 text-white font-medium py-2 rounded-lg hover:bg-blue-800 transition-colors text-sm"
                     >
-                      {selectedPrompt === prompt.id ? '내용 숨기기' : '내용 보기'}
+                      {selectedPrompt === prompt.promptId ? '내용 숨기기' : '내용 보기'}
                     </button>
                     
                     <div className="flex space-x-2">
@@ -235,7 +298,7 @@ const PurchasedPromptsPage = () => {
                   </div>
 
                   {/* 프롬프트 내용 */}
-                  {selectedPrompt === prompt.id && (
+                  {selectedPrompt === prompt.promptId && (
                     <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 animate-slide-down">
                       <h4 className="font-medium text-gray-900 mb-2">프롬프트 내용:</h4>
                       <div className="text-sm text-gray-700 whitespace-pre-wrap max-h-40 overflow-y-auto">

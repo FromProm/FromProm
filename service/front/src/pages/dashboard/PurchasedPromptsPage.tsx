@@ -1,16 +1,61 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { usePurchaseStore } from '../../store/purchaseStore';
-import { promptApi } from '../../services/api';
+import { promptApi, creditApi } from '../../services/api';
+import { promptTypeToCategory } from '../../services/dummyData';
 import AnimatedContent from '../../components/AnimatedContent';
 
 const PurchasedPromptsPage = () => {
-  const { getPurchasedPrompts, incrementDownloadCount } = usePurchaseStore();
+  const { getPurchasedPrompts, incrementDownloadCount, addPurchasedPrompt } = usePurchaseStore();
   const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [promptContents, setPromptContents] = useState<Record<string, string>>({});
   const [loadingContent, setLoadingContent] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(true);
+
+  // 페이지 로드 시 API에서 구매 내역 동기화
+  useEffect(() => {
+    const syncPurchasedPrompts = async () => {
+      setIsSyncing(true);
+      try {
+        const historyResponse = await creditApi.getPurchaseHistory();
+        const purchases = historyResponse.data.purchases || [];
+        
+        for (const purchase of purchases) {
+          if (purchase.promptId) {
+            try {
+              const detailResponse = await promptApi.getPromptDetail(purchase.promptId);
+              if (detailResponse.data.success && detailResponse.data.prompt) {
+                const prompt = detailResponse.data.prompt;
+                const category = promptTypeToCategory[prompt.promptType] || prompt.promptType || prompt.category;
+                
+                // purchaseStore에 추가 (이미 있으면 무시됨)
+                addPurchasedPrompt({
+                  id: prompt.promptId,
+                  title: prompt.title,
+                  price: prompt.price,
+                  category: category,
+                  sellerName: prompt.nickname || '판매자',
+                  description: prompt.description,
+                  content: prompt.content,
+                  rating: prompt.evaluationMetrics?.finalScore || 4.5,
+                });
+              }
+            } catch (err) {
+              console.error(`Failed to fetch prompt ${purchase.promptId}:`, err);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to sync purchased prompts:', error);
+      } finally {
+        setIsSyncing(false);
+      }
+    };
+
+    syncPurchasedPrompts();
+  }, [addPurchasedPrompt]);
 
   const purchasedPrompts = getPurchasedPrompts();
 
@@ -95,6 +140,17 @@ const PurchasedPromptsPage = () => {
       console.error('클립보드 복사 실패:', err);
     }
   };
+
+  if (isSyncing) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-600">구매한 프롬프트를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (purchasedPrompts.length === 0) {
     return (

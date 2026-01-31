@@ -245,69 +245,94 @@ const MyprofilePage = () => {
   };
 
   const menuItems = [
-    { id: 'profile' as MenuTab, label: '내 프로필', icon: '👤' },
-    { id: 'purchased' as MenuTab, label: '구매한 프롬프트', icon: '📥' },
-    { id: 'selling' as MenuTab, label: '판매 중인 프롬프트', icon: '📤' },
-    { id: 'analytics' as MenuTab, label: '판매 분석', icon: '📊' },
-    { id: 'settings' as MenuTab, label: '개인정보 설정', icon: '⚙️' },
+    { id: 'profile' as MenuTab, label: '내 프로필' },
+    { id: 'purchased' as MenuTab, label: '구매한 프롬프트' },
+    { id: 'selling' as MenuTab, label: '판매 중인 프롬프트' },
+    { id: 'analytics' as MenuTab, label: '판매 분석' },
+    { id: 'settings' as MenuTab, label: '개인정보 설정' },
   ];
 
   const purchasedPrompts = getPurchasedPrompts();
+
+  // 판매 프롬프트 수에 따른 배지 계산
+  const getSellerBadge = (count: number) => {
+    if (count >= 50) return { label: '프롬프트 마스터', color: 'from-purple-500 to-pink-500', icon: '👑' };
+    if (count >= 30) return { label: '프롬프트 전문가', color: 'from-yellow-400 to-orange-500', icon: '⭐' };
+    if (count >= 15) return { label: '프롬프트 크리에이터', color: 'from-blue-400 to-indigo-500', icon: '🎨' };
+    if (count >= 5) return { label: '프롬프트 메이커', color: 'from-green-400 to-teal-500', icon: '🌱' };
+    if (count >= 1) return { label: '프롬프트 입문자', color: 'from-gray-400 to-gray-500', icon: '🔰' };
+    return { label: '초보 판매자', color: 'from-gray-300 to-gray-400', icon: '🌟' };
+  };
+
+  const sellerBadge = getSellerBadge(myPrompts.length);
 
   return (
     <div className="min-h-screen bg-white">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* 프로필 헤더 */}
         <AnimatedContent once distance={50} duration={0.6} delay={0}>
-          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-6 mb-6">
-            <div className="flex items-start gap-6">
-              {/* 프로필 사진 */}
-              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg flex-shrink-0">
-                <img src="/logo.png" alt="Profile" className="w-full h-full object-cover" 
-                  onError={(e) => {
-                    e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%234F46E5" width="100" height="100"/><text x="50" y="60" text-anchor="middle" fill="white" font-size="40">F</text></svg>';
-                  }}
-                />
+          <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-xl shadow-lg border border-blue-200 p-8 mb-8">
+            <div className="flex flex-col lg:flex-row items-start gap-6">
+              {/* 프로필 아바타 - 닉네임 이니셜 */}
+              <div className="w-28 h-28 rounded-full border-4 border-white shadow-xl flex-shrink-0 bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
+                <span className="text-white text-4xl font-bold">
+                  {(userInfo?.nickname || '사용자').charAt(0)}
+                </span>
               </div>
               {/* 닉네임 & 자기소개 */}
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">{userInfo?.nickname || '사용자'}</h1>
+                <div className="flex items-center gap-3 mb-3">
+                  <h1 className="text-3xl font-bold text-gray-900">{userInfo?.nickname || '사용자'}</h1>
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-white text-sm font-medium bg-gradient-to-r ${sellerBadge.color}`}>
+                    <span>{sellerBadge.icon}</span>
+                    {sellerBadge.label}
+                  </span>
+                </div>
                 {isEditingBio ? (
                   <div>
                     <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)}
-                      placeholder="자기소개를 입력하세요..." maxLength={200} rows={2}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 text-sm focus:outline-none focus:border-blue-500 resize-none"
+                      placeholder="자기소개를 입력하세요..." maxLength={200} rows={3}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 resize-none"
                     />
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-gray-500">{editBio.length}/200</span>
-                      <div className="flex gap-2">
-                        <button onClick={handleCancelEdit} className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800">취소</button>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-sm text-gray-500">{editBio.length}/200</span>
+                      <div className="flex gap-3">
+                        <button onClick={handleCancelEdit} className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">취소</button>
                         <button onClick={handleSaveBio} disabled={isSaving}
-                          className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                          className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50 font-medium">
                           {isSaving ? '저장 중...' : '저장'}
                         </button>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-start gap-2">
-                    <p className="text-gray-600 text-sm">{userInfo?.bio || '자기소개가 없습니다.'}</p>
-                    <button onClick={() => setIsEditingBio(true)} className="text-blue-600 hover:text-blue-700 text-xs">수정</button>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-gray-600 leading-relaxed">{userInfo?.bio || '자기소개가 없습니다. 클릭하여 추가해보세요!'}</p>
+                    <button onClick={() => setIsEditingBio(true)} className="self-start px-3 py-1.5 text-sm text-blue-900 hover:text-white hover:bg-blue-900 rounded-lg transition-colors border border-blue-900">
+                      수정
+                    </button>
                   </div>
                 )}
               </div>
-              {/* 크레딧 */}
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg px-6 py-4 text-white min-w-[160px] h-[88px] flex flex-col justify-between">
-                <p className="text-sm opacity-80">보유 크레딧</p>
-                <p className="text-2xl font-bold">{(userInfo?.credit || 0).toLocaleString()}P</p>
-                <Link to="/credit" className="text-xs underline opacity-80 hover:opacity-100">충전하러가기 →</Link>
+              {/* 크레딧 & 장바구니 카드 */}
+              <div className="flex flex-row gap-4">
+                {/* 크레딧 */}
+                <Link to="/credit" className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-xl px-6 py-5 text-white min-w-[180px] shadow-lg flex flex-col transition-all">
+                  <p className="text-sm opacity-80 mb-1">보유 크레딧</p>
+                  <p className="text-3xl font-bold mb-3">{(userInfo?.credit || 0).toLocaleString()}P</p>
+                  <div className="mt-auto bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg text-center">
+                    충전하기
+                  </div>
+                </Link>
+                {/* 장바구니 */}
+                <Link to="/cart" className="bg-gradient-to-r from-orange-400 to-red-400 rounded-xl px-6 py-5 text-white hover:from-orange-500 hover:to-red-500 transition-all min-w-[180px] shadow-lg flex flex-col">
+                  <p className="text-sm opacity-80 mb-1">장바구니</p>
+                  <p className="text-3xl font-bold mb-3">{cartItems.length}개</p>
+                  <div className="mt-auto bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg text-center">
+                    {cartItems.length > 0 ? `${getCartTotalPrice().toLocaleString()}P` : '비어있음'}
+                  </div>
+                </Link>
               </div>
-              {/* 장바구니 */}
-              <Link to="/cart" className="bg-gradient-to-r from-orange-500 to-red-500 rounded-lg px-6 py-4 text-white hover:from-orange-600 hover:to-red-600 transition-all min-w-[160px] h-[88px] flex flex-col justify-between">
-                <p className="text-sm opacity-80">장바구니</p>
-                <p className="text-2xl font-bold">{cartItems.length}개</p>
-                <p className="text-xs opacity-80">{cartItems.length > 0 ? `${getCartTotalPrice().toLocaleString()}P` : '비어있음'}</p>
-              </Link>
             </div>
           </div>
         </AnimatedContent>
@@ -320,19 +345,20 @@ const MyprofilePage = () => {
         )}
 
         {/* 메인 컨텐츠 영역 */}
-        <div className="flex gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* 좌측 메뉴 */}
-          <div className="w-64 flex-shrink-0">
+          <div className="lg:w-64 flex-shrink-0">
             <AnimatedContent once distance={50} duration={0.6} delay={0.1}>
-              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-4">
+              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-xl shadow-lg border border-blue-200 p-4">
                 <nav className="space-y-1">
                   {menuItems.map((item) => (
                     <button key={item.id} onClick={() => setActiveTab(item.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                        activeTab === item.id ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-blue-50'
+                      className={`w-full px-4 py-2.5 rounded-lg text-left transition-all ${
+                        activeTab === item.id 
+                          ? 'bg-white border-2 border-blue-900 text-gray-900 font-bold' 
+                          : 'text-gray-700 hover:bg-white hover:shadow-sm font-medium'
                       }`}>
-                      <span>{item.icon}</span>
-                      <span className="font-medium">{item.label}</span>
+                      {item.label}
                     </button>
                   ))}
                 </nav>
@@ -343,54 +369,66 @@ const MyprofilePage = () => {
           {/* 우측 컨텐츠 */}
           <div className="flex-1">
             <AnimatedContent once distance={50} duration={0.6} delay={0.2}>
-              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg shadow-lg border border-blue-100 p-6 min-h-[500px]">
+              <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-xl shadow-lg border border-blue-200 p-8 min-h-[500px]">
                 {/* 내 프로필 탭 */}
                 {activeTab === 'profile' && (
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">내 프로필</h2>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-8">내 프로필</h2>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                       {/* 좋아요 누른 프롬프트 */}
-                      <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-2 mb-4">
-                          <span className="text-lg">❤️</span>
+                      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                            <span className="text-xl">❤️</span>
+                          </div>
                           <h3 className="font-semibold text-gray-900">좋아요 누른 프롬프트</h3>
                         </div>
-                        <div className="text-center py-6">
-                          <p className="text-2xl font-bold text-red-500 mb-1">0</p>
-                          <p className="text-gray-500 text-sm">개의 프롬프트</p>
+                        <div className="flex items-baseline justify-center gap-1.5 py-4 mb-4">
+                          <span className="text-5xl font-bold text-red-500">0</span>
+                          <span className="text-gray-500 self-end pb-1">개의 프롬프트</span>
                         </div>
-                        <button onClick={() => openModal('likes')} className="w-full text-blue-600 text-sm hover:underline">모두 보기 →</button>
+                        <button onClick={() => openModal('likes')} className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2.5 rounded-lg transition-colors">
+                          모두 보기
+                        </button>
                       </div>
                       {/* 댓글 남긴 프롬프트 */}
-                      <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-2 mb-4">
-                          <span className="text-lg">💬</span>
+                      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span className="text-xl">💬</span>
+                          </div>
                           <h3 className="font-semibold text-gray-900">댓글 남긴 프롬프트</h3>
                         </div>
-                        <div className="text-center py-6">
-                          <p className="text-2xl font-bold text-blue-500 mb-1">0</p>
-                          <p className="text-gray-500 text-sm">개의 프롬프트</p>
+                        <div className="flex items-baseline justify-center gap-1.5 py-4 mb-4">
+                          <span className="text-5xl font-bold text-blue-500">0</span>
+                          <span className="text-gray-500 self-end pb-1">개의 프롬프트</span>
                         </div>
-                        <button onClick={() => openModal('comments')} className="w-full text-blue-600 text-sm hover:underline">모두 보기 →</button>
+                        <button onClick={() => openModal('comments')} className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium py-2.5 rounded-lg transition-colors">
+                          모두 보기
+                        </button>
                       </div>
                       {/* 북마크한 프롬프트 */}
-                      <div className="bg-white rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center gap-2 mb-4">
-                          <span className="text-lg">🔖</span>
+                      <div className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <span className="text-xl">🔖</span>
+                          </div>
                           <h3 className="font-semibold text-gray-900">북마크한 프롬프트</h3>
                         </div>
-                        <div className="text-center py-6">
-                          <p className="text-2xl font-bold text-yellow-500 mb-1">0</p>
-                          <p className="text-gray-500 text-sm">개의 프롬프트</p>
+                        <div className="flex items-baseline justify-center gap-1.5 py-4 mb-4">
+                          <span className="text-5xl font-bold text-yellow-500">0</span>
+                          <span className="text-gray-500 self-end pb-1">개의 프롬프트</span>
                         </div>
-                        <button onClick={() => openModal('bookmarks')} className="w-full text-blue-600 text-sm hover:underline">모두 보기 →</button>
+                        <button onClick={() => openModal('bookmarks')} className="w-full bg-yellow-50 hover:bg-yellow-100 text-yellow-600 font-medium py-2.5 rounded-lg transition-colors">
+                          모두 보기
+                        </button>
                       </div>
                     </div>
                     {/* 크레딧 히스토리 */}
-                    <div className="mt-6 bg-white rounded-lg p-4 border border-gray-200">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-semibold text-gray-900">최근 크레딧 내역</h3>
-                        <Link to="/dashboard/credit-history" className="text-blue-600 text-sm hover:underline">전체 보기</Link>
+                    <div className="mt-8 bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+                      <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900">📜 최근 크레딧 내역</h3>
+                        <Link to="/dashboard/credit-history" className="text-blue-600 font-medium hover:underline">전체 보기 →</Link>
                       </div>
                       {isLoadingHistory ? (
                         <div className="text-center py-4"><div className="w-6 h-6 mx-auto border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>
@@ -418,30 +456,37 @@ const MyprofilePage = () => {
                 {/* 구매한 프롬프트 탭 */}
                 {activeTab === 'purchased' && (
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-6">구매한 프롬프트</h2>
+                    <div className="mb-6">
+                      <h2 className="text-xl font-bold text-gray-900">구매한 프롬프트</h2>
+                      <p className="text-sm text-gray-500 mt-1">총 {purchasedPrompts.length}개의 프롬프트</p>
+                    </div>
                     {purchasedPrompts.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {purchasedPrompts.map((prompt) => (
-                          <div key={prompt.id} className="bg-white rounded-lg p-4 border border-gray-200">
-                            <div className="flex justify-between items-start mb-2">
-                              <h3 className="font-medium text-gray-900">{prompt.title}</h3>
-                              <span className="text-blue-600 font-medium">{prompt.price}P</span>
+                          <Link key={prompt.id} to={`/prompt/${prompt.id}`} 
+                            className="bg-white rounded-xl p-5 border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all group">
+                            <div className="flex justify-between items-start mb-3">
+                              <h3 className="font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">{prompt.title}</h3>
+                              <span className="text-blue-900 font-bold text-lg">{prompt.price}P</span>
                             </div>
-                            <p className="text-gray-600 text-sm mb-3 line-clamp-2">{prompt.description}</p>
-                            <div className="flex justify-between items-center text-xs text-gray-500">
-                              <span>{prompt.category}</span>
-                              <span>by {prompt.sellerName}</span>
+                            <p className="text-gray-600 text-sm mb-4 line-clamp-2">{prompt.description}</p>
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">{prompt.category}</span>
+                              <span className="text-xs text-gray-500">by {prompt.sellerName}</span>
                             </div>
-                          </div>
+                          </Link>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-12">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                          <span className="text-2xl">📥</span>
+                      <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
+                        <div className="w-20 h-20 mx-auto mb-6 bg-blue-50 rounded-full flex items-center justify-center">
+                          <svg className="w-10 h-10 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                          </svg>
                         </div>
-                        <p className="text-gray-500 mb-4">구매한 프롬프트가 없습니다</p>
-                        <Link to="/marketplace" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">아직 구매한 프롬프트가 없어요</h3>
+                        <p className="text-gray-500 mb-6">마켓플레이스에서 다양한 프롬프트를 둘러보세요</p>
+                        <Link to="/marketplace" className="inline-flex items-center px-6 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 font-medium transition-colors">
                           마켓플레이스 둘러보기
                         </Link>
                       </div>
@@ -452,52 +497,59 @@ const MyprofilePage = () => {
                 {/* 판매 중인 프롬프트 탭 */}
                 {activeTab === 'selling' && (
                   <div>
-                    <div className="flex justify-between items-center mb-6">
+                    <div className="mb-6">
                       <h2 className="text-xl font-bold text-gray-900">판매 중인 프롬프트</h2>
-                      <Link to="/prompt/create" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
-                        + 새 프롬프트 등록
-                      </Link>
+                      <p className="text-sm text-gray-500 mt-1">총 {myPrompts.length}개의 프롬프트</p>
                     </div>
                     {isLoadingPrompts ? (
-                      <div className="text-center py-12"><div className="w-8 h-8 mx-auto border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>
+                      <div className="text-center py-12"><div className="w-8 h-8 mx-auto border-2 border-blue-900 border-t-transparent rounded-full animate-spin"></div></div>
                     ) : myPrompts.length > 0 ? (
                       <div className="space-y-4">
                         {myPrompts.map((prompt) => (
                           <Link key={prompt.promptId} to={`/prompt/${prompt.promptId}`}
-                            className="block bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+                            className="block bg-white rounded-xl p-5 border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all group">
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h3 className="font-medium text-gray-900">{prompt.title}</h3>
-                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                <div className="flex items-center gap-3 mb-3">
+                                  <h3 className="font-semibold text-gray-900 group-hover:text-blue-900 transition-colors">{prompt.title}</h3>
+                                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                                     prompt.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                                   }`}>
-                                    {prompt.status === 'completed' ? '완료' : '처리중'}
+                                    {prompt.status === 'completed' ? '검증 완료' : '검증 중'}
                                   </span>
                                 </div>
-                                <p className="text-gray-600 text-sm mb-2 line-clamp-1">{prompt.description}</p>
-                                <div className="flex items-center gap-4 text-xs text-gray-500">
-                                  <span>{prompt.promptType}</span>
-                                  <span>❤️ {prompt.likeCount}</span>
-                                  <span>💬 {prompt.commentCount}</span>
-                                  <span>🔖 {prompt.bookmarkCount}</span>
+                                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{prompt.description}</p>
+                                <div className="flex items-center gap-4 text-sm text-gray-500">
+                                  <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">{prompt.promptType}</span>
+                                  <span className="flex items-center gap-1">
+                                    <span className="text-red-400">♥</span> {prompt.likeCount}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <span className="text-blue-400">◆</span> {prompt.commentCount}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <span className="text-yellow-500">★</span> {prompt.bookmarkCount}
+                                  </span>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <p className="text-lg font-bold text-blue-600">{prompt.price}P</p>
-                                <p className="text-xs text-gray-500">{new Date(prompt.created_at).toLocaleDateString()}</p>
+                              <div className="text-right ml-4">
+                                <p className="text-xl font-bold text-blue-900">{prompt.price}P</p>
+                                <p className="text-xs text-gray-400 mt-1">{new Date(prompt.created_at).toLocaleDateString()}</p>
                               </div>
                             </div>
                           </Link>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-12">
-                        <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                          <span className="text-2xl">📤</span>
+                      <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
+                        <div className="w-20 h-20 mx-auto mb-6 bg-blue-50 rounded-full flex items-center justify-center">
+                          <svg className="w-10 h-10 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
                         </div>
-                        <p className="text-gray-500 mb-4">등록한 프롬프트가 없습니다</p>
-                        <Link to="/prompt/create" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">아직 등록한 프롬프트가 없어요</h3>
+                        <p className="text-gray-500 mb-6">나만의 프롬프트를 등록하고 수익을 창출해보세요</p>
+                        <Link to="/prompt/create" className="inline-flex items-center px-6 py-3 bg-blue-900 text-white rounded-lg hover:bg-blue-800 font-medium transition-colors">
                           프롬프트 등록하기
                         </Link>
                       </div>
@@ -541,9 +593,9 @@ const MyprofilePage = () => {
                       <h3 className="font-semibold text-gray-900 mb-4">닉네임 변경</h3>
                       <form onSubmit={handleNicknameChange} className="flex gap-3">
                         <input type="text" value={nickname} onChange={(e) => setNickname(e.target.value)}
-                          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500" required />
+                          className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-900" required />
                         <button type="submit" disabled={isSaving}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                          className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50">
                           {isSaving ? '변경 중...' : '변경'}
                         </button>
                       </form>
@@ -554,15 +606,15 @@ const MyprofilePage = () => {
                       <form onSubmit={handlePasswordChange} className="space-y-3">
                         <input type="password" placeholder="현재 비밀번호" value={currentPassword}
                           onChange={(e) => setCurrentPassword(e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500" required />
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-900" required />
                         <input type="password" placeholder="새 비밀번호" value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500" required />
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-900" required />
                         <input type="password" placeholder="새 비밀번호 확인" value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500" required />
+                          className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:border-blue-900" required />
                         <button type="submit" disabled={isSaving}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                          className="px-4 py-2 bg-blue-900 text-white rounded-lg hover:bg-blue-800 disabled:opacity-50">
                           {isSaving ? '변경 중...' : '비밀번호 변경'}
                         </button>
                       </form>

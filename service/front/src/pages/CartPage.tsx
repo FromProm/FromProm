@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
 import { creditApi } from '../services/api';
+import { promptTypeToCategory } from '../services/dummyData';
 import Header from '../components/Header';
 import AnimatedContent from '../components/AnimatedContent';
 import SplitText from '../components/SplitText';
@@ -274,7 +275,7 @@ const CartPage = () => {
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
                       <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                        {item.category}
+                        {promptTypeToCategory[item.category] || item.category}
                       </span>
                       <div className="flex items-center space-x-1 text-xs text-gray-500">
                         <span>⭐</span>

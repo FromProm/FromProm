@@ -82,13 +82,29 @@ const Header = () => {
           <div className="hidden md:flex items-center justify-between flex-1 ml-8">
             {isAuthenticated ? (
               <>
-                {/* 왼쪽 메뉴들 - 항상 모두 표시 */}
+                {/* 왼쪽 메뉴들 - 가이드 > 마켓 > 등록 > 장바구니 > 마이페이지 순서 */}
                 <div className="flex items-center space-x-6">
                   <Link
-                    to="/dashboard"
-                    className={`${getMenuStyle('/dashboard')} transition-colors`}
+                    to="/docs"
+                    className={`${getMenuStyle('/docs')} transition-colors`}
                   >
-                    마이페이지
+                    사용 가이드
+                  </Link>
+                  <Link
+                    to="/marketplace"
+                    className={`${getMenuStyle('/marketplace')} transition-colors`}
+                  >
+                    마켓
+                  </Link>
+                  <Link
+                    to="/prompt/create"
+                    className={`px-3 py-1.5 rounded-md transition-all ${
+                      isCurrentPage('/prompt/create')
+                        ? 'border-2 border-blue-900 text-blue-900 font-bold'
+                        : 'bg-blue-900 text-white font-medium hover:bg-blue-800'
+                    }`}
+                  >
+                    ✏️ 프롬프트 등록
                   </Link>
                   <Link
                     to="/cart"
@@ -102,16 +118,10 @@ const Header = () => {
                     )}
                   </Link>
                   <Link
-                    to="/prompt/create"
-                    className={`${getMenuStyle('/prompt/create')} transition-colors`}
+                    to="/dashboard"
+                    className={`${getMenuStyle('/dashboard')} transition-colors`}
                   >
-                    등록
-                  </Link>
-                  <Link
-                    to="/marketplace"
-                    className={`${getMenuStyle('/marketplace')} transition-colors`}
-                  >
-                    마켓
+                    마이페이지
                   </Link>
                 </div>
                 
@@ -175,10 +185,26 @@ const Header = () => {
                   </div>
                 )}
                 <Link
-                  to="/dashboard"
-                  className={`block px-2 py-2 ${isCurrentPage('/dashboard') ? 'text-blue-600 bg-blue-50 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'} rounded-lg transition-colors`}
+                  to="/docs"
+                  className={`block px-2 py-2 ${isCurrentPage('/docs') ? 'text-blue-600 bg-blue-50 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'} rounded-lg transition-colors`}
                 >
-                  마이페이지
+                  사용 가이드
+                </Link>
+                <Link
+                  to="/marketplace"
+                  className={`block px-2 py-2 ${isCurrentPage('/marketplace') ? 'text-blue-600 bg-blue-50 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'} rounded-lg transition-colors`}
+                >
+                  마켓
+                </Link>
+                <Link
+                  to="/prompt/create"
+                  className={`block px-2 py-2 text-center rounded-lg transition-all ${
+                    isCurrentPage('/prompt/create')
+                      ? 'border-2 border-blue-900 text-blue-900 font-bold'
+                      : 'bg-blue-900 text-white font-medium'
+                  }`}
+                >
+                  ✏️ 프롬프트 등록
                 </Link>
                 <Link
                   to="/cart"
@@ -192,16 +218,10 @@ const Header = () => {
                   )}
                 </Link>
                 <Link
-                  to="/prompt/create"
-                  className={`block px-2 py-2 ${isCurrentPage('/prompt/create') ? 'text-blue-600 bg-blue-50 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'} rounded-lg transition-colors`}
+                  to="/dashboard"
+                  className={`block px-2 py-2 ${isCurrentPage('/dashboard') ? 'text-blue-600 bg-blue-50 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'} rounded-lg transition-colors`}
                 >
-                  등록
-                </Link>
-                <Link
-                  to="/marketplace"
-                  className={`block px-2 py-2 ${isCurrentPage('/marketplace') ? 'text-blue-600 bg-blue-50 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'} rounded-lg transition-colors`}
-                >
-                  마켓
+                  마이페이지
                 </Link>
                 <button
                   onClick={handleLogout}

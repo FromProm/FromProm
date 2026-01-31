@@ -33,19 +33,34 @@ const CreditHistoryPage = () => {
     fetchHistory();
   }, []);
 
-  // 날짜 포맷팅 함수 (UTC -> 한국 시간 KST 변환)
+  // 날짜 포맷팅 함수 (UTC -> 한국 시간 KST 변환, +9시간)
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     try {
-      const date = new Date(dateString);
-      return date.toLocaleString('ko-KR', {
-        timeZone: 'Asia/Seoul',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      // ISO 8601 형식 파싱 (예: 2025-01-15T10:30:00Z 또는 2025-01-15T10:30:00)
+      let utcTime: number;
+      
+      // Z가 없으면 UTC로 간주하고 Z 추가
+      const normalizedDateString = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+      const date = new Date(normalizedDateString);
+      
+      if (isNaN(date.getTime())) {
+        return dateString;
+      }
+      
+      utcTime = date.getTime();
+      
+      // UTC 시간에 9시간(한국 시간) 추가
+      const kstTime = utcTime + (9 * 60 * 60 * 1000);
+      const kstDate = new Date(kstTime);
+      
+      const year = kstDate.getUTCFullYear();
+      const month = String(kstDate.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(kstDate.getUTCDate()).padStart(2, '0');
+      const hours = String(kstDate.getUTCHours()).padStart(2, '0');
+      const minutes = String(kstDate.getUTCMinutes()).padStart(2, '0');
+      
+      return `${year}. ${month}. ${day}. ${hours}:${minutes}`;
     } catch {
       return dateString;
     }

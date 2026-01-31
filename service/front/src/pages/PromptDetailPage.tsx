@@ -607,16 +607,18 @@ const PromptDetailPage = () => {
                 }
               }
 
-              // 프롬프트 템플릿에서 변수 순서 추출 ({변수명} 형태)
+              // 프롬프트 템플릿에서 변수 순서 추출 ({변수명} 또는 {{변수명}} 형태)
               const templateVariableOrder: string[] = [];
               if (prompt.content) {
-                const variableRegex = /\{([^}]+)\}/g;
+                // {{변수명}} 형태와 {변수명} 형태 모두 지원
+                const variableRegex = /\{\{?([^{}]+)\}?\}/g;
                 let match;
                 // 정규식 lastIndex 초기화
                 variableRegex.lastIndex = 0;
                 while ((match = variableRegex.exec(prompt.content)) !== null) {
-                  if (!templateVariableOrder.includes(match[1])) {
-                    templateVariableOrder.push(match[1]);
+                  const varName = match[1].trim();
+                  if (varName && !templateVariableOrder.includes(varName)) {
+                    templateVariableOrder.push(varName);
                   }
                 }
               }

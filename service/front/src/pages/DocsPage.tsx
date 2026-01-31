@@ -4,7 +4,7 @@ import LightPillar from '../components/LightPillar';
 
 const DocsPage = () => {
   return (
-    <div className="relative min-h-screen overflow-hidden" style={{ background: 'linear-gradient(180deg, #05050A 0%, #020204 100%)' }}>
+    <div className="relative min-h-screen overflow-hidden" style={{ background: 'linear-gradient(180deg, #05050A 0%, #020204 100%)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* LightPillar 배경 효과 */}
       <div className="absolute inset-0 z-0 opacity-20">
         <LightPillar
@@ -27,16 +27,27 @@ const DocsPage = () => {
       <header className="relative z-10 border-b border-slate-800/50 bg-slate-900/30 backdrop-blur-xl">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-14">
-            <Link to="/" className="flex items-center space-x-3">
-              <div className="w-10 h-9 rounded-md overflow-hidden">
-                <img src="/logo.png" alt="FromProm Logo" className="w-full h-full object-cover" />
-              </div>
-              <span className="text-xl font-semibold text-white">FromProm</span>
-            </Link>
-            <nav className="flex items-center space-x-6">
-              <Link to="/marketplace" className="text-gray-300 hover:text-white text-sm font-medium">Platform</Link>
-              <Link to="/docs" className="text-white text-sm font-medium">Guide</Link>
-            </nav>
+            <div className="flex items-center">
+              <Link to="/" className="flex items-center space-x-3">
+                <div className="w-10 h-9 rounded-md overflow-hidden">
+                  <img src="/logo.png" alt="FromProm Logo" className="w-full h-full object-cover" />
+                </div>
+                <span className="text-xl font-semibold text-white">FromProm</span>
+              </Link>
+              <nav className="hidden md:flex items-center space-x-8 ml-12">
+                <Link to="/marketplace" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
+                  마켓
+                </Link>
+              </nav>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link to="/auth/login" className="text-gray-300 hover:text-white font-medium text-sm transition-colors">
+                로그인
+              </Link>
+              <Link to="/auth/register" className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors">
+                시작하기
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -198,16 +209,16 @@ const DocsPage = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
         >
           <h2 className="text-2xl font-bold text-white mb-6">지금 바로 시작하세요</h2>
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               to="/marketplace"
-              className="bg-white text-black font-bold px-8 py-3 rounded-lg hover:bg-gray-100 transition-all"
+              className="bg-white text-black font-bold px-8 py-3 rounded-lg hover:bg-gray-100 transition-all text-center whitespace-nowrap"
             >
               프롬프트 둘러보기
             </Link>
             <Link
               to="/prompt/create"
-              className="border-2 border-slate-500 text-white font-semibold px-8 py-3 rounded-lg hover:border-white hover:bg-white/10 transition-all"
+              className="border-2 border-slate-500 text-white font-semibold px-8 py-3 rounded-lg hover:border-white hover:bg-white/10 transition-all text-center whitespace-nowrap"
             >
               프롬프트 등록하기
             </Link>

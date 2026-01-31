@@ -269,6 +269,8 @@ const MyprofilePage = () => {
       .replace(/^Purchase:/i, '구매:')
       .replace(/^Prompt purchase:/i, '프롬프트 구매:')
       .replace(/^Prompt Purchase:/i, '프롬프트 구매:')
+      .replace(/^Prompt Sale$/i, '프롬프트 판매')
+      .replace(/^Prompt sale$/i, '프롬프트 판매')
       .replace(/^Cart purchase$/i, '장바구니 구매')
       .replace(/^Cart Purchase$/i, '장바구니 구매')
       .replace(/^Refund:/i, '환불:')

@@ -68,6 +68,25 @@ const CreditHistoryPage = () => {
     return description?.includes('Purchase') || description?.includes('구매');
   };
 
+  // 영어 설명을 한국어로 변환
+  const translateDescription = (description: string): string => {
+    if (!description) return description;
+    return description
+      .replace(/^Credit charge$/i, '크레딧 충전')
+      .replace(/^Charge$/i, '충전')
+      .replace(/^Cart Purchase$/i, '장바구니 구매')
+      .replace(/^Cart purchase$/i, '장바구니 구매')
+      .replace(/^Prompt Purchase:/i, '프롬프트 구매:')
+      .replace(/^Prompt purchase:/i, '프롬프트 구매:')
+      .replace(/^Purchase:/i, '구매:')
+      .replace(/^Prompt Sale$/i, '프롬프트 판매')
+      .replace(/^Prompt sale$/i, '프롬프트 판매')
+      .replace(/^Refund:/i, '환불:')
+      .replace(/^Bonus$/i, '보너스')
+      .replace(/^Welcome bonus$/i, '가입 보너스')
+      .replace(/^Sign up bonus$/i, '가입 보너스');
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -115,22 +134,22 @@ const CreditHistoryPage = () => {
               {history.map((item, index) => (
                 <AnimatedContent key={item.SK || index} once distance={50} duration={0.6} delay={index * 0.05}>
                   <div className="bg-gradient-to-br from-blue-100 via-blue-50 to-white rounded-lg border border-gray-200 p-4 shadow-sm hover:scale-[1.02] hover:shadow-md transition-all duration-200 cursor-pointer">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTypeColor(item.user_description)}`}>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap flex-shrink-0 ${getTypeColor(item.user_description)}`}>
                           {getTypeLabel(item.user_description)}
                         </span>
-                        <div>
-                          <p className="font-medium text-gray-900">{item.user_description}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 break-words">{translateDescription(item.user_description)}</p>
                           {item.prompt_titles && item.prompt_titles.length > 0 && (
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-sm text-gray-600 mt-1 break-words">
                               {item.prompt_titles.join(', ')}
                             </p>
                           )}
                           <p className="text-sm text-gray-500 mt-1">{formatDate(item.created_at)}</p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right flex-shrink-0 pl-[52px] sm:pl-0">
                         <p className={`text-lg font-bold ${isExpense(item.user_description) ? 'text-red-600' : 'text-green-600'}`}>
                           {isExpense(item.user_description) ? '' : '+'}{item.amount.toLocaleString()}P
                         </p>

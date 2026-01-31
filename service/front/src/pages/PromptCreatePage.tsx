@@ -452,10 +452,10 @@ const PromptCreatePage = () => {
             </AnimatedContent>
 
             {/* 제출 버튼 */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <Link
                 to="/marketplace"
-                className="text-blue-900 hover:text-blue-800 font-bold text-lg transition-colors"
+                className="text-blue-900 hover:text-blue-800 font-bold text-base sm:text-lg transition-colors whitespace-nowrap"
               >
                 ← 마켓플레이스로 돌아가기
               </Link>
@@ -463,7 +463,7 @@ const PromptCreatePage = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold px-8 py-3 rounded-md hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold px-8 py-3 rounded-md hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 {isSubmitting ? '등록 중...' : '프롬프트 등록하기'}
               </button>

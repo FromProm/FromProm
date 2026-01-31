@@ -113,6 +113,7 @@ const getCardColors = (category: string) => {
 const MarketplacePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const { addToCart, removeFromCart, isInCart } = useCartStore();
   const { isPurchased } = usePurchaseStore();
   const { user, userInfo } = useAuthStore();
@@ -122,6 +123,19 @@ const MarketplacePage = () => {
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const isLoggedIn = () => !!localStorage.getItem('accessToken');
+
+  // 스크롤 위치 감지
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // React Query - 무한 스크롤 쿼리
   const {
@@ -580,6 +594,19 @@ const MarketplacePage = () => {
           </>
         )}
       </main>
+
+      {/* 스크롤 탑 버튼 */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center z-50"
+          aria-label="맨 위로 이동"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 };

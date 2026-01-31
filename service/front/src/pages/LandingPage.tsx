@@ -152,7 +152,7 @@ const LandingPage = () => {
                 </div>
               </div>
               <span className="text-xl font-semibold text-white tracking-tight">FromProm</span>
-              <nav className="hidden md:flex items-center space-x-8 ml-8">
+              <nav className="hidden md:flex items-center space-x-8 ml-12">
                 <Link to="/marketplace" className="text-gray-300 hover:text-white text-sm font-medium transition-colors">
                   마켓
                 </Link>
@@ -184,13 +184,13 @@ const LandingPage = () => {
                     state={{ from: '/' }}
                     className="text-gray-300 hover:text-white font-medium text-sm transition-colors"
                   >
-                    Sign in
+                    로그인
                   </Link>
                   <Link
                     to="/auth/register"
                     className="bg-white text-black font-medium px-4 py-2 rounded-md text-sm hover:bg-gray-100 transition-colors"
                   >
-                    Get started
+                    시작하기
                   </Link>
                 </div>
               )}
@@ -349,9 +349,26 @@ const LandingPage = () => {
             <p className="text-slate-500 text-lg">아직 인기 프롬프트가 없습니다</p>
           </motion.div>
         )}
-
-        {/* 신뢰성 섹션 */}
       </main>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-slate-800/50 bg-slate-900/30 backdrop-blur-xl mt-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center space-x-3">
+              <img src="/logo.png" alt="FromProm Logo" className="w-8 h-7 rounded-md" />
+              <span className="text-lg font-semibold text-white">FromProm</span>
+            </div>
+            <div className="flex items-center space-x-6 text-sm text-gray-400">
+              <Link to="/docs" className="hover:text-white transition-colors">사용 가이드</Link>
+              <Link to="/marketplace" className="hover:text-white transition-colors">마켓</Link>
+            </div>
+          </div>
+          <div className="mt-8 pt-8 border-t border-slate-800/50 text-center text-sm text-gray-500">
+            © 2025 FromProm. All rights reserved.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

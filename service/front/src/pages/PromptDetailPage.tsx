@@ -64,12 +64,21 @@ const PromptDetailPage = () => {
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const { addToCart, isInCart } = useCartStore();
   const { isPurchased, addPurchasedPrompt } = usePurchaseStore();
-  const { user } = useAuthStore();
+  const { userInfo, fetchUserInfo } = useAuthStore();
 
   const isAlreadyInCart = prompt ? isInCart(prompt.promptId) : false;
   const isAlreadyPurchased = prompt ? isPurchased(prompt.promptId) : false;
+  // 내가 등록한 프롬프트인지 확인
+  const isMyPrompt = prompt && userInfo?.sub ? prompt.userId === userInfo.sub : false;
 
   const isLoggedIn = () => !!localStorage.getItem('accessToken');
+
+  // 사용자 정보 가져오기
+  useEffect(() => {
+    if (isLoggedIn()) {
+      fetchUserInfo();
+    }
+  }, [fetchUserInfo]);
 
   // 프롬프트 상세 정보 가져오기
   useEffect(() => {
@@ -78,7 +87,7 @@ const PromptDetailPage = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const userId = user?.id;
+        const userId = userInfo?.sub;
         const response = await promptApi.getPromptDetailWithComments(id, userId);
         if (response.data.success) {
           setPrompt(response.data.prompt);
@@ -94,7 +103,7 @@ const PromptDetailPage = () => {
       }
     };
     fetchPromptDetail();
-  }, [id, user]);
+  }, [id, userInfo?.sub]);
 
   useEffect(() => {
     if (isLoggedIn()) {
@@ -115,7 +124,7 @@ const PromptDetailPage = () => {
       return;
     }
     
-    if (prompt && !isAlreadyInCart && !isAlreadyPurchased) {
+    if (prompt && !isAlreadyInCart && !isAlreadyPurchased && !isMyPrompt) {
       addToCart({
         id: prompt.promptId,
         title: prompt.title,
@@ -334,7 +343,19 @@ const PromptDetailPage = () => {
             <div className="text-left sm:text-right sm:ml-8">
               <div className="text-xl sm:text-3xl font-bold text-gray-900 mb-4">{prompt.price}P</div>
 
-              {isAlreadyPurchased ? (
+              {isMyPrompt ? (
+                <div className="space-y-2">
+                  <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg text-sm font-medium">
+                    ✏️ 내가 등록한 프롬프트입니다
+                  </div>
+                  <Link
+                    to="/dashboard/selling"
+                    className="block bg-blue-900 text-white font-semibold px-8 py-3 rounded-lg hover:bg-blue-800 transition-colors text-center"
+                  >
+                    판매 관리
+                  </Link>
+                </div>
+              ) : isAlreadyPurchased ? (
                 <div className="space-y-2">
                   <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg text-sm font-medium">
                     ✓ 구매 완료
@@ -495,7 +516,7 @@ const PromptDetailPage = () => {
           </div>
 
           {/* AI 피드백 - 프롬프트 등록자에게만 표시 */}
-          {performanceMetrics.feedback && user?.id === prompt.userId && (
+          {performanceMetrics.feedback && userInfo?.sub === prompt.userId && (
             <div className="mt-6 bg-white rounded-lg p-6 border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <span className="mr-2">🤖</span> AI 평가 피드백

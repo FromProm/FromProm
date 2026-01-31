@@ -6,6 +6,7 @@ import { userApi } from '../services/api';
 
 // 확장된 사용자 정보 타입
 interface UserInfo {
+  sub: string; // 사용자 고유 ID (Cognito sub)
   nickname: string;
   bio: string;
   credit: number;
@@ -81,7 +82,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     fetchUserInfoPromise = (async () => {
       try {
         const response = await userApi.getMe();
+        // PK는 "USER#uuid" 형식이므로 "USER#" 접두사 제거
+        const rawPK = response.data.PK || response.data.pk || '';
+        const sub = rawPK.startsWith('USER#') ? rawPK.substring(5) : rawPK;
         const userInfo: UserInfo = {
+          sub,
           nickname: response.data.nickname || '',
           bio: response.data.bio || '',
           credit: response.data.credit || 0,

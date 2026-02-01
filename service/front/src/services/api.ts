@@ -237,6 +237,10 @@ export const promptApi = {
   getUserBookmarkedPrompts: (userId: string, size: number = 20) =>
     api.get(`/api/search/user/${userId}/bookmarks?size=${size}`),
 
+  // 사용자가 댓글 남긴 프롬프트 목록 (search-service)
+  getUserCommentedPrompts: (userId: string, size: number = 20) =>
+    api.get(`/api/search/user/${userId}/comments?size=${size}`),
+
   // 프롬프트 삭제 (auth-service - 인증 필요)
   deletePrompt: (promptId: string) => api.delete(`/api/prompts/${promptId}`),
 };

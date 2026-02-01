@@ -77,9 +77,10 @@ const MyprofilePage = () => {
   const [modalData, setModalData] = useState<InteractionPrompt[]>([]);
   const [isLoadingModal, setIsLoadingModal] = useState(false);
 
-  // 좋아요/북마크 개수 상태
+  // 좋아요/북마크/댓글 개수 상태
   const [likedCount, setLikedCount] = useState(0);
   const [bookmarkedCount, setBookmarkedCount] = useState(0);
+  const [commentedCount, setCommentedCount] = useState(0);
 
   // 회원탈퇴 모달 상태
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -144,15 +145,16 @@ const MyprofilePage = () => {
     fetchMyPrompts();
   }, []);
 
-  // 좋아요/북마크 개수 가져오기
+  // 좋아요/북마크/댓글 개수 가져오기
   useEffect(() => {
     const fetchInteractionCounts = async () => {
       if (!userInfo?.sub) return;
       
       try {
-        const [likesRes, bookmarksRes] = await Promise.all([
+        const [likesRes, bookmarksRes, commentsRes] = await Promise.all([
           promptApi.getUserLikedPrompts(userInfo.sub, 100),
-          promptApi.getUserBookmarkedPrompts(userInfo.sub, 100)
+          promptApi.getUserBookmarkedPrompts(userInfo.sub, 100),
+          promptApi.getUserCommentedPrompts(userInfo.sub, 100)
         ]);
         
         if (likesRes.data.prompts) {
@@ -160,6 +162,9 @@ const MyprofilePage = () => {
         }
         if (bookmarksRes.data.prompts) {
           setBookmarkedCount(bookmarksRes.data.prompts.length);
+        }
+        if (commentsRes.data.prompts) {
+          setCommentedCount(commentsRes.data.prompts.length);
         }
       } catch (error) {
         console.error('Failed to fetch interaction counts:', error);
@@ -293,12 +298,36 @@ const MyprofilePage = () => {
     setIsLoadingModal(true);
     setModalData([]);
     
-    // TODO: API 연동 시 실제 데이터 가져오기
-    // 현재는 빈 배열로 표시
-    setTimeout(() => {
-      setModalData([]);
+    if (!userInfo?.sub) {
       setIsLoadingModal(false);
-    }, 500);
+      return;
+    }
+    
+    try {
+      let response;
+      if (type === 'likes') {
+        response = await promptApi.getUserLikedPrompts(userInfo.sub, 100);
+      } else if (type === 'bookmarks') {
+        response = await promptApi.getUserBookmarkedPrompts(userInfo.sub, 100);
+      } else if (type === 'comments') {
+        response = await promptApi.getUserCommentedPrompts(userInfo.sub, 100);
+      }
+      
+      if (response?.data?.prompts) {
+        const prompts = response.data.prompts.map((p: any) => ({
+          promptId: p.promptId || p.id,
+          title: p.title || '제목 없음',
+          price: p.price || 0,
+          createdAt: p.createdAt || p.created_at || ''
+        }));
+        setModalData(prompts);
+      }
+    } catch (error) {
+      console.error('Failed to fetch modal data:', error);
+      setModalData([]);
+    } finally {
+      setIsLoadingModal(false);
+    }
   };
 
   // 모달 닫기
@@ -566,7 +595,7 @@ const MyprofilePage = () => {
                           <h3 className="font-semibold text-gray-900 text-sm sm:text-base">댓글 남긴 프롬프트</h3>
                         </div>
                         <div className="flex items-baseline justify-center gap-1.5 py-3 sm:py-4 mb-3 sm:mb-4">
-                          <span className="text-4xl sm:text-5xl font-bold text-blue-500">0</span>
+                          <span className="text-4xl sm:text-5xl font-bold text-blue-500">{commentedCount}</span>
                           <span className="text-gray-500 self-end pb-1 text-sm sm:text-base">개의 프롬프트</span>
                         </div>
                         <button onClick={() => openModal('comments')} className="w-full bg-blue-50 hover:bg-blue-100 text-blue-600 font-medium py-2 sm:py-2.5 rounded-lg transition-colors text-sm sm:text-base">

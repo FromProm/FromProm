@@ -492,6 +492,60 @@ public class SearchController {
     }
 
     /**
+     * 사용자가 댓글 남긴 프롬프트 목록
+     * GET /api/search/user/{userId}/comments
+     */
+    @GetMapping("/user/{userId}/comments")
+    public ResponseEntity<Map<String, Object>> getUserCommentedPrompts(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "20") int size) {
+
+        List<String> commentedPromptIds = interactionService.getUserCommentedPrompts(userId);
+        
+        // OpenSearch에서 프롬프트 정보 가져오기
+        List<PromptDocument> prompts = commentedPromptIds.stream()
+                .limit(size)
+                .map(searchService::getPromptById)
+                .filter(p -> p != null)
+                .collect(Collectors.toList());
+        
+        // 닉네임이 없는 프롬프트의 userId 수집하여 일괄 조회
+        List<String> userIdsNeedingNickname = prompts.stream()
+                .filter(p -> p.getNickname() == null || p.getNickname().isEmpty())
+                .map(PromptDocument::getUserId)
+                .filter(id -> id != null && !id.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+        Map<String, String> nicknameMap = userIdsNeedingNickname.isEmpty() 
+                ? new HashMap<>() 
+                : interactionService.getUserNicknamesBatch(userIdsNeedingNickname);
+        
+        // 좋아요/북마크 여부 일괄 조회
+        List<String> promptIds = prompts.stream()
+                .map(PromptDocument::getPromptId)
+                .filter(id -> id != null)
+                .collect(Collectors.toList());
+        Map<String, Boolean> likedMapComments = new HashMap<>();
+        Map<String, Boolean> bookmarkedMapComments = new HashMap<>();
+        if (!promptIds.isEmpty()) {
+            likedMapComments = interactionService.hasUserLikedBatch(userId, promptIds);
+            bookmarkedMapComments = interactionService.hasUserBookmarkedBatch(userId, promptIds);
+        }
+        
+        final Map<String, Boolean> finalLikedMapComments = likedMapComments;
+        final Map<String, Boolean> finalBookmarkedMapComments = bookmarkedMapComments;
+        List<Map<String, Object>> enrichedCommentsResults = prompts.stream()
+                .map(prompt -> enrichPromptFromOpenSearchBatch(prompt, nicknameMap, finalLikedMapComments, finalBookmarkedMapComments))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "prompts", enrichedCommentsResults,
+            "count", enrichedCommentsResults.size()
+        ));
+    }
+
+    /**
      * OpenSearch 프롬프트 데이터에 DynamoDB 통계 및 기본 정보 병합
      * DynamoDB 데이터를 우선 사용 (더 정확한 원본 데이터)
      * @deprecated 상세 페이지용으로만 사용, 목록 조회는 enrichPromptFromOpenSearch 사용

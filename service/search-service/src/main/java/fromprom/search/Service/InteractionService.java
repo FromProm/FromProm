@@ -218,6 +218,39 @@ public class InteractionService {
     }
 
     /**
+     * 사용자가 댓글 남긴 프롬프트 ID 목록 조회
+     * - Scan으로 comment_user가 userId인 모든 댓글 찾기
+     * - 중복 제거하여 프롬프트 ID 목록 반환
+     */
+    public List<String> getUserCommentedPrompts(String userId) {
+        Set<String> commentedPromptIds = new HashSet<>();
+
+        try {
+            ScanResponse response = dynamoDbClient.scan(ScanRequest.builder()
+                    .tableName(tableName)
+                    .filterExpression("comment_user = :userId AND begins_with(SK, :commentPrefix)")
+                    .expressionAttributeValues(Map.of(
+                            ":userId", AttributeValue.builder().s(userId).build(),
+                            ":commentPrefix", AttributeValue.builder().s("COMMENT#").build()
+                    ))
+                    .build());
+
+            for (Map<String, AttributeValue> item : response.items()) {
+                String pk = item.get("PK").s();
+                if (pk.startsWith("PROMPT#")) {
+                    String promptId = pk.replace("PROMPT#", "");
+                    commentedPromptIds.add(promptId);
+                }
+            }
+
+        } catch (Exception e) {
+            log.error("댓글 남긴 프롬프트 목록 조회 실패: {}", e.getMessage());
+        }
+
+        return new ArrayList<>(commentedPromptIds);
+    }
+
+    /**
      * 특정 사용자가 특정 프롬프트에 좋아요 했는지 확인
      */
     public boolean hasUserLiked(String userId, String promptId) {

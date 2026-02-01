@@ -390,24 +390,11 @@ const MarketplacePage = () => {
             </div>
           </div>
 
-          {/* 모바일: All 첫줄, 나머지 둘째줄 / 데스크탑: 한줄 */}
+          {/* 모바일: 2x2 배치 / 데스크탑: 한줄 */}
           <div className="flex flex-col sm:flex-row sm:flex-wrap justify-center gap-1.5 sm:gap-2">
-            {/* 모바일에서 All 버튼 첫 줄 */}
-            <div className="flex justify-center sm:hidden">
-              <button
-                onClick={() => setSelectedCategory('All')}
-                className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  selectedCategory === 'All'
-                    ? 'bg-blue-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-300'
-                }`}
-              >
-                All
-              </button>
-            </div>
-            {/* 모바일에서 나머지 버튼 둘째 줄 */}
-            <div className="flex justify-center gap-1.5 sm:hidden">
-              {categories.filter(c => c !== 'All').map((category) => (
+            {/* 모바일에서 2x2 배치 */}
+            <div className="grid grid-cols-2 gap-1.5 sm:hidden">
+              {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}

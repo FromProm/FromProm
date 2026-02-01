@@ -28,6 +28,7 @@ const LandingPage = () => {
   const { clearPurchases } = usePurchaseStore();
   const [popularPrompts, setPopularPrompts] = useState<PopularPrompt[]>([]);
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // 인기 프롬프트 가져오기 (좋아요 50개 이상)
@@ -51,35 +52,24 @@ const LandingPage = () => {
     fetchPopularPrompts();
   }, []);
 
-  // 무한 스크롤 애니메이션
+  // 무한 스크롤 애니메이션 - CSS 기반으로 변경
   useEffect(() => {
     if (!scrollRef.current || popularPrompts.length === 0) return;
     
     const scrollContainer = scrollRef.current;
-    let animationId: number;
-    let scrollPosition = 0;
-    const speed = 2.0;
-    
-    const animate = () => {
-      scrollPosition += speed;
-      if (scrollPosition >= scrollContainer.scrollWidth / 2) {
-        scrollPosition = 0;
-      }
-      scrollContainer.scrollLeft = scrollPosition;
-      animationId = requestAnimationFrame(animate);
-    };
-    
-    animationId = requestAnimationFrame(animate);
     
     // 호버 시 멈춤
-    const handleMouseEnter = () => cancelAnimationFrame(animationId);
-    const handleMouseLeave = () => { animationId = requestAnimationFrame(animate); };
+    const handleMouseEnter = () => {
+      scrollContainer.style.animationPlayState = 'paused';
+    };
+    const handleMouseLeave = () => {
+      scrollContainer.style.animationPlayState = 'running';
+    };
     
     scrollContainer.addEventListener('mouseenter', handleMouseEnter);
     scrollContainer.addEventListener('mouseleave', handleMouseLeave);
     
     return () => {
-      cancelAnimationFrame(animationId);
       scrollContainer.removeEventListener('mouseenter', handleMouseEnter);
       scrollContainer.removeEventListener('mouseleave', handleMouseLeave);
     };
@@ -177,7 +167,7 @@ const LandingPage = () => {
             </motion.div>
 
             <motion.div
-              className="flex items-center space-x-6"
+              className="hidden md:flex items-center space-x-6"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
@@ -212,7 +202,107 @@ const LandingPage = () => {
                 </div>
               )}
             </motion.div>
+
+            {/* 모바일 햄버거 메뉴 버튼 */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-md text-gray-300 hover:text-white hover:bg-slate-800/50 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
+
+          {/* 모바일 메뉴 드롭다운 */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden py-4 border-t border-slate-700/50">
+              {isAuthenticated ? (
+                <div className="space-y-3">
+                  <Link
+                    to="/docs"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-medium transition-colors"
+                  >
+                    사용 가이드
+                  </Link>
+                  <Link
+                    to="/marketplace"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-medium transition-colors"
+                  >
+                    마켓
+                  </Link>
+                  <Link
+                    to="/cart"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-medium transition-colors"
+                  >
+                    장바구니
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-medium transition-colors"
+                  >
+                    마이페이지
+                  </Link>
+                  <Link
+                    to="/prompt/create"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-center bg-blue-200 text-blue-900 font-medium rounded-lg hover:bg-blue-900 hover:text-white transition-colors"
+                  >
+                    프롬프트 등록
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg font-medium transition-colors"
+                  >
+                    로그아웃
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Link
+                    to="/docs"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-medium transition-colors"
+                  >
+                    사용 가이드
+                  </Link>
+                  <Link
+                    to="/marketplace"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-medium transition-colors"
+                  >
+                    마켓
+                  </Link>
+                  <Link
+                    to="/auth/login"
+                    state={{ from: '/' }}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-medium transition-colors"
+                  >
+                    로그인
+                  </Link>
+                  <Link
+                    to="/auth/register"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-center bg-white text-black font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    회원가입
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </header>
 
@@ -270,15 +360,7 @@ const LandingPage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              {/* 사용 가이드 버튼 - 위에 긴 버튼 */}
-              <Link
-                to="/docs"
-                className="px-8 py-3 rounded-md bg-blue-800/70 border border-cyan-400/60 text-white font-bold text-base text-center hover:bg-blue-700/80 hover:border-cyan-300/70 transition-all animate-bounce-subtle sm:min-w-[340px]"
-              >
-                FromProm 사용 가이드 보기
-              </Link>
-              
-              {/* 아래 두 버튼 */}
+              {/* 두 버튼 - 마켓, 가이드 */}
               <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
                 <Link
                   to="/marketplace"
@@ -288,10 +370,10 @@ const LandingPage = () => {
                 </Link>
 
                 <Link
-                  to="/prompt/create"
-                  className="border-2 border-slate-500 text-white font-semibold px-6 py-2.5 rounded-lg hover:border-white hover:bg-white/10 transition-all text-base"
+                  to="/docs"
+                  className="px-6 py-2.5 rounded-lg bg-blue-800/70 border border-cyan-400/60 text-white font-bold text-base text-center hover:bg-blue-700/80 hover:border-cyan-300/70 transition-all animate-bounce-subtle"
                 >
-                  프롬프트 등록하기
+                  사용 가이드 보기
                 </Link>
               </div>
             </motion.div>
@@ -318,8 +400,7 @@ const LandingPage = () => {
               {/* 스크롤 컨테이너 */}
               <div
                 ref={scrollRef}
-                className="flex gap-10 overflow-x-hidden py-8 px-6"
-                style={{ scrollBehavior: 'auto' }}
+                className="flex gap-4 sm:gap-6 py-6 px-4 animate-scroll-left"
               >
                 {/* 무한 스크롤을 위해 아이템 복제 */}
                 {[...popularPrompts, ...popularPrompts].map((prompt, index) => (
@@ -330,25 +411,25 @@ const LandingPage = () => {
                   >
                     <Link
                       to={`/prompt/${prompt.promptId}`}
-                      className="block flex-shrink-0 w-[420px] min-h-[240px] bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-md border border-slate-700/60 rounded-2xl p-8 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group"
+                      className="block flex-shrink-0 w-[260px] h-[200px] sm:w-[320px] sm:h-[220px] bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-md border border-slate-700/60 rounded-xl p-4 sm:p-6 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group flex flex-col"
                     >
-                      <div className="flex items-center gap-3 mb-5">
-                        <span className="text-sm text-slate-200 bg-slate-700/60 px-4 py-2 rounded-lg font-medium">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-xs sm:text-sm text-slate-200 bg-slate-700/60 px-2 sm:px-3 py-1 rounded-lg font-medium truncate max-w-[140px] sm:max-w-[180px]">
                           {promptTypeToCategory[prompt.category] || prompt.category}
                         </span>
-                        <span className="text-sm text-red-400 flex items-center gap-1.5 font-medium">
+                        <span className="text-xs sm:text-sm text-red-400 flex items-center gap-1 font-medium">
                           ❤️ {prompt.likeCount}
                         </span>
                       </div>
-                      <h3 className="text-2xl text-white font-bold mb-4 line-clamp-1 group-hover:text-indigo-300 transition-colors">
+                      <h3 className="text-base sm:text-lg text-white font-bold mb-2 line-clamp-1 group-hover:text-indigo-300 transition-colors">
                         {prompt.title}
                       </h3>
-                      <p className="text-slate-400 text-lg line-clamp-2 mb-5 leading-relaxed">
+                      <p className="text-slate-400 text-sm line-clamp-2 mb-auto leading-relaxed">
                         {prompt.description}
                       </p>
-                      <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
-                        <span className="text-base text-slate-500">by {prompt.nickname || '익명'}</span>
-                        <span className="text-indigo-400 font-bold text-xl">{prompt.price}P</span>
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-700/50 mt-3">
+                        <span className="text-xs sm:text-sm text-slate-500 truncate max-w-[100px]">by {prompt.nickname || '익명'}</span>
+                        <span className="text-indigo-400 font-bold text-base sm:text-lg">{prompt.price}P</span>
                       </div>
                     </Link>
                   </TiltCard>

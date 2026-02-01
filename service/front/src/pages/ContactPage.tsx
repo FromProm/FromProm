@@ -170,7 +170,7 @@ const ContactPage = () => {
           {/* 안내 문구 */}
           <div className="mt-8 p-4 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-600">
-              💡 문의 내용은 <strong>tlsdmlwls@gmail.com</strong>으로 전달됩니다.
+              💡 문의 내용은 <strong>tlsdmlwls21@gmail.com</strong>으로 전달됩니다.
               <br />
               영업일 기준 1~2일 내에 답변 드리겠습니다.
             </p>

@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
 import { useAuthStore } from '../store/authStore';
@@ -53,6 +54,7 @@ interface PromptDetail {
 const PromptDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [prompt, setPrompt] = useState<PromptDetail | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -186,6 +188,8 @@ const PromptDetailPage = () => {
         await interactionApi.addLike(prompt.promptId);
         setPrompt({ ...prompt, isLiked: true, likeCount: currentLikeCount + 1 });
       }
+      // 마켓플레이스 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ['prompts'] });
     } catch (error) {
       console.error('Failed to toggle like:', error);
     }
@@ -208,6 +212,8 @@ const PromptDetailPage = () => {
         await interactionApi.addBookmark(prompt.promptId);
         setPrompt({ ...prompt, isBookmarked: true, bookmarkCount: currentBookmarkCount + 1 });
       }
+      // 마켓플레이스 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ['prompts'] });
     } catch (error) {
       console.error('Failed to toggle bookmark:', error);
     }

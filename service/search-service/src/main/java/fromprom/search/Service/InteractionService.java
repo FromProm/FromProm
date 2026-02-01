@@ -218,20 +218,20 @@ public class InteractionService {
     }
 
     /**
-     * 사용자가 댓글 남긴 프롬프트 ID 목록 조회
-     * - Scan으로 comment_user가 userId인 모든 댓글 찾기
+     * 사용자가 댓글 남긴 프롬프트 ID 목록 조회 (GSI 사용)
+     * - comment-user-index GSI를 사용하여 Query
      * - 중복 제거하여 프롬프트 ID 목록 반환
      */
     public List<String> getUserCommentedPrompts(String userId) {
         Set<String> commentedPromptIds = new HashSet<>();
 
         try {
-            ScanResponse response = dynamoDbClient.scan(ScanRequest.builder()
+            QueryResponse response = dynamoDbClient.query(QueryRequest.builder()
                     .tableName(tableName)
-                    .filterExpression("comment_user = :userId AND begins_with(SK, :commentPrefix)")
+                    .indexName("comment-user-index")
+                    .keyConditionExpression("comment_user = :userId")
                     .expressionAttributeValues(Map.of(
-                            ":userId", AttributeValue.builder().s(userId).build(),
-                            ":commentPrefix", AttributeValue.builder().s("COMMENT#").build()
+                            ":userId", AttributeValue.builder().s(userId).build()
                     ))
                     .build());
 

@@ -501,4 +501,44 @@ public class SearchService {
 
         return resultList;
     }
+
+    /**
+     * 사용자의 모든 프롬프트 닉네임 업데이트
+     */
+    public int updateUserPromptsNickname(String userId, String newNickname) {
+        int updatedCount = 0;
+
+        try {
+            // 1. 해당 사용자의 모든 프롬프트 조회
+            SearchResponse<PromptDocument> response = openSearchClient.search(s -> s
+                    .index(INDEX_NAME)
+                    .query(q -> q
+                            .term(t -> t.field("userId").value(FieldValue.of(userId)))
+                    )
+                    .size(1000),
+                    PromptDocument.class
+            );
+
+            // 2. 각 프롬프트의 nickname 필드 업데이트
+            for (Hit<PromptDocument> hit : response.hits().hits()) {
+                try {
+                    openSearchClient.update(u -> u
+                            .index(INDEX_NAME)
+                            .id(hit.id())
+                            .doc(java.util.Map.of("nickname", newNickname)),
+                            PromptDocument.class
+                    );
+                    updatedCount++;
+                    log.info("OpenSearch 프롬프트 닉네임 업데이트 완료: {}", hit.id());
+                } catch (IOException e) {
+                    log.error("OpenSearch 프롬프트 닉네임 업데이트 실패: {} - {}", hit.id(), e.getMessage());
+                }
+            }
+
+        } catch (IOException e) {
+            log.error("사용자 프롬프트 조회 실패: {}", e.getMessage());
+        }
+
+        return updatedCount;
+    }
 }

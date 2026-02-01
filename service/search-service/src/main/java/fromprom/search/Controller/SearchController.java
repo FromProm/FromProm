@@ -730,4 +730,30 @@ public class SearchController {
         
         return result;
     }
+
+    /**
+     * 사용자의 모든 프롬프트 닉네임 업데이트 (내부 API)
+     * PUT /api/search/user/{userId}/nickname
+     */
+    @PutMapping("/user/{userId}/nickname")
+    public ResponseEntity<Map<String, Object>> updateUserPromptsNickname(
+            @PathVariable String userId,
+            @RequestBody Map<String, String> request) {
+        
+        String newNickname = request.get("nickname");
+        if (newNickname == null || newNickname.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", "닉네임을 입력해주세요"
+            ));
+        }
+        
+        int updatedCount = searchService.updateUserPromptsNickname(userId, newNickname);
+        
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "message", "프롬프트 닉네임 업데이트 완료",
+            "updatedCount", updatedCount
+        ));
+    }
 }

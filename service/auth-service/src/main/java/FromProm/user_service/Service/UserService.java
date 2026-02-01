@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 
@@ -19,12 +20,16 @@ import java.time.LocalDateTime;
 public class UserService {
     private final CognitoIdentityProviderClient cognitoClient;
     private final UserRepository userRepository;
+    private final RestTemplate restTemplate;
 
     @Value("${aws.cognito.clientId}")
     private String clientId;
 
     @Value("${aws.cognito.userPoolId}")
     private String userPoolId;
+
+    @Value("${search.service.url:http://search-service:8080}")
+    private String searchServiceUrl;
 
     // 회원가입
     public void signUp(UserSignUpRequest request) {
@@ -230,11 +235,13 @@ public class UserService {
 
         // 2. 닉네임 변경 시 중복 체크 (null이 아니고, 기존과 다를 때만)
         String newNickname = request.getNickname();
+        boolean nicknameChanged = false;
         if (newNickname != null && !newNickname.trim().isEmpty() && !newNickname.equals(user.getNickname())) {
             if (userRepository.existsByNickname(newNickname)) {
                 throw new RuntimeException("이미 사용 중인 닉네임입니다.");
             }
             user.setNickname(newNickname);
+            nicknameChanged = true;
         }
 
         // 3. 소개글 변경 (값이 있을 때만 반영)
@@ -250,6 +257,22 @@ public class UserService {
         // 5. 업데이트 날짜 갱신 및 저장
         user.setUpdated_at(now);
         userRepository.update(user);
+
+        // 6. 닉네임이 변경된 경우, 사용자가 등록한 프롬프트와 댓글의 닉네임도 업데이트
+        if (nicknameChanged) {
+            String userId = userSub.replace("USER#", "");
+            userRepository.updateUserPromptsNickname(userSub, newNickname);
+            userRepository.updateUserCommentsNickname(userId, newNickname);
+            
+            // OpenSearch 닉네임 업데이트 (비동기로 처리, 실패해도 무시)
+            try {
+                String url = searchServiceUrl + "/api/search/user/" + userSub + "/nickname";
+                restTemplate.put(url, Map.of("nickname", newNickname));
+                System.out.println("OpenSearch 닉네임 업데이트 요청 완료: " + userSub);
+            } catch (Exception e) {
+                System.err.println("OpenSearch 닉네임 업데이트 실패 (무시됨): " + e.getMessage());
+            }
+        }
     }
 
     //회원 탈퇴 (Hard Delete - 모든 관련 데이터 삭제)

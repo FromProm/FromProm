@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import LightPillar from '../components/LightPillar';
@@ -6,6 +7,7 @@ import { useAuthStore } from '../store/authStore';
 const DocsPage = () => {
   const { isAuthenticated, logout } = useAuthStore();
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -43,7 +45,7 @@ const DocsPage = () => {
                 </div>
                 <span className="text-xl font-semibold text-white">FromProm</span>
               </Link>
-              {/* 메뉴 순서: 사용 가이드 > 마켓 > 장바구니 > 마이페이지 */}
+              {/* 데스크톱 메뉴 */}
               <nav className="hidden md:flex items-center space-x-6 ml-6">
                 <Link to="/docs" className="text-blue-400 font-bold text-sm transition-colors">
                   사용 가이드
@@ -63,9 +65,11 @@ const DocsPage = () => {
                 )}
               </nav>
             </div>
-            <div className="flex items-center space-x-4">
+            
+            {/* 데스크톱 우측 메뉴 */}
+            <div className="hidden md:flex items-center space-x-4">
               {isAuthenticated ? (
-                <div className="flex items-center space-x-4">
+                <>
                   <Link to="/prompt/create" className="bg-blue-200 text-blue-900 font-medium px-3 py-1.5 rounded-md text-sm hover:bg-blue-900 hover:text-white transition-colors animate-bounce-subtle">
                     프롬프트 등록
                   </Link>
@@ -75,7 +79,7 @@ const DocsPage = () => {
                   >
                     로그아웃
                   </button>
-                </div>
+                </>
               ) : (
                 <>
                   <Link to="/auth/login" className="text-gray-300 hover:text-white font-medium text-sm transition-colors">
@@ -87,7 +91,103 @@ const DocsPage = () => {
                 </>
               )}
             </div>
+
+            {/* 모바일 햄버거 버튼 */}
+            <button
+              className="md:hidden p-2 text-gray-300 hover:text-white"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
+
+          {/* 모바일 메뉴 */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden py-4 border-t border-slate-700/50">
+              {isAuthenticated ? (
+                <div className="space-y-3">
+                  <Link
+                    to="/docs"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-blue-400 bg-blue-900/20 font-bold rounded-lg"
+                  >
+                    사용 가이드
+                  </Link>
+                  <Link
+                    to="/marketplace"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-medium transition-colors"
+                  >
+                    마켓
+                  </Link>
+                  <Link
+                    to="/cart"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-medium transition-colors"
+                  >
+                    장바구니
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-medium transition-colors"
+                  >
+                    마이페이지
+                  </Link>
+                  <Link
+                    to="/prompt/create"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-center bg-blue-200 text-blue-900 font-medium rounded-lg hover:bg-blue-900 hover:text-white transition-colors"
+                  >
+                    프롬프트 등록
+                  </Link>
+                  <button
+                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                    className="w-full text-left px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg font-medium transition-colors"
+                  >
+                    로그아웃
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <Link
+                    to="/docs"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-blue-400 bg-blue-900/20 font-bold rounded-lg"
+                  >
+                    사용 가이드
+                  </Link>
+                  <Link
+                    to="/marketplace"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-medium transition-colors"
+                  >
+                    마켓
+                  </Link>
+                  <Link
+                    to="/auth/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-medium transition-colors"
+                  >
+                    로그인
+                  </Link>
+                  <Link
+                    to="/auth/register"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block px-3 py-2 text-center bg-white text-black font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    회원가입
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </header>
 

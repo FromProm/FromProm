@@ -61,25 +61,27 @@ const LandingPage = () => {
     let scrollPosition = 0;
     let isPaused = false;
     const speed = 1.5; // 픽셀/프레임 (속도 조절)
-    let resetPoint = 0;
     
     // 모바일 체크 (640px 미만)
     const isMobile = () => window.innerWidth < 640;
     
-    // 리셋 포인트 계산 (컨테이너가 렌더링된 후)
-    const calculateResetPoint = () => {
-      // 전체 스크롤 너비의 1/4 (4번 복제했으므로)
-      resetPoint = scrollContainer.scrollWidth / 4;
+    // 고정 너비 기반 리셋 포인트 계산 (TiltCard wrapper 고려)
+    // 데스크톱: 카드 320px + gap 24px = 344px per item
+    // 원본 아이템 개수만큼의 총 너비
+    const getResetPoint = () => {
+      const itemWidth = 320; // sm:w-[320px]
+      const gap = 24; // sm:gap-6 = 24px
+      const itemCount = popularPrompts.length;
+      return itemCount * (itemWidth + gap);
     };
     
-    // 초기 계산
-    setTimeout(calculateResetPoint, 100);
+    const resetPoint = getResetPoint();
     
     const animate = () => {
       if (!isPaused && !isMobile() && resetPoint > 0) {
         scrollPosition += speed;
         
-        // 리셋 포인트에 도달하면 즉시 0으로
+        // 리셋 포인트에 도달하면 0으로 (끊김 없이)
         if (scrollPosition >= resetPoint) {
           scrollPosition = scrollPosition - resetPoint;
         }
@@ -90,30 +92,18 @@ const LandingPage = () => {
     };
     
     // 호버 시 멈춤
-    const handleMouseEnter = () => {
-      isPaused = true;
-    };
-    const handleMouseLeave = () => {
-      isPaused = false;
-    };
-    
-    // 리사이즈 시 재계산
-    const handleResize = () => {
-      calculateResetPoint();
-    };
+    const handleMouseEnter = () => { isPaused = true; };
+    const handleMouseLeave = () => { isPaused = false; };
     
     scrollContainer.addEventListener('mouseenter', handleMouseEnter);
     scrollContainer.addEventListener('mouseleave', handleMouseLeave);
-    window.addEventListener('resize', handleResize);
     
-    // 애니메이션 시작
     animationId = requestAnimationFrame(animate);
     
     return () => {
       cancelAnimationFrame(animationId);
       scrollContainer.removeEventListener('mouseenter', handleMouseEnter);
       scrollContainer.removeEventListener('mouseleave', handleMouseLeave);
-      window.removeEventListener('resize', handleResize);
     };
   }, [popularPrompts]);
 

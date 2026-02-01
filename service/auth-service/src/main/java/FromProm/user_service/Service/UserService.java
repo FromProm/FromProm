@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 
@@ -20,16 +19,12 @@ import java.time.LocalDateTime;
 public class UserService {
     private final CognitoIdentityProviderClient cognitoClient;
     private final UserRepository userRepository;
-    private final RestTemplate restTemplate;
 
     @Value("${aws.cognito.clientId}")
     private String clientId;
 
     @Value("${aws.cognito.userPoolId}")
     private String userPoolId;
-
-    @Value("${search.service.url:http://search-service:8080}")
-    private String searchServiceUrl;
 
     // 회원가입
     public void signUp(UserSignUpRequest request) {
@@ -263,15 +258,7 @@ public class UserService {
             String userId = userSub.replace("USER#", "");
             userRepository.updateUserPromptsNickname(userSub, newNickname);
             userRepository.updateUserCommentsNickname(userId, newNickname);
-            
-            // OpenSearch 닉네임 업데이트 (비동기로 처리, 실패해도 무시)
-            try {
-                String url = searchServiceUrl + "/api/search/user/" + userSub + "/nickname";
-                restTemplate.put(url, Map.of("nickname", newNickname));
-                System.out.println("OpenSearch 닉네임 업데이트 요청 완료: " + userSub);
-            } catch (Exception e) {
-                System.err.println("OpenSearch 닉네임 업데이트 실패 (무시됨): " + e.getMessage());
-            }
+            // OpenSearch는 DynamoDB Stream Lambda에서 자동 동기화됨
         }
     }
 

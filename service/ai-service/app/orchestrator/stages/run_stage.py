@@ -230,4 +230,8 @@ class RunStage:
         if not has_placeholder:
             result = f"{result}\n\n{input_content}"
         
+        # 4. 표/그래프 생성 제약 추가
+        constraint = "\n\n[중요: 답변은 일반 텍스트로만 작성해주세요. 표(table), 그래프, 차트, 다이어그램 등의 시각적 요소는 사용하지 말고, 모든 내용을 문장 형태의 텍스트로 설명해주세요.]"
+        result = result + constraint
+        
         return result

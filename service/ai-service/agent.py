@@ -280,7 +280,8 @@ async def evaluate_from_dynamodb_format(request: dict) -> dict:
             recommended_model=model,
             repeat_count=5,
             PK=request.get("PK"),
-            create_user=request.get("create_user")  # 이메일 발송용 create_user 전달
+            create_user=request.get("create_user"),  # 이메일 발송용 create_user 전달
+            title=request.get("title")  # 이메일 제목용 프롬프트 제목 전달
         )
         
         # 파이프라인 실행

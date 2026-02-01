@@ -354,18 +354,18 @@ class StrandsSupervisorAgent:
 
             logger.info(f"[{execution_id}] 📧 Sending completion email to {user_email}")
 
-            # 2. S3 URL 생성 (필요시)
-            s3_result_url = None
-            # TODO: S3에 결과 저장했다면 URL 생성
-            # s3_result_url = f"https://your-bucket.s3.amazonaws.com/results/{job_id}.json"
+            # 2. prompt_id 추출 (PROMPT#xxx에서 xxx만)
+            prompt_id = None
+            if job_request.PK and job_request.PK.startswith("PROMPT#"):
+                prompt_id = job_request.PK.replace("PROMPT#", "")
 
             # 3. 이메일 발송
             result = await self.ses_notifier.send_evaluation_complete_email(
                 recipient_email=user_email,
-                job_id=user_id,  # PK에서 추출한 UUID 사용
                 final_score=final_score,
                 prompt_type=job_request.prompt_type.value,
-                s3_result_url=s3_result_url
+                prompt_title=job_request.title,
+                prompt_id=prompt_id
             )
 
             if result.get("success"):

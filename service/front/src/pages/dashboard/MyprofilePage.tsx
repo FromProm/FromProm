@@ -740,12 +740,21 @@ const MyprofilePage = () => {
                                 <div className="flex sm:flex-col justify-between sm:text-right sm:ml-4 items-center sm:items-end gap-2">
                                   <p className="text-lg sm:text-xl font-bold text-blue-900">{prompt.price}P</p>
                                   <p className="text-xs text-gray-400 sm:mt-1">{new Date(prompt.created_at).toLocaleDateString()}</p>
-                                  <button
-                                    onClick={(e) => openDeleteModal(e, prompt.promptId, prompt.title)}
-                                    className="text-xs px-2 py-1 text-red-500 hover:text-white hover:bg-red-500 border border-red-300 rounded transition-colors"
-                                  >
-                                    삭제
-                                  </button>
+                                  <div className="flex gap-2">
+                                    <Link
+                                      to={`/prompt/${prompt.promptId}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-xs px-2 py-1 text-blue-600 hover:text-white hover:bg-blue-600 border border-blue-300 rounded transition-colors"
+                                    >
+                                      보기
+                                    </Link>
+                                    <button
+                                      onClick={(e) => openDeleteModal(e, prompt.promptId, prompt.title)}
+                                      className="text-xs px-2 py-1 text-red-500 hover:text-white hover:bg-red-500 border border-red-300 rounded transition-colors"
+                                    >
+                                      삭제
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             </Link>
@@ -777,15 +786,24 @@ const MyprofilePage = () => {
                                 <div className="flex sm:flex-col justify-between sm:text-right sm:ml-4 items-center sm:items-end gap-2">
                                   <p className="text-lg sm:text-xl font-bold text-blue-900">{prompt.price}P</p>
                                   <p className="text-xs text-gray-400 sm:mt-1">{new Date(prompt.created_at).toLocaleDateString()}</p>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openDeleteModal(e, prompt.promptId, prompt.title);
-                                    }}
-                                    className="text-xs px-2 py-1 text-red-500 hover:text-white hover:bg-red-500 border border-red-300 rounded transition-colors"
-                                  >
-                                    삭제
-                                  </button>
+                                  <div className="flex gap-2">
+                                    <Link
+                                      to={`/prompt/${prompt.promptId}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-xs px-2 py-1 text-blue-600 hover:text-white hover:bg-blue-600 border border-blue-300 rounded transition-colors"
+                                    >
+                                      보기
+                                    </Link>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openDeleteModal(e, prompt.promptId, prompt.title);
+                                      }}
+                                      className="text-xs px-2 py-1 text-red-500 hover:text-white hover:bg-red-500 border border-red-300 rounded transition-colors"
+                                    >
+                                      삭제
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             </div>

@@ -40,6 +40,10 @@ const errorMessageMap: Record<string, string> = {
   'Incorrect username or password': '이메일 또는 비밀번호가 올바르지 않습니다.',
   'Password did not conform with policy': '비밀번호는 8자 이상, 대소문자, 숫자, 특수문자를 포함해야 합니다.',
   'Attempt limit exceeded': '시도 횟수가 초과되었습니다. 잠시 후 다시 시도해주세요.',
+  '인증이 필요합니다': '이메일 또는 비밀번호가 올바르지 않습니다.',
+  'Authentication required': '이메일 또는 비밀번호가 올바르지 않습니다.',
+  'Invalid credentials': '이메일 또는 비밀번호가 올바르지 않습니다.',
+  'Login failed': '이메일 또는 비밀번호가 올바르지 않습니다.',
   
   // 네트워크/서버 관련
   'Network Error': '네트워크 연결을 확인해주세요.',
@@ -72,6 +76,11 @@ export const getFriendlyErrorMessage = (error: any): string => {
   // AWS 에러 코드 패턴 검사 (예: "User: ... is not authorized")
   if (rawMessage.includes('not authorized') || rawMessage.includes('Access Denied')) {
     return '접근 권한이 없습니다. 다시 로그인해주세요.';
+  }
+
+  // 로그인 실패 관련 메시지 처리
+  if (rawMessage.includes('인증이 필요') || rawMessage.includes('인증 실패') || rawMessage.includes('authentication')) {
+    return '이메일 또는 비밀번호가 올바르지 않습니다.';
   }
 
   if (rawMessage.includes('expired') || rawMessage.includes('Expired')) {

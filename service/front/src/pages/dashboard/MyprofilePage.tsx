@@ -751,7 +751,8 @@ const MyprofilePage = () => {
                         {myPrompts.map((prompt) => (
                           prompt.status === 'completed' ? (
                             <div key={prompt.promptId}
-                              className="block bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all group">
+                              onClick={() => navigate(`/prompt/${prompt.promptId}`)}
+                              className="block bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all group cursor-pointer">
                               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0">
                                 <div className="flex-1">
                                   <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
@@ -799,7 +800,7 @@ const MyprofilePage = () => {
                               </div>
                               {/* 프롬프트 내용 펼치기 */}
                               {expandedPromptId === prompt.promptId && (
-                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                <div className="mt-4 pt-4 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
                                   <h4 className="text-sm font-semibold text-gray-700 mb-2">📝 프롬프트 내용</h4>
                                   {isLoadingContent ? (
                                     <div className="flex items-center justify-center py-4">

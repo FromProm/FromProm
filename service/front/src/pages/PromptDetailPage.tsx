@@ -349,7 +349,7 @@ const PromptDetailPage = () => {
                 {prompt.status === 'completed' && (
                   <>
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-green-600 font-medium">Verified</span>
+                    <span className="text-sm text-green-600 font-medium">검증 완료</span>
                   </>
                 )}
               </div>

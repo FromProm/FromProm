@@ -80,22 +80,12 @@
 }
 
 
-@keyframes scrollLeft {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-33.333%);
-  }
+/* 스크롤바 숨기기 */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* 웹: 15초, 모바일: 8초 */
-.animate-scroll-left {
-  animation: scrollLeft 8s linear infinite;
-}
-
-@media (min-width: 640px) {
-  .animate-scroll-left {
-    animation: scrollLeft 15s linear infinite;
-  }
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

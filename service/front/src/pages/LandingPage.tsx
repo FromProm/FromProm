@@ -52,24 +52,50 @@ const LandingPage = () => {
     fetchPopularPrompts();
   }, []);
 
-  // 무한 스크롤 애니메이션 - CSS 기반으로 변경
+  // 무한 스크롤 애니메이션 - JavaScript 기반 (데스크톱만)
   useEffect(() => {
     if (!scrollRef.current || popularPrompts.length === 0) return;
     
     const scrollContainer = scrollRef.current;
+    let animationId: number;
+    let scrollPosition = 0;
+    let isPaused = false;
+    const speed = 1; // 픽셀/프레임 (속도 조절)
+    
+    // 모바일 체크 (640px 미만)
+    const isMobile = () => window.innerWidth < 640;
+    
+    const animate = () => {
+      if (!isPaused && !isMobile()) {
+        scrollPosition += speed;
+        
+        // 1/3 지점에 도달하면 리셋 (끊김 없이)
+        const oneThird = scrollContainer.scrollWidth / 3;
+        if (scrollPosition >= oneThird) {
+          scrollPosition = 0;
+        }
+        
+        scrollContainer.style.transform = `translateX(-${scrollPosition}px)`;
+      }
+      animationId = requestAnimationFrame(animate);
+    };
     
     // 호버 시 멈춤
     const handleMouseEnter = () => {
-      scrollContainer.style.animationPlayState = 'paused';
+      isPaused = true;
     };
     const handleMouseLeave = () => {
-      scrollContainer.style.animationPlayState = 'running';
+      isPaused = false;
     };
     
     scrollContainer.addEventListener('mouseenter', handleMouseEnter);
     scrollContainer.addEventListener('mouseleave', handleMouseLeave);
     
+    // 애니메이션 시작
+    animationId = requestAnimationFrame(animate);
+    
     return () => {
+      cancelAnimationFrame(animationId);
       scrollContainer.removeEventListener('mouseenter', handleMouseEnter);
       scrollContainer.removeEventListener('mouseleave', handleMouseLeave);
     };
@@ -397,10 +423,11 @@ const LandingPage = () => {
               <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-48 bg-gradient-to-r from-[#020204] to-transparent z-10 pointer-events-none" />
               <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-48 bg-gradient-to-l from-[#020204] to-transparent z-10 pointer-events-none" />
               
-              {/* 스크롤 컨테이너 */}
+              {/* 스크롤 컨테이너 - 모바일에서 터치 스크롤 가능, 데스크톱에서 JS 애니메이션 */}
               <div
                 ref={scrollRef}
-                className="flex gap-4 sm:gap-6 py-6 px-4 animate-scroll-left"
+                className="flex gap-4 sm:gap-6 py-6 px-4 overflow-x-auto sm:overflow-x-hidden scrollbar-hide touch-pan-x"
+                style={{ WebkitOverflowScrolling: 'touch' }}
               >
                 {/* 무한 스크롤을 위해 아이템 3번 복제 */}
                 {[...popularPrompts, ...popularPrompts, ...popularPrompts].map((prompt, index) => (

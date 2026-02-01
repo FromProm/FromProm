@@ -564,7 +564,7 @@ const MarketplacePage = () => {
                       </div>
 
                       {/* 통계 정보 */}
-                      <div className={`flex items-center justify-between text-xs text-gray-500 border-t ${colors.borderBottom} pt-2 sm:pt-3`}>
+                      <div className={`flex items-center justify-between text-xs text-gray-500 border-t ${colors.borderBottom} pt-2 sm:pt-3 min-h-[1.75rem]`}>
                         <div className="flex items-center space-x-3 sm:space-x-4">
                           <button 
                             onClick={(e) => handleLikeToggle(prompt, e)}
@@ -585,7 +585,7 @@ const MarketplacePage = () => {
                             <span>{prompt.commentCount || 0}</span>
                           </span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 min-h-[1.5rem]">
                           {(prompt.likeCount || 0) >= 3 && (
                             <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
                               🔥 HOT

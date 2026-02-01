@@ -372,7 +372,7 @@ const MyprofilePage = () => {
   };
 
   // 판매중인 프롬프트 내용 토글
-  const togglePromptContent = async (e: React.MouseEvent, promptId: string) => {
+  const togglePromptContent = async (e: React.MouseEvent, promptId: string, status?: string) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -385,6 +385,13 @@ const MyprofilePage = () => {
     
     // 새로운 프롬프트 펼치기
     setExpandedPromptId(promptId);
+    
+    // 검증 중인 프롬프트는 API 호출 없이 바로 메시지 표시
+    if (status !== 'completed') {
+      setExpandedPromptContent('🔄 AI가 프롬프트를 검증하고 있습니다. 검증이 완료되면 내용을 확인할 수 있습니다.');
+      return;
+    }
+    
     setIsLoadingContent(true);
     setExpandedPromptContent('');
     
@@ -780,7 +787,7 @@ const MyprofilePage = () => {
                                   <p className="text-xs text-gray-400 sm:mt-1">{new Date(prompt.created_at).toLocaleDateString()}</p>
                                   <div className="flex gap-2">
                                     <button
-                                      onClick={(e) => togglePromptContent(e, prompt.promptId)}
+                                      onClick={(e) => togglePromptContent(e, prompt.promptId, prompt.status)}
                                       className={`text-xs px-2 py-1 border rounded transition-colors ${
                                         expandedPromptId === prompt.promptId
                                           ? 'bg-blue-600 text-white border-blue-600'
@@ -845,7 +852,7 @@ const MyprofilePage = () => {
                                   <p className="text-xs text-gray-400 sm:mt-1">{new Date(prompt.created_at).toLocaleDateString()}</p>
                                   <div className="flex gap-2">
                                     <button
-                                      onClick={(e) => togglePromptContent(e, prompt.promptId)}
+                                      onClick={(e) => togglePromptContent(e, prompt.promptId, prompt.status)}
                                       className={`text-xs px-2 py-1 border rounded transition-colors ${
                                         expandedPromptId === prompt.promptId
                                           ? 'bg-blue-600 text-white border-blue-600'

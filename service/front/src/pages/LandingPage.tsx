@@ -61,29 +61,27 @@ const LandingPage = () => {
     let scrollPosition = 0;
     let isPaused = false;
     const speed = 1.5; // 픽셀/프레임 (속도 조절)
+    let resetPoint = 0;
     
     // 모바일 체크 (640px 미만)
     const isMobile = () => window.innerWidth < 640;
     
-    // 카드 하나의 너비 + gap 계산
-    const getCardWidth = () => {
-      const card = scrollContainer.querySelector('a');
-      if (!card) return 320 + 24; // 기본값
-      const cardWidth = card.offsetWidth;
-      const gap = isMobile() ? 16 : 24; // gap-4 = 16px, gap-6 = 24px
-      return cardWidth + gap;
+    // 리셋 포인트 계산 (컨테이너가 렌더링된 후)
+    const calculateResetPoint = () => {
+      // 전체 스크롤 너비의 1/4 (4번 복제했으므로)
+      resetPoint = scrollContainer.scrollWidth / 4;
     };
     
+    // 초기 계산
+    setTimeout(calculateResetPoint, 100);
+    
     const animate = () => {
-      if (!isPaused && !isMobile()) {
+      if (!isPaused && !isMobile() && resetPoint > 0) {
         scrollPosition += speed;
         
-        // 원본 아이템들의 총 너비에 도달하면 리셋
-        const cardWidth = getCardWidth();
-        const totalOriginalWidth = cardWidth * popularPrompts.length;
-        
-        if (scrollPosition >= totalOriginalWidth) {
-          scrollPosition = 0;
+        // 리셋 포인트에 도달하면 즉시 0으로
+        if (scrollPosition >= resetPoint) {
+          scrollPosition = scrollPosition - resetPoint;
         }
         
         scrollContainer.style.transform = `translateX(-${scrollPosition}px)`;
@@ -99,8 +97,14 @@ const LandingPage = () => {
       isPaused = false;
     };
     
+    // 리사이즈 시 재계산
+    const handleResize = () => {
+      calculateResetPoint();
+    };
+    
     scrollContainer.addEventListener('mouseenter', handleMouseEnter);
     scrollContainer.addEventListener('mouseleave', handleMouseLeave);
+    window.addEventListener('resize', handleResize);
     
     // 애니메이션 시작
     animationId = requestAnimationFrame(animate);
@@ -109,6 +113,7 @@ const LandingPage = () => {
       cancelAnimationFrame(animationId);
       scrollContainer.removeEventListener('mouseenter', handleMouseEnter);
       scrollContainer.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('resize', handleResize);
     };
   }, [popularPrompts]);
 
@@ -440,8 +445,8 @@ const LandingPage = () => {
                 className="flex gap-4 sm:gap-6 py-6 px-4 overflow-x-auto sm:overflow-x-hidden scrollbar-hide touch-pan-x"
                 style={{ WebkitOverflowScrolling: 'touch' }}
               >
-                {/* 무한 스크롤을 위해 아이템 3번 복제 */}
-                {[...popularPrompts, ...popularPrompts, ...popularPrompts].map((prompt, index) => (
+                {/* 무한 스크롤을 위해 아이템 4번 복제 */}
+                {[...popularPrompts, ...popularPrompts, ...popularPrompts, ...popularPrompts].map((prompt, index) => (
                   <TiltCard
                     key={`${prompt.promptId}-${index}`}
                     rotateAmplitude={10}

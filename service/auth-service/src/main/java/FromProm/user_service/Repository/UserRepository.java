@@ -352,4 +352,83 @@ public class UserRepository {
                     .build());
         }
     }
+
+    /**
+     * 사용자가 등록한 모든 프롬프트의 닉네임 업데이트
+     */
+    public void updateUserPromptsNickname(String userPK, String newNickname) {
+        // create_user가 userPK인 모든 프롬프트 조회
+        ScanRequest scanRequest = ScanRequest.builder()
+                .tableName(TABLE_NAME)
+                .filterExpression("create_user = :userId AND SK = :metadata")
+                .expressionAttributeValues(Map.of(
+                        ":userId", AttributeValue.builder().s(userPK).build(),
+                        ":metadata", AttributeValue.builder().s("METADATA").build()
+                ))
+                .build();
+
+        ScanResponse response = dynamoDbClient.scan(scanRequest);
+        
+        for (Map<String, AttributeValue> item : response.items()) {
+            String promptPK = item.get("PK").s();
+            
+            try {
+                // 프롬프트의 nickname 필드 업데이트
+                dynamoDbClient.updateItem(UpdateItemRequest.builder()
+                        .tableName(TABLE_NAME)
+                        .key(Map.of(
+                                "PK", AttributeValue.builder().s(promptPK).build(),
+                                "SK", AttributeValue.builder().s("METADATA").build()
+                        ))
+                        .updateExpression("SET nickname = :newNickname")
+                        .expressionAttributeValues(Map.of(
+                                ":newNickname", AttributeValue.builder().s(newNickname).build()
+                        ))
+                        .build());
+                System.out.println("프롬프트 닉네임 업데이트 완료: " + promptPK);
+            } catch (Exception e) {
+                System.err.println("프롬프트 닉네임 업데이트 실패: " + promptPK + " - " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 사용자가 작성한 모든 댓글의 닉네임 업데이트
+     */
+    public void updateUserCommentsNickname(String userId, String newNickname) {
+        // comment_user가 userId인 모든 댓글 조회
+        ScanRequest scanRequest = ScanRequest.builder()
+                .tableName(TABLE_NAME)
+                .filterExpression("comment_user = :userId AND begins_with(SK, :commentPrefix)")
+                .expressionAttributeValues(Map.of(
+                        ":userId", AttributeValue.builder().s(userId).build(),
+                        ":commentPrefix", AttributeValue.builder().s("COMMENT#").build()
+                ))
+                .build();
+
+        ScanResponse response = dynamoDbClient.scan(scanRequest);
+        
+        for (Map<String, AttributeValue> item : response.items()) {
+            String promptPK = item.get("PK").s();
+            String commentSK = item.get("SK").s();
+            
+            try {
+                // 댓글의 comment_user_nickname 필드 업데이트
+                dynamoDbClient.updateItem(UpdateItemRequest.builder()
+                        .tableName(TABLE_NAME)
+                        .key(Map.of(
+                                "PK", AttributeValue.builder().s(promptPK).build(),
+                                "SK", AttributeValue.builder().s(commentSK).build()
+                        ))
+                        .updateExpression("SET comment_user_nickname = :newNickname")
+                        .expressionAttributeValues(Map.of(
+                                ":newNickname", AttributeValue.builder().s(newNickname).build()
+                        ))
+                        .build());
+                System.out.println("댓글 닉네임 업데이트 완료: " + promptPK + "/" + commentSK);
+            } catch (Exception e) {
+                System.err.println("댓글 닉네임 업데이트 실패: " + promptPK + "/" + commentSK + " - " + e.getMessage());
+            }
+        }
+    }
 }

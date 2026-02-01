@@ -128,34 +128,42 @@ public class UserRepository {
             
             // LIKE# 삭제 시 프롬프트의 like_count 감소
             if (sk.startsWith("LIKE#")) {
-                String promptId = sk.replace("LIKE#", "");
+                String promptId = sk.replace("LIKE#PROMPT#", "");
                 try {
-                    dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
-                            .transactItems(
-                                    TransactWriteItem.builder()
-                                            .delete(Delete.builder()
-                                                    .tableName(TABLE_NAME)
-                                                    .key(Map.of(
-                                                            "PK", AttributeValue.builder().s(pk).build(),
-                                                            "SK", AttributeValue.builder().s(sk).build()
-                                                    ))
-                                                    .build())
-                                            .build(),
-                                    TransactWriteItem.builder()
-                                            .update(Update.builder()
-                                                    .tableName(TABLE_NAME)
-                                                    .key(Map.of(
-                                                            "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
-                                                            "SK", AttributeValue.builder().s("METADATA").build()
-                                                    ))
-                                                    .updateExpression("SET like_count = if_not_exists(like_count, :zero) - :dec")
-                                                    .expressionAttributeValues(Map.of(
-                                                            ":dec", AttributeValue.builder().n("1").build(),
-                                                            ":zero", AttributeValue.builder().n("0").build()
-                                                    ))
-                                                    .build())
-                                            .build()
-                            )
+                    // 먼저 좋아요 삭제
+                    dynamoDbClient.deleteItem(DeleteItemRequest.builder()
+                            .tableName(TABLE_NAME)
+                            .key(Map.of(
+                                    "PK", AttributeValue.builder().s(pk).build(),
+                                    "SK", AttributeValue.builder().s(sk).build()
+                            ))
+                            .build());
+                    
+                    // like_count 감소 (문자열 타입으로 저장됨)
+                    GetItemResponse metadataResponse = dynamoDbClient.getItem(GetItemRequest.builder()
+                            .tableName(TABLE_NAME)
+                            .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                                    "SK", AttributeValue.builder().s("METADATA").build()))
+                            .projectionExpression("like_count")
+                            .build());
+                    
+                    int currentCount = 0;
+                    if (metadataResponse.hasItem() && metadataResponse.item().containsKey("like_count")) {
+                        AttributeValue countAttr = metadataResponse.item().get("like_count");
+                        if (countAttr.s() != null) {
+                            currentCount = Integer.parseInt(countAttr.s());
+                        } else if (countAttr.n() != null) {
+                            currentCount = Integer.parseInt(countAttr.n());
+                        }
+                    }
+                    
+                    int newCount = Math.max(0, currentCount - 1);
+                    dynamoDbClient.updateItem(UpdateItemRequest.builder()
+                            .tableName(TABLE_NAME)
+                            .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                                    "SK", AttributeValue.builder().s("METADATA").build()))
+                            .updateExpression("SET like_count = :newCount")
+                            .expressionAttributeValues(Map.of(":newCount", AttributeValue.builder().s(String.valueOf(newCount)).build()))
                             .build());
                 } catch (Exception e) {
                     System.err.println("좋아요 삭제 실패: " + pk + "/" + sk + " - " + e.getMessage());
@@ -163,34 +171,42 @@ public class UserRepository {
             }
             // BOOKMARK# 삭제 시 프롬프트의 bookmark_count 감소
             else if (sk.startsWith("BOOKMARK#")) {
-                String promptId = sk.replace("BOOKMARK#", "");
+                String promptId = sk.replace("BOOKMARK#PROMPT#", "");
                 try {
-                    dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
-                            .transactItems(
-                                    TransactWriteItem.builder()
-                                            .delete(Delete.builder()
-                                                    .tableName(TABLE_NAME)
-                                                    .key(Map.of(
-                                                            "PK", AttributeValue.builder().s(pk).build(),
-                                                            "SK", AttributeValue.builder().s(sk).build()
-                                                    ))
-                                                    .build())
-                                            .build(),
-                                    TransactWriteItem.builder()
-                                            .update(Update.builder()
-                                                    .tableName(TABLE_NAME)
-                                                    .key(Map.of(
-                                                            "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
-                                                            "SK", AttributeValue.builder().s("METADATA").build()
-                                                    ))
-                                                    .updateExpression("SET bookmark_count = if_not_exists(bookmark_count, :zero) - :dec")
-                                                    .expressionAttributeValues(Map.of(
-                                                            ":dec", AttributeValue.builder().n("1").build(),
-                                                            ":zero", AttributeValue.builder().n("0").build()
-                                                    ))
-                                                    .build())
-                                            .build()
-                            )
+                    // 먼저 북마크 삭제
+                    dynamoDbClient.deleteItem(DeleteItemRequest.builder()
+                            .tableName(TABLE_NAME)
+                            .key(Map.of(
+                                    "PK", AttributeValue.builder().s(pk).build(),
+                                    "SK", AttributeValue.builder().s(sk).build()
+                            ))
+                            .build());
+                    
+                    // bookmark_count 감소 (문자열 타입으로 저장됨)
+                    GetItemResponse metadataResponse = dynamoDbClient.getItem(GetItemRequest.builder()
+                            .tableName(TABLE_NAME)
+                            .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                                    "SK", AttributeValue.builder().s("METADATA").build()))
+                            .projectionExpression("bookmark_count")
+                            .build());
+                    
+                    int currentCount = 0;
+                    if (metadataResponse.hasItem() && metadataResponse.item().containsKey("bookmark_count")) {
+                        AttributeValue countAttr = metadataResponse.item().get("bookmark_count");
+                        if (countAttr.s() != null) {
+                            currentCount = Integer.parseInt(countAttr.s());
+                        } else if (countAttr.n() != null) {
+                            currentCount = Integer.parseInt(countAttr.n());
+                        }
+                    }
+                    
+                    int newCount = Math.max(0, currentCount - 1);
+                    dynamoDbClient.updateItem(UpdateItemRequest.builder()
+                            .tableName(TABLE_NAME)
+                            .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                                    "SK", AttributeValue.builder().s("METADATA").build()))
+                            .updateExpression("SET bookmark_count = :newCount")
+                            .expressionAttributeValues(Map.of(":newCount", AttributeValue.builder().s(String.valueOf(newCount)).build()))
                             .build());
                 } catch (Exception e) {
                     System.err.println("북마크 삭제 실패: " + pk + "/" + sk + " - " + e.getMessage());

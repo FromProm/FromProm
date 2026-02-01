@@ -52,19 +52,31 @@ public class InteractionService {
             throw new RuntimeException("이미 좋아요를 누른 프롬프트입니다.");
         }
 
-        // METADATA의 like_count 증가 시도 (실패해도 좋아요는 이미 추가됨)
+        // METADATA의 like_count 증가 (문자열 타입으로 저장됨)
         try {
+            GetItemResponse metadataResponse = dynamoDbClient.getItem(GetItemRequest.builder()
+                    .tableName(TABLE_NAME)
+                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()))
+                    .projectionExpression("like_count")
+                    .build());
+            
+            int currentCount = 0;
+            if (metadataResponse.hasItem() && metadataResponse.item().containsKey("like_count")) {
+                AttributeValue countAttr = metadataResponse.item().get("like_count");
+                if (countAttr.s() != null) {
+                    currentCount = Integer.parseInt(countAttr.s());
+                } else if (countAttr.n() != null) {
+                    currentCount = Integer.parseInt(countAttr.n());
+                }
+            }
+            
             dynamoDbClient.updateItem(UpdateItemRequest.builder()
                     .tableName(TABLE_NAME)
-                    .key(Map.of(
-                            "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
-                            "SK", AttributeValue.builder().s("METADATA").build()
-                    ))
-                    .updateExpression("SET like_count = if_not_exists(like_count, :zero) + :inc")
-                    .expressionAttributeValues(Map.of(
-                            ":inc", AttributeValue.builder().n("1").build(),
-                            ":zero", AttributeValue.builder().n("0").build()
-                    ))
+                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()))
+                    .updateExpression("SET like_count = :newCount")
+                    .expressionAttributeValues(Map.of(":newCount", AttributeValue.builder().s(String.valueOf(currentCount + 1)).build()))
                     .build());
         } catch (Exception e) {
             System.err.println("like_count 업데이트 실패 (무시됨): " + e.getMessage());
@@ -86,21 +98,32 @@ public class InteractionService {
             throw new RuntimeException("이미 좋아요를 취소했거나 좋아요 기록이 없습니다.");
         }
 
-        // METADATA의 like_count 감소 시도 (실패해도 좋아요는 이미 삭제됨)
+        // METADATA의 like_count 감소 (문자열 타입으로 저장됨)
         try {
+            GetItemResponse metadataResponse = dynamoDbClient.getItem(GetItemRequest.builder()
+                    .tableName(TABLE_NAME)
+                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()))
+                    .projectionExpression("like_count")
+                    .build());
+            
+            int currentCount = 0;
+            if (metadataResponse.hasItem() && metadataResponse.item().containsKey("like_count")) {
+                AttributeValue countAttr = metadataResponse.item().get("like_count");
+                if (countAttr.s() != null) {
+                    currentCount = Integer.parseInt(countAttr.s());
+                } else if (countAttr.n() != null) {
+                    currentCount = Integer.parseInt(countAttr.n());
+                }
+            }
+            
+            int newCount = Math.max(0, currentCount - 1);
             dynamoDbClient.updateItem(UpdateItemRequest.builder()
                     .tableName(TABLE_NAME)
-                    .key(Map.of(
-                            "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
-                            "SK", AttributeValue.builder().s("METADATA").build()
-                    ))
-                    .updateExpression("SET like_count = if_not_exists(like_count, :one) - :dec")
-                    .conditionExpression("attribute_not_exists(like_count) OR like_count > :zero")
-                    .expressionAttributeValues(Map.of(
-                            ":dec", AttributeValue.builder().n("1").build(),
-                            ":zero", AttributeValue.builder().n("0").build(),
-                            ":one", AttributeValue.builder().n("1").build()
-                    ))
+                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()))
+                    .updateExpression("SET like_count = :newCount")
+                    .expressionAttributeValues(Map.of(":newCount", AttributeValue.builder().s(String.valueOf(newCount)).build()))
                     .build());
         } catch (Exception e) {
             System.err.println("like_count 감소 실패 (무시됨): " + e.getMessage());
@@ -131,19 +154,31 @@ public class InteractionService {
             throw new RuntimeException("이미 북마크한 프롬프트입니다.");
         }
 
-        // METADATA의 bookmark_count 증가 시도 (실패해도 북마크는 이미 추가됨)
+        // METADATA의 bookmark_count 증가 (문자열 타입으로 저장됨)
         try {
+            GetItemResponse metadataResponse = dynamoDbClient.getItem(GetItemRequest.builder()
+                    .tableName(TABLE_NAME)
+                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()))
+                    .projectionExpression("bookmark_count")
+                    .build());
+            
+            int currentCount = 0;
+            if (metadataResponse.hasItem() && metadataResponse.item().containsKey("bookmark_count")) {
+                AttributeValue countAttr = metadataResponse.item().get("bookmark_count");
+                if (countAttr.s() != null) {
+                    currentCount = Integer.parseInt(countAttr.s());
+                } else if (countAttr.n() != null) {
+                    currentCount = Integer.parseInt(countAttr.n());
+                }
+            }
+            
             dynamoDbClient.updateItem(UpdateItemRequest.builder()
                     .tableName(TABLE_NAME)
-                    .key(Map.of(
-                            "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
-                            "SK", AttributeValue.builder().s("METADATA").build()
-                    ))
-                    .updateExpression("SET bookmark_count = if_not_exists(bookmark_count, :zero) + :inc")
-                    .expressionAttributeValues(Map.of(
-                            ":inc", AttributeValue.builder().n("1").build(),
-                            ":zero", AttributeValue.builder().n("0").build()
-                    ))
+                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()))
+                    .updateExpression("SET bookmark_count = :newCount")
+                    .expressionAttributeValues(Map.of(":newCount", AttributeValue.builder().s(String.valueOf(currentCount + 1)).build()))
                     .build());
         } catch (Exception e) {
             System.err.println("bookmark_count 업데이트 실패 (무시됨): " + e.getMessage());
@@ -166,21 +201,32 @@ public class InteractionService {
             throw new RuntimeException("이미 북마크를 취소했거나 북마크 기록이 없습니다.");
         }
 
-        // METADATA의 bookmark_count 감소 시도 (실패해도 북마크는 이미 삭제됨)
+        // METADATA의 bookmark_count 감소 (문자열 타입으로 저장됨)
         try {
+            GetItemResponse metadataResponse = dynamoDbClient.getItem(GetItemRequest.builder()
+                    .tableName(TABLE_NAME)
+                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()))
+                    .projectionExpression("bookmark_count")
+                    .build());
+            
+            int currentCount = 0;
+            if (metadataResponse.hasItem() && metadataResponse.item().containsKey("bookmark_count")) {
+                AttributeValue countAttr = metadataResponse.item().get("bookmark_count");
+                if (countAttr.s() != null) {
+                    currentCount = Integer.parseInt(countAttr.s());
+                } else if (countAttr.n() != null) {
+                    currentCount = Integer.parseInt(countAttr.n());
+                }
+            }
+            
+            int newCount = Math.max(0, currentCount - 1);
             dynamoDbClient.updateItem(UpdateItemRequest.builder()
                     .tableName(TABLE_NAME)
-                    .key(Map.of(
-                            "PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
-                            "SK", AttributeValue.builder().s("METADATA").build()
-                    ))
-                    .updateExpression("SET bookmark_count = if_not_exists(bookmark_count, :one) - :dec")
-                    .conditionExpression("attribute_not_exists(bookmark_count) OR bookmark_count > :zero")
-                    .expressionAttributeValues(Map.of(
-                            ":dec", AttributeValue.builder().n("1").build(),
-                            ":zero", AttributeValue.builder().n("0").build(),
-                            ":one", AttributeValue.builder().n("1").build()
-                    ))
+                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()))
+                    .updateExpression("SET bookmark_count = :newCount")
+                    .expressionAttributeValues(Map.of(":newCount", AttributeValue.builder().s(String.valueOf(newCount)).build()))
                     .build());
         } catch (Exception e) {
             System.err.println("bookmark_count 감소 실패 (무시됨): " + e.getMessage());

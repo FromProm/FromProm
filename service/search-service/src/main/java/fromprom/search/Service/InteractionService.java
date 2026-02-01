@@ -385,9 +385,17 @@ public class InteractionService {
     }
 
     private int getNumberValue(Map<String, AttributeValue> item, String key) {
-        if (item.containsKey(key) && item.get(key).n() != null) {
+        if (item.containsKey(key)) {
+            AttributeValue attr = item.get(key);
             try {
-                return Integer.parseInt(item.get(key).n());
+                // 숫자 타입 (N)
+                if (attr.n() != null) {
+                    return Integer.parseInt(attr.n());
+                }
+                // 문자열 타입 (S) - DynamoDB에 문자열로 저장된 경우
+                if (attr.s() != null) {
+                    return Integer.parseInt(attr.s());
+                }
             } catch (NumberFormatException e) {
                 return 0;
             }

@@ -77,6 +77,10 @@ const MyprofilePage = () => {
   const [modalData, setModalData] = useState<InteractionPrompt[]>([]);
   const [isLoadingModal, setIsLoadingModal] = useState(false);
 
+  // 좋아요/북마크 개수 상태
+  const [likedCount, setLikedCount] = useState(0);
+  const [bookmarkedCount, setBookmarkedCount] = useState(0);
+
   // 회원탈퇴 모달 상태
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawPassword, setWithdrawPassword] = useState('');
@@ -139,6 +143,31 @@ const MyprofilePage = () => {
     };
     fetchMyPrompts();
   }, []);
+
+  // 좋아요/북마크 개수 가져오기
+  useEffect(() => {
+    const fetchInteractionCounts = async () => {
+      if (!userInfo?.sub) return;
+      
+      try {
+        const [likesRes, bookmarksRes] = await Promise.all([
+          promptApi.getUserLikedPrompts(userInfo.sub, 100),
+          promptApi.getUserBookmarkedPrompts(userInfo.sub, 100)
+        ]);
+        
+        if (likesRes.data.prompts) {
+          setLikedCount(likesRes.data.prompts.length);
+        }
+        if (bookmarksRes.data.prompts) {
+          setBookmarkedCount(bookmarksRes.data.prompts.length);
+        }
+      } catch (error) {
+        console.error('Failed to fetch interaction counts:', error);
+      }
+    };
+    
+    fetchInteractionCounts();
+  }, [userInfo?.sub]);
 
   // 크레딧 히스토리 가져오기
   useEffect(() => {
@@ -521,7 +550,7 @@ const MyprofilePage = () => {
                           <h3 className="font-semibold text-gray-900 text-sm sm:text-base">좋아요 누른 프롬프트</h3>
                         </div>
                         <div className="flex items-baseline justify-center gap-1.5 py-3 sm:py-4 mb-3 sm:mb-4">
-                          <span className="text-4xl sm:text-5xl font-bold text-red-500">0</span>
+                          <span className="text-4xl sm:text-5xl font-bold text-red-500">{likedCount}</span>
                           <span className="text-gray-500 self-end pb-1 text-sm sm:text-base">개의 프롬프트</span>
                         </div>
                         <button onClick={() => openModal('likes')} className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-medium py-2 sm:py-2.5 rounded-lg transition-colors text-sm sm:text-base">
@@ -553,7 +582,7 @@ const MyprofilePage = () => {
                           <h3 className="font-semibold text-gray-900 text-sm sm:text-base">북마크한 프롬프트</h3>
                         </div>
                         <div className="flex items-baseline justify-center gap-1.5 py-3 sm:py-4 mb-3 sm:mb-4">
-                          <span className="text-4xl sm:text-5xl font-bold text-yellow-500">0</span>
+                          <span className="text-4xl sm:text-5xl font-bold text-yellow-500">{bookmarkedCount}</span>
                           <span className="text-gray-500 self-end pb-1 text-sm sm:text-base">개의 프롬프트</span>
                         </div>
                         <button onClick={() => openModal('bookmarks')} className="w-full bg-yellow-50 hover:bg-yellow-100 text-yellow-600 font-medium py-2 sm:py-2.5 rounded-lg transition-colors text-sm sm:text-base">

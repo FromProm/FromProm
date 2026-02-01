@@ -222,13 +222,13 @@ const DocsPage = () => {
             <span className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center text-cyan-400">💡</span>
             프롬프트란?
           </h2>
-          <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-8">
+          <div className="md:bg-slate-800/40 md:backdrop-blur-sm md:border md:border-slate-700/50 md:rounded-2xl md:p-8">
             <p className="text-gray-300 text-lg mb-6 leading-relaxed">
               <span className="text-white font-semibold">프롬프트(Prompt)</span>는 AI에게 원하는 결과를 얻기 위해 입력하는 <span className="text-cyan-400 font-medium">명령어 또는 질문</span>입니다.
               잘 작성된 프롬프트는 AI로부터 더 정확하고 유용한 답변을 이끌어낼 수 있습니다.
             </p>
             
-            <div className="bg-slate-900/60 rounded-xl p-6 mb-6">
+            <div className="md:bg-slate-900/60 md:rounded-xl md:p-6 mb-6">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
                 <span className="text-yellow-400">✨</span> 플레이스홀더 사용법
               </h3>
@@ -284,7 +284,7 @@ const DocsPage = () => {
           <div className="grid gap-6">
             {/* 정보형 */}
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 hover:border-blue-500/50 transition-colors">
-              <div className="flex items-start gap-4">
+              <div className="flex flex-col md:flex-row md:items-start gap-4">
                 <div className="w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
                   <span className="text-3xl">📊</span>
                 </div>
@@ -311,7 +311,7 @@ const DocsPage = () => {
 
             {/* 글 창작형 */}
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 hover:border-green-500/50 transition-colors">
-              <div className="flex items-start gap-4">
+              <div className="flex flex-col md:flex-row md:items-start gap-4">
                 <div className="w-14 h-14 bg-green-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
                   <span className="text-3xl">✍️</span>
                 </div>
@@ -338,7 +338,7 @@ const DocsPage = () => {
 
             {/* 이미지 창작형 */}
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 hover:border-purple-500/50 transition-colors">
-              <div className="flex items-start gap-4">
+              <div className="flex flex-col md:flex-row md:items-start gap-4">
                 <div className="w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
                   <span className="text-3xl">🎨</span>
                 </div>

@@ -444,7 +444,7 @@ const DocsPage = () => {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6">
               <h3 className="text-xl font-semibold text-white mb-3">
-                토큰 사용량
+                토큰 사용 수
               </h3>
               <p className="text-gray-400 mb-4">프롬프트의 길이를 측정합니다. 같은 결과를 얻는다면 짧고 간결한 프롬프트가 더 효율적이에요.</p>
               <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500 mb-3">
@@ -458,7 +458,7 @@ const DocsPage = () => {
 
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6">
               <h3 className="text-xl font-semibold text-white mb-3">
-                정보 밀도
+                출력 대비 정보 밀도
               </h3>
               <p className="text-gray-400 mb-4">AI 응답에 유용한 정보가 얼마나 알차게 담겨있는지 평가합니다. 같은 말 반복 없이 핵심만 전달하는지 확인해요.</p>
               <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500 mb-3">
@@ -466,13 +466,13 @@ const DocsPage = () => {
               </div>
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-sm">
                 <p className="text-blue-300 font-medium mb-1">💡 예시</p>
-                <p className="text-gray-400">❌ "이 제품은 좋습니다. 정말 좋은 제품입니다."<br/>✅ "이 제품은 배터리 20시간, 무게 150g으로 휴대성이 뛰어납니다."</p>
+                <p className="text-gray-400">❌ "이 제품은 정말 정말 정말 정말 좋습니다. 진짜 좋고 너무 좋아요."<br/>✅ "이 제품은 배터리 20시간, 무게 150g으로 휴대성이 뛰어납니다."</p>
               </div>
             </div>
 
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6">
               <h3 className="text-xl font-semibold text-white mb-3">
-                응답 일관성
+                응답의 일관성
               </h3>
               <p className="text-gray-400 mb-4">같은 프롬프트를 여러 번 사용해도 비슷한 품질의 결과가 나오는지 측정합니다. 일관성이 높으면 매번 안정적인 결과를 기대할 수 있어요.</p>
               <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500 mb-3">
@@ -486,7 +486,7 @@ const DocsPage = () => {
 
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6">
               <h3 className="text-xl font-semibold text-white mb-3">
-                버전 호환성
+                버전별 일관성
               </h3>
               <p className="text-gray-400 mb-4">AI 모델이 업데이트되어도 프롬프트가 잘 작동하는지 평가합니다. 점수가 높으면 오래 사용할 수 있는 프롬프트예요.</p>
               <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500 mb-3">

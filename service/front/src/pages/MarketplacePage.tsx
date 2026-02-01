@@ -72,7 +72,22 @@ const formatModelName = (model: string): string => {
 };
 
 // 카드 색상 설정 함수
-const getCardColors = (category: string) => {
+const getCardColors = (category: string, finalScore?: number) => {
+  // 90점 이상이면 황금색 카드
+  if (finalScore && finalScore >= 90) {
+    return {
+      gradient: 'from-amber-100 via-yellow-50 to-amber-50',
+      border: 'border-amber-300',
+      hoverBorder: 'hover:border-amber-500',
+      shadow: 'shadow-amber-500/20 hover:shadow-amber-500/40',
+      tag: 'text-amber-800 bg-amber-100 border border-amber-400',
+      borderBottom: 'border-amber-200',
+      barGradient: 'from-amber-300 to-amber-500',
+      dotColor: 'bg-amber-500',
+      isGold: true,
+    };
+  }
+
   const type = promptTypeToCategory[category] || category;
   if (type === '사실 근거 기반' || category === 'type_a') {
     return {
@@ -84,6 +99,7 @@ const getCardColors = (category: string) => {
       borderBottom: 'border-rose-100',
       barGradient: 'from-rose-200 to-rose-500',
       dotColor: 'bg-rose-500',
+      isGold: false,
     };
   } else if (type === '글 창작 및 생성' || category === 'type_b_text') {
     return {
@@ -95,6 +111,7 @@ const getCardColors = (category: string) => {
       borderBottom: 'border-emerald-100',
       barGradient: 'from-emerald-200 to-emerald-500',
       dotColor: 'bg-emerald-500',
+      isGold: false,
     };
   } else {
     return {
@@ -106,6 +123,7 @@ const getCardColors = (category: string) => {
       borderBottom: 'border-blue-100',
       barGradient: 'from-blue-200 to-blue-500',
       dotColor: 'bg-blue-500',
+      isGold: false,
     };
   }
 };
@@ -338,6 +356,27 @@ const MarketplacePage = () => {
     return matchesCategory && matchesSearch;
   });
 
+  // 90점 이상 프롬프트를 상단에 배치
+  const sortedPrompts = [...filteredPrompts].sort((a, b) => {
+    const aScore = a.evaluationMetrics?.finalScore || 0;
+    const bScore = b.evaluationMetrics?.finalScore || 0;
+    const aIsGold = aScore >= 90;
+    const bIsGold = bScore >= 90;
+    
+    // 둘 다 골드이거나 둘 다 골드가 아니면 점수 순으로
+    if (aIsGold === bIsGold) {
+      return bScore - aScore;
+    }
+    // 골드가 먼저
+    return aIsGold ? -1 : 1;
+  });
+
+  // TOP 3 프롬프트 ID 추출 (90점 이상 중 상위 3개)
+  const top3PromptIds = sortedPrompts
+    .filter(p => (p.evaluationMetrics?.finalScore || 0) >= 90)
+    .slice(0, 3)
+    .map(p => p.promptId);
+
   return (
     <div className="min-h-screen bg-white">
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
@@ -441,8 +480,10 @@ const MarketplacePage = () => {
           <>
             {/* 프롬프트 그리드 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {filteredPrompts.map((prompt, index) => {
-                const colors = getCardColors(prompt.category);
+              {sortedPrompts.map((prompt, index) => {
+                const colors = getCardColors(prompt.category, prompt.evaluationMetrics?.finalScore);
+                const isTop3 = top3PromptIds.includes(prompt.promptId);
+                const top3Rank = isTop3 ? top3PromptIds.indexOf(prompt.promptId) + 1 : 0;
                 
                 return (
                   <AnimatedContent
@@ -458,11 +499,23 @@ const MarketplacePage = () => {
                     delay={index * 0.1}
                   >
                     <TiltCard
-                      className={`relative bg-gradient-to-br ${colors.gradient} border-2 ${colors.border} ${colors.hoverBorder} rounded-xl p-4 sm:p-5 shadow-lg ${colors.shadow} cursor-pointer group flex flex-col transition-colors duration-300`}
+                      className={`relative bg-gradient-to-br ${colors.gradient} border-2 ${colors.border} ${colors.hoverBorder} rounded-xl p-4 sm:p-5 shadow-lg ${colors.shadow} cursor-pointer group flex flex-col transition-colors duration-300 ${colors.isGold ? 'ring-2 ring-amber-400/50' : ''}`}
                       onClick={() => navigate(`/prompt/${prompt.promptId}`)}
                       rotateAmplitude={8}
                       scaleOnHover={1.03}
                     >
+                      {/* TOP 3 뱃지 */}
+                      {isTop3 && (
+                        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1">
+                          🏆 TOP {top3Rank}
+                        </div>
+                      )}
+                      {/* 골드 뱃지 (TOP 3가 아닌 90점 이상) */}
+                      {colors.isGold && !isTop3 && (
+                        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
+                          ⭐ PREMIUM
+                        </div>
+                      )}
                       {/* 상단: 카테고리 + 가격 */}
                       <div className="flex items-center justify-between mb-2 sm:mb-3">
                         <div className="flex items-center space-x-1.5 sm:space-x-2">
@@ -590,7 +643,7 @@ const MarketplacePage = () => {
             </div>
 
             {/* 무한 스크롤 트리거 */}
-            {filteredPrompts.length > 0 && (
+            {sortedPrompts.length > 0 && (
               <div ref={loadMoreRef} className="flex justify-center items-center py-8">
                 {isFetchingNextPage && (
                   <div className="flex flex-col items-center">
@@ -605,7 +658,7 @@ const MarketplacePage = () => {
             )}
 
             {/* 결과 없음 */}
-            {filteredPrompts.length === 0 && (
+            {sortedPrompts.length === 0 && (
               <div className="text-center py-8 sm:py-12">
                 <div className="text-gray-600 text-base sm:text-lg mb-2">검색 결과가 없습니다</div>
                 <p className="text-gray-500 text-xs sm:text-sm">다른 키워드나 카테고리를 시도해보세요</p>

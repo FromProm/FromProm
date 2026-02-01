@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { userApi } from '../../services/api';
-import LightRays from '../../components/LightRays';
+import LightPillar from '../../components/LightPillar';
 import SplitText from '../../components/SplitText';
 import AnimatedContent from '../../components/AnimatedContent';
+import { getFriendlyErrorMessage } from '../../utils/errorMessages';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -32,43 +33,46 @@ const LoginPage = () => {
       const redirectTo = from.startsWith('/auth') ? '/marketplace' : from;
       navigate(redirectTo);
     } catch (error: any) {
-      const message = error.response?.data || '로그인에 실패했습니다.';
-      alert(message);
+      alert(getFriendlyErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen bg-black overflow-hidden">
-      {/* 배경 그라데이션 */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-gray-900 to-black" />
-      </div>
-
-      {/* LightRays 효과 */}
-      <div className="absolute inset-0 z-[1]" style={{ width: '100%', height: '100%' }}>
-        <LightRays
-          raysOrigin="top-center"
-          raysColor="#ffffff"
-          raysSpeed={1}
-          lightSpread={1}
-          rayLength={3}
-          followMouse={false}
-          fadeDistance={3}
-          saturation={1}
-          mouseInfluence={0.1}
-          noiseAmount={0.1}
-          distortion={0.05}
+    <div className="relative min-h-screen overflow-hidden" style={{ background: 'linear-gradient(180deg, #05050A 0%, #020204 100%)', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      {/* LightPillar 배경 효과 */}
+      <div className="absolute inset-0 z-0 opacity-30">
+        <LightPillar
+          topColor="#3ACCEF"
+          bottomColor="#3ACCEF"
+          intensity={1}
+          rotationSpeed={0.3}
+          glowAmount={0.002}
+          pillarWidth={3}
+          pillarHeight={0.4}
+          noiseIntensity={0.5}
+          pillarRotation={25}
+          interactive={false}
+          mixBlendMode="screen"
+          quality="medium"
         />
       </div>
+      
+      {/* 그라데이션 오버레이 */}
+      <div 
+        className="absolute inset-0 z-[1] pointer-events-none"
+        style={{ 
+          background: 'radial-gradient(60% 60% at 50% 40%, rgba(124,108,255,0.15), transparent)'
+        }}
+      />
 
-      <div className="relative z-10 flex flex-col justify-center py-12 sm:px-6 lg:px-8 min-h-screen">
+      <div className="relative z-10 flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 min-h-screen">
         {/* 상단 로고와 제목 */}
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center justify-center mb-6 sm:mb-8">
             <Link to="/" className="flex items-center space-x-2 mr-4">
-              <div className="w-10 h-10 rounded-md overflow-hidden flex items-center justify-center shadow-lg">
+              <div className="w-9 h-8 sm:w-11 sm:h-10 rounded-md overflow-hidden flex items-center justify-center shadow-lg">
                 {/* 이미지가 있으면 이미지를 사용하고, 없으면 기본 아이콘 사용 */}
                 <img
                   src="/logo.png"
@@ -85,7 +89,7 @@ const LoginPage = () => {
                   <span className="text-black font-bold text-base">P</span>
                 </div>
               </div>
-              <h2 className="text-2xl font-bold text-white">
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
                 FromProm
               </h2>
             </Link>
@@ -94,7 +98,7 @@ const LoginPage = () => {
           <div className="flex justify-center items-center space-x-3 mb-3">
             <SplitText
               text="로그인"
-              className="text-3xl font-bold text-white"
+              className="text-2xl sm:text-3xl font-bold text-white"
               delay={50}
               duration={0.6}
               ease="power3.out"
@@ -111,7 +115,7 @@ const LoginPage = () => {
           <div className="text-center">
             <SplitText
               text="FromProm에 오신 것을 환영합니다"
-              className="text-gray-300"
+              className="text-gray-300 text-sm sm:text-base"
               delay={30}
               duration={0.5}
               ease="power3.out"
@@ -126,7 +130,7 @@ const LoginPage = () => {
           </div>
         </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <AnimatedContent
             distance={100}
             direction="vertical"
@@ -139,8 +143,8 @@ const LoginPage = () => {
             threshold={0.1}
             delay={0.2}
           >
-            <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 py-8 px-4 shadow-2xl sm:rounded-xl sm:px-10">
-              <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 py-6 sm:py-8 px-4 shadow-2xl sm:rounded-xl sm:px-10">
+              <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-300">
                   이메일
@@ -201,7 +205,7 @@ const LoginPage = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 hover:from-cyan-600 hover:via-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {isLoading ? '로그인 중...' : '로그인'}
                 </button>

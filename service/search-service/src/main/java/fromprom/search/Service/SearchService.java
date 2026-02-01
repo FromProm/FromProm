@@ -240,6 +240,176 @@ public class SearchService {
     }
 
     /**
+     * 전체 프롬프트 목록 조회 (Cursor 기반 페이지네이션)
+     * @param size 페이지 크기
+     * @param cursor 이전 페이지의 마지막 createdAt 값 (첫 페이지는 null)
+     * @return 프롬프트 목록과 다음 커서
+     */
+    public PagedSearchResult getAllPromptsPaged(int size, String cursor) {
+        List<PromptDocument> resultList = new ArrayList<>();
+        String nextCursor = null;
+        boolean hasNext = false;
+
+        try {
+            // size + 1개를 조회하여 다음 페이지 존재 여부 확인
+            int fetchSize = size + 1;
+            
+            SearchResponse<PromptDocument> response;
+            
+            if (cursor != null && !cursor.isEmpty()) {
+                // 커서가 있으면 search_after 사용
+                final String cursorValue = cursor;
+                response = openSearchClient.search(s -> s
+                        .index(INDEX_NAME)
+                        .query(q -> q
+                                .term(t -> t.field("status").value(FieldValue.of("completed")))
+                        )
+                        .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
+                        .sort(sort -> sort.field(f -> f.field("_id").order(SortOrder.Desc)))
+                        .searchAfter(List.of(cursorValue, ""))
+                        .size(fetchSize),
+                        PromptDocument.class
+                );
+            } else {
+                // 첫 페이지
+                response = openSearchClient.search(s -> s
+                        .index(INDEX_NAME)
+                        .query(q -> q
+                                .term(t -> t.field("status").value(FieldValue.of("completed")))
+                        )
+                        .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
+                        .sort(sort -> sort.field(f -> f.field("_id").order(SortOrder.Desc)))
+                        .size(fetchSize),
+                        PromptDocument.class
+                );
+            }
+
+            List<Hit<PromptDocument>> hits = response.hits().hits();
+            
+            // 다음 페이지 존재 여부 확인
+            if (hits.size() > size) {
+                hasNext = true;
+                hits = hits.subList(0, size);
+            }
+
+            for (Hit<PromptDocument> hit : hits) {
+                PromptDocument doc = hit.source();
+                if (doc != null) {
+                    doc.setPromptId(hit.id());
+                    resultList.add(doc);
+                }
+            }
+            
+            // 다음 커서 설정 (마지막 항목의 createdAt)
+            if (!resultList.isEmpty() && hasNext) {
+                PromptDocument lastDoc = resultList.get(resultList.size() - 1);
+                nextCursor = lastDoc.getCreatedAt();
+            }
+
+        } catch (IOException e) {
+            log.error("전체 프롬프트 페이지네이션 조회 실패: {}", e.getMessage());
+        }
+
+        return new PagedSearchResult(resultList, nextCursor, hasNext);
+    }
+
+    /**
+     * 키워드 검색 (Cursor 기반 페이지네이션)
+     */
+    public PagedSearchResult searchPromptsPaged(String keyword, int size, String cursor) {
+        List<PromptDocument> resultList = new ArrayList<>();
+        String nextCursor = null;
+        boolean hasNext = false;
+
+        try {
+            int fetchSize = size + 1;
+            
+            SearchResponse<PromptDocument> response;
+            
+            if (cursor != null && !cursor.isEmpty()) {
+                final String cursorValue = cursor;
+                response = openSearchClient.search(s -> s
+                        .index(INDEX_NAME)
+                        .query(q -> q
+                                .bool(b -> b
+                                        .must(m -> m
+                                                .multiMatch(mm -> mm
+                                                        .fields("title^3", "description^2", "content")
+                                                        .query(keyword)
+                                                        .fuzziness("AUTO")
+                                                )
+                                        )
+                                        .filter(f -> f.term(t -> t.field("status").value(FieldValue.of("completed"))))
+                                )
+                        )
+                        .sort(sort -> sort.field(f -> f.field("_score").order(SortOrder.Desc)))
+                        .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
+                        .searchAfter(List.of(cursorValue, ""))
+                        .size(fetchSize),
+                        PromptDocument.class
+                );
+            } else {
+                response = openSearchClient.search(s -> s
+                        .index(INDEX_NAME)
+                        .query(q -> q
+                                .bool(b -> b
+                                        .must(m -> m
+                                                .multiMatch(mm -> mm
+                                                        .fields("title^3", "description^2", "content")
+                                                        .query(keyword)
+                                                        .fuzziness("AUTO")
+                                                )
+                                        )
+                                        .filter(f -> f.term(t -> t.field("status").value(FieldValue.of("completed"))))
+                                )
+                        )
+                        .sort(sort -> sort.field(f -> f.field("_score").order(SortOrder.Desc)))
+                        .sort(sort -> sort.field(f -> f.field("createdAt").order(SortOrder.Desc)))
+                        .size(fetchSize),
+                        PromptDocument.class
+                );
+            }
+
+            List<Hit<PromptDocument>> hits = response.hits().hits();
+            
+            if (hits.size() > size) {
+                hasNext = true;
+                hits = hits.subList(0, size);
+            }
+
+            for (Hit<PromptDocument> hit : hits) {
+                PromptDocument doc = hit.source();
+                if (doc != null) {
+                    doc.setPromptId(hit.id());
+                    doc.setScore(hit.score());
+                    resultList.add(doc);
+                }
+            }
+            
+            if (!resultList.isEmpty() && hasNext) {
+                PromptDocument lastDoc = resultList.get(resultList.size() - 1);
+                nextCursor = lastDoc.getCreatedAt();
+            }
+
+        } catch (IOException e) {
+            log.error("키워드 검색 페이지네이션 실패: {}", e.getMessage());
+        }
+
+        return new PagedSearchResult(resultList, nextCursor, hasNext);
+    }
+
+    /**
+     * 페이지네이션 결과를 담는 내부 클래스
+     */
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    public static class PagedSearchResult {
+        private List<PromptDocument> items;
+        private String nextCursor;
+        private boolean hasNext;
+    }
+
+    /**
      * 프롬프트 상세 조회 (ID로)
      */
     public PromptDocument getPromptById(String promptId) {

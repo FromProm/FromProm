@@ -5,6 +5,7 @@ import { useAuthStore } from './store/authStore';
 
 // Pages
 import LandingPage from './pages/LandingPage';
+import DocsPage from './pages/DocsPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import MarketplacePage from './pages/MarketplacePage';
@@ -19,6 +20,7 @@ import SellingPromptsPage from './pages/dashboard/SellingPromptsPage';
 import AnalyticsPage from './pages/dashboard/AnalyticsPage';
 import SettingsPage from './pages/dashboard/SettingsPage';
 import CreditHistoryPage from './pages/dashboard/CreditHistoryPage';
+import ContactPage from './pages/ContactPage';
 
 // Components
 import Layout from './components/Layout';
@@ -52,6 +54,8 @@ function App() {
                 <Routes>
                     {/* 공개 라우트 - Header 없음 */}
                     <Route path="/" element={<LandingPage />} />
+                    <Route path="/docs" element={<DocsPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
                     <Route path="/auth/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
                     <Route path="/auth/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
                     <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />

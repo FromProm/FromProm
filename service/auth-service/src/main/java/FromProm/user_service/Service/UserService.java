@@ -1,37 +1,24 @@
 package FromProm.user_service.Service;
 
 import FromProm.user_service.DTO.*;
-import FromProm.user_service.Entity.Credit;
 import FromProm.user_service.Entity.User;
-import FromProm.user_service.Repository.CreditRepository;
 import FromProm.user_service.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.*;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Map;
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final CognitoIdentityProviderClient cognitoClient;
     private final UserRepository userRepository;
-    private final CreditRepository creditRepository;
-    private final DynamoDbEnhancedClient enhancedClient; // [추가 필요!] 빨간불 방지
 
     @Value("${aws.cognito.clientId}")
     private String clientId;
@@ -286,6 +273,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public void withdrawWithToken(String accessToken) {
         // 1. AccessToken으로 Cognito에서 'sub' 조회 (유저 본인 확인)
         GetUserRequest getUserRequest = GetUserRequest.builder()

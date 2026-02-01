@@ -58,24 +58,21 @@ class Settings(BaseSettings):
     # Scoring Weights
     weights: Dict[str, Dict[str, float]] = {
         "type_a": {
-            "token_usage": 0.15,
             "information_density": 0.20,
             "consistency": 0.20,
-            "model_variance": 0.15,
-            "hallucination": 0.15,
-            "relevance": 0.15
+            "model_variance": 0.20,
+            "hallucination": 0.20,
+            "relevance": 0.20
         },
         "type_b_text": {
-            "token_usage": 0.25,
-            "information_density": 0.25,
-            "model_variance": 0.25,
-            "relevance": 0.25
+            "information_density": 0.33,
+            "model_variance": 0.33,
+            "relevance": 0.33
         },
         "type_b_image": {
-            "token_usage": 0.30,
-            "consistency": 0.30,
-            "model_variance": 0.20,
-            "relevance": 0.20
+            "consistency": 0.33,
+            "model_variance": 0.33,
+            "relevance": 0.33
         }
     }
     

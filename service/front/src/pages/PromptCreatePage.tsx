@@ -28,9 +28,10 @@ interface ExampleInput {
 
 const PromptCreatePage = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, userInfo, fetchUserInfo } = useAuthStore();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const alertShownRef = useRef(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   
   const defaultCategory = '사실/정보/근거 요구';
   const defaultModels = getCategoryModels(defaultCategory);
@@ -78,8 +79,10 @@ const PromptCreatePage = () => {
       }
     } else {
       setIsAuthenticated(true);
+      // 사용자 정보 가져오기 (nickname 포함)
+      fetchUserInfo();
     }
-  }, [navigate]);
+  }, [navigate, fetchUserInfo]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -149,14 +152,14 @@ const PromptCreatePage = () => {
         price: parseInt(formData.price),
         content: formData.content,
         model: formData.model,
-        nickname: user?.nickname || '',
+        nickname: userInfo?.nickname || '',
         inputs: inputs,
         examples: examples,
       });
       
       console.log('프롬프트 등록 응답:', response.data);
-      alert('프롬프트가 성공적으로 등록되었습니다! AI 검증이 완료되면 마켓플레이스에 공개됩니다.');
-      navigate('/dashboard');
+      setShowSuccessModal(true);
+      // 모달에서 버튼 클릭 시 이동하도록 여기서는 navigate 제거
     } catch (error: any) {
       console.error('프롬프트 등록 실패:', error);
       const message = error.response?.data?.message || error.response?.data || '프롬프트 등록에 실패했습니다.';
@@ -348,9 +351,6 @@ const PromptCreatePage = () => {
                     placeholder={"프롬프트를 작성하세요. 변수는 {{변수명}} 형식으로 입력하세요.\n\n예시:\n{{주제}}에 대해 {{형식}}으로 설명해주세요."}
                     className="w-full bg-white border border-gray-300 rounded-lg px-4 py-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors resize-none font-mono"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    구매 후에만 공개되는 프롬프트입니다.
-                  </p>
                   
                   {/* 추출된 변수 표시 */}
                   {extractedVariables.length > 0 && (
@@ -453,10 +453,10 @@ const PromptCreatePage = () => {
             </AnimatedContent>
 
             {/* 제출 버튼 */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <Link
                 to="/marketplace"
-                className="text-blue-900 hover:text-blue-800 font-bold text-lg transition-colors"
+                className="text-blue-900 hover:text-blue-800 font-bold text-base sm:text-lg transition-colors whitespace-nowrap"
               >
                 ← 마켓플레이스로 돌아가기
               </Link>
@@ -464,7 +464,7 @@ const PromptCreatePage = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold px-8 py-3 rounded-md hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold px-8 py-3 rounded-md hover:from-blue-700 hover:to-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 {isSubmitting ? '등록 중...' : '프롬프트 등록하기'}
               </button>
@@ -472,6 +472,49 @@ const PromptCreatePage = () => {
           </form>
         </motion.div>
       </main>
+
+      {/* 등록 성공 모달 */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div 
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 text-center"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">프롬프트 등록 완료!</h3>
+            <p className="text-gray-600 mb-4">
+              프롬프트가 성공적으로 등록되었습니다.
+            </p>
+            <div className="bg-blue-50 rounded-lg p-4 mb-6 text-left">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-blue-900">AI 분석이 진행됩니다</p>
+                  <p className="text-sm text-blue-700 mt-1">
+                    분석이 완료되면<br/><span className="font-semibold">{userInfo?.email}</span>으로 결과가 발송됩니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/dashboard?tab=selling')}
+              className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              판매 중인 프롬프트 확인하기
+            </button>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

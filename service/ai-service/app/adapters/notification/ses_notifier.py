@@ -40,7 +40,7 @@ class SESNotifier:
             발송 결과
         """
         try:
-            subject = f"[FromProm] 프롬프트 평가 완료 - Job ID: {job_id}"
+            subject = "[FromProm] 프롬프트 평가 완료"
 
             html_body = self._generate_html_body(
                 job_id, final_score, prompt_type, s3_result_url
@@ -233,8 +233,8 @@ class SESNotifier:
                             <!-- CTA Button -->
                             <tr>
                                 <td style="padding: 0 40px 40px; text-align: center;">
-                                    <a href="{s3_result_url if s3_result_url else f'https://fromprom.cloud/prompts/{job_id}'}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.4);">
-                                        상세 결과 확인하기 →
+                                    <a href="https://fromprom.cloud" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; padding: 16px 48px; border-radius: 12px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.4);">
+                                        FromProm 바로가기 →
                                     </a>
                                 </td>
                             </tr>
@@ -305,10 +305,9 @@ FromProm - 프롬프트 평가 완료
 ━━━━━━━━━━━━━━━━━━━━━━
 
 ✅ 최종 점수: {final_score:.1f} / 100점
-📋 작업 ID: {job_id}
 🔖 프롬프트 타입: {prompt_type}
 
-{f'🔗 상세 결과: {s3_result_url}' if s3_result_url else ''}
+🔗 FromProm 바로가기: https://fromprom.cloud
 
 ━━━━━━━━━━━━━━━━━━━━━━
 

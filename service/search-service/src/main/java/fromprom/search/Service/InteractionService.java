@@ -265,6 +265,110 @@ public class InteractionService {
         return false;
     }
 
+    /**
+     * 특정 사용자가 여러 프롬프트에 좋아요 했는지 일괄 확인
+     * @return promptId -> isLiked 맵
+     */
+    public Map<String, Boolean> hasUserLikedBatch(String userId, List<String> promptIds) {
+        Map<String, Boolean> likedMap = new HashMap<>();
+        
+        if (userId == null || userId.isEmpty() || promptIds == null || promptIds.isEmpty()) {
+            return likedMap;
+        }
+
+        // 기본값 false로 초기화
+        promptIds.forEach(id -> likedMap.put(id, false));
+
+        String userPK = "USER#" + userId;
+
+        try {
+            // BatchGetItem 요청 생성 (최대 100개 제한)
+            List<String> targetIds = promptIds.stream().distinct().limit(100).collect(Collectors.toList());
+            
+            List<Map<String, AttributeValue>> keys = targetIds.stream()
+                    .map(promptId -> Map.of(
+                            "PK", AttributeValue.builder().s(userPK).build(),
+                            "SK", AttributeValue.builder().s("LIKE#PROMPT#" + promptId).build()
+                    ))
+                    .collect(Collectors.toList());
+
+            KeysAndAttributes keysAndAttributes = KeysAndAttributes.builder()
+                    .keys(keys)
+                    .projectionExpression("SK")
+                    .build();
+
+            BatchGetItemResponse response = dynamoDbClient.batchGetItem(BatchGetItemRequest.builder()
+                    .requestItems(Map.of(tableName, keysAndAttributes))
+                    .build());
+
+            // 결과 파싱 - 존재하는 항목만 true로 설정
+            List<Map<String, AttributeValue>> items = response.responses().get(tableName);
+            if (items != null) {
+                for (Map<String, AttributeValue> item : items) {
+                    String sk = item.get("SK").s();
+                    String promptId = sk.replace("LIKE#PROMPT#", "");
+                    likedMap.put(promptId, true);
+                }
+            }
+        } catch (Exception e) {
+            log.error("좋아요 일괄 확인 실패: {}", e.getMessage());
+        }
+
+        return likedMap;
+    }
+
+    /**
+     * 특정 사용자가 여러 프롬프트를 북마크 했는지 일괄 확인
+     * @return promptId -> isBookmarked 맵
+     */
+    public Map<String, Boolean> hasUserBookmarkedBatch(String userId, List<String> promptIds) {
+        Map<String, Boolean> bookmarkedMap = new HashMap<>();
+        
+        if (userId == null || userId.isEmpty() || promptIds == null || promptIds.isEmpty()) {
+            return bookmarkedMap;
+        }
+
+        // 기본값 false로 초기화
+        promptIds.forEach(id -> bookmarkedMap.put(id, false));
+
+        String userPK = "USER#" + userId;
+
+        try {
+            // BatchGetItem 요청 생성 (최대 100개 제한)
+            List<String> targetIds = promptIds.stream().distinct().limit(100).collect(Collectors.toList());
+            
+            List<Map<String, AttributeValue>> keys = targetIds.stream()
+                    .map(promptId -> Map.of(
+                            "PK", AttributeValue.builder().s(userPK).build(),
+                            "SK", AttributeValue.builder().s("BOOKMARK#PROMPT#" + promptId).build()
+                    ))
+                    .collect(Collectors.toList());
+
+            KeysAndAttributes keysAndAttributes = KeysAndAttributes.builder()
+                    .keys(keys)
+                    .projectionExpression("SK")
+                    .build();
+
+            BatchGetItemResponse response = dynamoDbClient.batchGetItem(BatchGetItemRequest.builder()
+                    .requestItems(Map.of(tableName, keysAndAttributes))
+                    .build());
+
+            // 결과 파싱 - 존재하는 항목만 true로 설정
+            List<Map<String, AttributeValue>> items = response.responses().get(tableName);
+            if (items != null) {
+                for (Map<String, AttributeValue> item : items) {
+                    String sk = item.get("SK").s();
+                    String promptId = sk.replace("BOOKMARK#PROMPT#", "");
+                    bookmarkedMap.put(promptId, true);
+                }
+            }
+        } catch (Exception e) {
+            log.error("북마크 일괄 확인 실패: {}", e.getMessage());
+        }
+
+        return bookmarkedMap;
+    }
+
     private Comment convertToComment(Map<String, AttributeValue> item) {
         return Comment.builder()
                 .commentId(item.get("SK").s())
@@ -289,5 +393,160 @@ public class InteractionService {
             }
         }
         return 0;
+    }
+
+    /**
+     * 프롬프트 예시 입출력(examples) 조회
+     * DynamoDB 구조: examples[].input.content (JSON string), examples[].output (string)
+     */
+    public List<Map<String, Object>> getPromptExamples(String promptId) {
+        String promptPK = "PROMPT#" + promptId;
+        List<Map<String, Object>> examples = new ArrayList<>();
+
+        try {
+            GetItemResponse response = dynamoDbClient.getItem(GetItemRequest.builder()
+                    .tableName(tableName)
+                    .key(Map.of(
+                            "PK", AttributeValue.builder().s(promptPK).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()
+                    ))
+                    .projectionExpression("examples")
+                    .build());
+
+            if (response.hasItem() && response.item().containsKey("examples")) {
+                AttributeValue examplesAttr = response.item().get("examples");
+                if (examplesAttr.l() != null) {
+                    for (AttributeValue exampleAttr : examplesAttr.l()) {
+                        if (exampleAttr.m() != null) {
+                            Map<String, Object> example = new HashMap<>();
+                            Map<String, AttributeValue> exampleMap = exampleAttr.m();
+                            
+                            // index 추출
+                            if (exampleMap.containsKey("index") && exampleMap.get("index").n() != null) {
+                                example.put("index", Integer.parseInt(exampleMap.get("index").n()));
+                            }
+                            
+                            // input 추출 (중첩 구조: input.content, input.input_type)
+                            if (exampleMap.containsKey("input") && exampleMap.get("input").m() != null) {
+                                Map<String, AttributeValue> inputMap = exampleMap.get("input").m();
+                                Map<String, Object> inputObj = new HashMap<>();
+                                
+                                if (inputMap.containsKey("content") && inputMap.get("content").s() != null) {
+                                    inputObj.put("content", inputMap.get("content").s());
+                                }
+                                if (inputMap.containsKey("input_type") && inputMap.get("input_type").s() != null) {
+                                    inputObj.put("inputType", inputMap.get("input_type").s());
+                                }
+                                
+                                if (!inputObj.isEmpty()) {
+                                    example.put("input", inputObj);
+                                }
+                            }
+                            
+                            // output 추출
+                            if (exampleMap.containsKey("output") && exampleMap.get("output").s() != null) {
+                                example.put("output", exampleMap.get("output").s());
+                            }
+                            
+                            if (!example.isEmpty()) {
+                                examples.add(example);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("프롬프트 예시 조회 실패: {}", e.getMessage());
+        }
+
+        return examples;
+    }
+
+    /**
+     * 사용자 닉네임 조회 (userId로)
+     */
+    public String getUserNickname(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return null;
+        }
+        
+        // userId가 "USER#" 접두사 없이 들어올 수 있으므로 정규화
+        String userPK = userId.startsWith("USER#") ? userId : "USER#" + userId;
+
+        try {
+            GetItemResponse response = dynamoDbClient.getItem(GetItemRequest.builder()
+                    .tableName(tableName)
+                    .key(Map.of(
+                            "PK", AttributeValue.builder().s(userPK).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()
+                    ))
+                    .projectionExpression("nickname")
+                    .build());
+
+            if (response.hasItem()) {
+                return getStringValue(response.item(), "nickname");
+            }
+        } catch (Exception e) {
+            log.error("사용자 닉네임 조회 실패: {}", e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * 여러 사용자의 닉네임 일괄 조회 (N+1 문제 방지)
+     */
+    public Map<String, String> getUserNicknamesBatch(List<String> userIds) {
+        Map<String, String> nicknameMap = new HashMap<>();
+
+        if (userIds == null || userIds.isEmpty()) {
+            return nicknameMap;
+        }
+
+        // 중복 제거 및 정규화
+        List<String> uniqueUserIds = userIds.stream()
+                .filter(id -> id != null && !id.isEmpty())
+                .map(id -> id.startsWith("USER#") ? id : "USER#" + id)
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (uniqueUserIds.isEmpty()) {
+            return nicknameMap;
+        }
+
+        try {
+            // BatchGetItem 요청 생성
+            List<Map<String, AttributeValue>> keys = uniqueUserIds.stream()
+                    .map(id -> Map.of(
+                            "PK", AttributeValue.builder().s(id).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()
+                    ))
+                    .collect(Collectors.toList());
+
+            KeysAndAttributes keysAndAttributes = KeysAndAttributes.builder()
+                    .keys(keys)
+                    .projectionExpression("PK, nickname")
+                    .build();
+
+            BatchGetItemResponse response = dynamoDbClient.batchGetItem(BatchGetItemRequest.builder()
+                    .requestItems(Map.of(tableName, keysAndAttributes))
+                    .build());
+
+            // 결과 파싱
+            List<Map<String, AttributeValue>> items = response.responses().get(tableName);
+            if (items != null) {
+                for (Map<String, AttributeValue> item : items) {
+                    String pk = item.get("PK").s();
+                    String nickname = getStringValue(item, "nickname");
+                    nicknameMap.put(pk, nickname);
+                    // USER# 없는 버전도 저장 (편의성)
+                    nicknameMap.put(pk.replace("USER#", ""), nickname);
+                }
+            }
+        } catch (Exception e) {
+            log.error("사용자 닉네임 일괄 조회 실패: {}", e.getMessage());
+        }
+
+        return nicknameMap;
     }
 }

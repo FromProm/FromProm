@@ -1,40 +1,37 @@
+import { Link } from 'react-router-dom';
+
 const Footer = () => {
   return (
     <footer className="bg-gray-900 text-white">
       <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <img src="/logo.png" alt="FromProm" className="w-8 h-8 rounded-lg" />
-              <span className="text-xl font-bold">FromProm</span>
-            </div>
-            <p className="text-gray-400 mb-4">
-              고품질 프롬프트를 거래하는 전문 마켓플레이스입니다.
-              성능 지표 기반의 검증된 프롬프트를 만나보세요.
-            </p>
+        {/* 로고 + 슬로건 */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <img src="/logo.png" alt="FromProm" className="w-10 h-9 rounded-lg" />
+            <span className="text-xl font-bold">FromProm</span>
           </div>
-          
-          <div>
-            <h3 className="font-semibold mb-4">서비스</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white">마켓플레이스</a></li>
-              <li><a href="#" className="hover:text-white">성능 분석</a></li>
-              <li><a href="#" className="hover:text-white">판매자 도구</a></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="font-semibold mb-4">지원</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white">도움말</a></li>
-              <li><a href="#" className="hover:text-white">문의하기</a></li>
-              <li><a href="#" className="hover:text-white">개발자 API</a></li>
-            </ul>
-          </div>
+          <p className="text-gray-400">
+            AI 기반으로 프롬프트 품질 보증 및 합리적인 구매까지 한번에.
+          </p>
         </div>
-        
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2026 FromProm. All rights reserved.</p>
+
+        {/* 링크 */}
+        <div className="flex items-center justify-center space-x-4 text-sm text-gray-400 mb-8">
+          <Link to="/docs" className="hover:text-white transition-colors">
+            사용 가이드
+          </Link>
+          <span className="text-gray-600">|</span>
+          <Link to="/contact" className="hover:text-white transition-colors">
+            1:1 문의
+          </Link>
+        </div>
+
+        {/* 회사 정보 */}
+        <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm space-y-1">
+          <p className="font-medium text-gray-400">FromProm</p>
+          <p>대표 신의진</p>
+          <p>김영동 이찬종 오지은 고유나</p>
+          <p>이메일 : tlsdmlwls21@gmail.com</p>
         </div>
       </div>
     </footer>

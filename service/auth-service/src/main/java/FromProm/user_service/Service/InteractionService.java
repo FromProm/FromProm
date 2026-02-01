@@ -210,15 +210,34 @@ public class InteractionService {
                 .item(commentItem)
                 .build());
 
-        // METADATA의 comment_count 증가 시도 (실패해도 댓글은 이미 추가됨)
+        // METADATA의 comment_count 증가 시도 (문자열 타입으로 저장됨)
         try {
+            // 현재 comment_count 값 조회
+            GetItemResponse metadataResponse = dynamoDbClient.getItem(GetItemRequest.builder()
+                    .tableName(TABLE_NAME)
+                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()))
+                    .projectionExpression("comment_count")
+                    .build());
+            
+            int currentCount = 0;
+            if (metadataResponse.hasItem() && metadataResponse.item().containsKey("comment_count")) {
+                AttributeValue countAttr = metadataResponse.item().get("comment_count");
+                // 문자열 또는 숫자 타입 모두 처리
+                if (countAttr.s() != null) {
+                    currentCount = Integer.parseInt(countAttr.s());
+                } else if (countAttr.n() != null) {
+                    currentCount = Integer.parseInt(countAttr.n());
+                }
+            }
+            
+            // +1 한 값을 문자열로 저장
             dynamoDbClient.updateItem(UpdateItemRequest.builder()
                     .tableName(TABLE_NAME)
                     .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
                             "SK", AttributeValue.builder().s("METADATA").build()))
-                    .updateExpression("SET comment_count = if_not_exists(comment_count, :zero) + :inc")
-                    .expressionAttributeValues(Map.of(":inc", AttributeValue.builder().n("1").build(),
-                            ":zero", AttributeValue.builder().n("0").build()))
+                    .updateExpression("SET comment_count = :newCount")
+                    .expressionAttributeValues(Map.of(":newCount", AttributeValue.builder().s(String.valueOf(currentCount + 1)).build()))
                     .build());
         } catch (Exception e) {
             // METADATA 업데이트 실패는 무시 (댓글은 이미 추가됨)
@@ -267,27 +286,41 @@ public class InteractionService {
             throw new IllegalAccessException("본인이 작성한 댓글만 삭제할 수 있습니다.");
         }
 
-        // 2. 체크 통과 후 실제 삭제 트랜잭션 실행
+        // 2. 체크 통과 후 실제 삭제 실행
         try {
-            dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
-                    .transactItems(
-                            TransactWriteItem.builder().delete(Delete.builder()
-                                    .tableName(TABLE_NAME)
-                                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
-                                            "SK", AttributeValue.builder().s(commentSk).build()))
-                                    .build()).build(),
-                            TransactWriteItem.builder().update(Update.builder()
-                                    .tableName(TABLE_NAME)
-                                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
-                                            "SK", AttributeValue.builder().s("METADATA").build()))
-                                    .updateExpression("SET comment_count = comment_count - :dec")
-                                    .conditionExpression("comment_count > :zero")
-                                    .expressionAttributeValues(Map.of(
-                                            ":dec", AttributeValue.builder().n("1").build(),
-                                            ":zero", AttributeValue.builder().n("0").build()
-                                    ))
-                                    .build()).build()
-                    ).build());
+            // 먼저 댓글 삭제
+            dynamoDbClient.deleteItem(DeleteItemRequest.builder()
+                    .tableName(TABLE_NAME)
+                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                            "SK", AttributeValue.builder().s(commentSk).build()))
+                    .build());
+            
+            // comment_count 감소 (문자열 타입으로 저장됨)
+            GetItemResponse metadataResponse = dynamoDbClient.getItem(GetItemRequest.builder()
+                    .tableName(TABLE_NAME)
+                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()))
+                    .projectionExpression("comment_count")
+                    .build());
+            
+            int currentCount = 0;
+            if (metadataResponse.hasItem() && metadataResponse.item().containsKey("comment_count")) {
+                AttributeValue countAttr = metadataResponse.item().get("comment_count");
+                if (countAttr.s() != null) {
+                    currentCount = Integer.parseInt(countAttr.s());
+                } else if (countAttr.n() != null) {
+                    currentCount = Integer.parseInt(countAttr.n());
+                }
+            }
+            
+            int newCount = Math.max(0, currentCount - 1);
+            dynamoDbClient.updateItem(UpdateItemRequest.builder()
+                    .tableName(TABLE_NAME)
+                    .key(Map.of("PK", AttributeValue.builder().s("PROMPT#" + promptId).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()))
+                    .updateExpression("SET comment_count = :newCount")
+                    .expressionAttributeValues(Map.of(":newCount", AttributeValue.builder().s(String.valueOf(newCount)).build()))
+                    .build());
         } catch (Exception e) {
             throw new RuntimeException("댓글 삭제 중 오류가 발생했습니다.");
         }
@@ -345,7 +378,7 @@ public class InteractionService {
                     .tableName(TABLE_NAME)
                     .key(Map.of(
                             "PK", AttributeValue.builder().s("USER#" + userId).build(),
-                            "SK", AttributeValue.builder().s("METADATA").build()
+                            "SK", AttributeValue.builder().s("PROFILE").build()
                     ))
                     .projectionExpression("nickname")
                     .build());
@@ -356,6 +389,6 @@ public class InteractionService {
         } catch (Exception e) {
             System.err.println("DynamoDB 닉네임 조회 실패: " + e.getMessage());
         }
-        return "UnknownUser";
+        return "Unknown";
     }
 }

@@ -232,34 +232,40 @@ public class UserRepository {
             String commentSK = item.get("SK").s();
             
             try {
-                // 댓글 삭제 + comment_count 감소 트랜잭션
-                dynamoDbClient.transactWriteItems(TransactWriteItemsRequest.builder()
-                        .transactItems(
-                                TransactWriteItem.builder()
-                                        .delete(Delete.builder()
-                                                .tableName(TABLE_NAME)
-                                                .key(Map.of(
-                                                        "PK", AttributeValue.builder().s(promptPK).build(),
-                                                        "SK", AttributeValue.builder().s(commentSK).build()
-                                                ))
-                                                .build())
-                                        .build(),
-                                TransactWriteItem.builder()
-                                        .update(Update.builder()
-                                                .tableName(TABLE_NAME)
-                                                .key(Map.of(
-                                                        "PK", AttributeValue.builder().s(promptPK).build(),
-                                                        "SK", AttributeValue.builder().s("METADATA").build()
-                                                ))
-                                                .updateExpression("SET comment_count = if_not_exists(comment_count, :zero) - :dec")
-                                                .conditionExpression("attribute_exists(PK)")
-                                                .expressionAttributeValues(Map.of(
-                                                        ":dec", AttributeValue.builder().n("1").build(),
-                                                        ":zero", AttributeValue.builder().n("0").build()
-                                                ))
-                                                .build())
-                                        .build()
-                        )
+                // 댓글 삭제
+                dynamoDbClient.deleteItem(DeleteItemRequest.builder()
+                        .tableName(TABLE_NAME)
+                        .key(Map.of(
+                                "PK", AttributeValue.builder().s(promptPK).build(),
+                                "SK", AttributeValue.builder().s(commentSK).build()
+                        ))
+                        .build());
+                
+                // comment_count 감소 (문자열 타입으로 저장됨)
+                GetItemResponse metadataResponse = dynamoDbClient.getItem(GetItemRequest.builder()
+                        .tableName(TABLE_NAME)
+                        .key(Map.of("PK", AttributeValue.builder().s(promptPK).build(),
+                                "SK", AttributeValue.builder().s("METADATA").build()))
+                        .projectionExpression("comment_count")
+                        .build());
+                
+                int currentCount = 0;
+                if (metadataResponse.hasItem() && metadataResponse.item().containsKey("comment_count")) {
+                    AttributeValue countAttr = metadataResponse.item().get("comment_count");
+                    if (countAttr.s() != null) {
+                        currentCount = Integer.parseInt(countAttr.s());
+                    } else if (countAttr.n() != null) {
+                        currentCount = Integer.parseInt(countAttr.n());
+                    }
+                }
+                
+                int newCount = Math.max(0, currentCount - 1);
+                dynamoDbClient.updateItem(UpdateItemRequest.builder()
+                        .tableName(TABLE_NAME)
+                        .key(Map.of("PK", AttributeValue.builder().s(promptPK).build(),
+                                "SK", AttributeValue.builder().s("METADATA").build()))
+                        .updateExpression("SET comment_count = :newCount")
+                        .expressionAttributeValues(Map.of(":newCount", AttributeValue.builder().s(String.valueOf(newCount)).build()))
                         .build());
             } catch (Exception e) {
                 // 개별 댓글 삭제 실패해도 계속 진행

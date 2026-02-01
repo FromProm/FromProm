@@ -79,7 +79,7 @@ class StrandsSupervisorAgent:
             step4_start = time.time()
             logger.info(f"[{execution_id}] 📊 Step 4: Integrating results...")
             final_score, weighted_scores, metrics = await self._integrate_results(
-                workflow_results, job_request.prompt_type
+                workflow_results, job_request.prompt_type, job_request.prompt
             )
             step4_duration = time.time() - step4_start
             logger.info(f"[{execution_id}] 📊 Step 4 Complete (가중치 적용 및 최종 점수 계산) - {format_duration(step4_duration)}")
@@ -216,17 +216,34 @@ class StrandsSupervisorAgent:
     async def _integrate_results(
         self,
         workflow_results: Dict[str, Any],
-        prompt_type: PromptType
+        prompt_type: PromptType,
+        prompt: str
     ) -> tuple[float, Dict[str, float], Dict[str, Any]]:
         """결과 통합"""
-        
+
+        # 프롬프트 길이에 따른 페널티 적용
+        prompt_length = len(prompt)
+        if prompt_length <= 10:
+            penalty = 0.1
+        elif prompt_length <= 50:
+            penalty = 0.4
+        elif prompt_length <= 100:
+            penalty = 0.7
+        else:
+            penalty = 1.0
+
+        if penalty < 1.0:
+            logger.info(f"📉 Short prompt penalty applied (length: {prompt_length}): scores × {penalty}")
+
         metrics = {}
-        
+
         for agent_type, result in workflow_results.items():
             if result and result.get("success"):
-                score = result.get("score", 0.0)
+                raw_score = result.get("score", 0.0)
+                # token_usage는 글자수와 관계없으므로 페널티 제외
+                score = raw_score if agent_type == "token_usage" else raw_score * penalty
                 details = result.get("details", {})
-                
+
                 if agent_type == "token_usage":
                     metrics[agent_type] = TokenMetricScore(score=score, details=details)
                 else:

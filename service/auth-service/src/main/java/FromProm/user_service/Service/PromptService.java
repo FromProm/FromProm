@@ -174,26 +174,28 @@ public class PromptService {
     }
 
     /**
-     * 사용자가 등록한 프롬프트 목록 조회
+     * 사용자가 등록한 프롬프트 목록 조회 (GSI 사용)
      */
     public List<Map<String, Object>> getMyPrompts(String userId) {
         String userPK = "USER#" + userId;
         
-        // create_user가 userPK인 모든 프롬프트 조회
-        ScanRequest scanRequest = ScanRequest.builder()
+        // create-user-index GSI를 사용하여 Query
+        QueryRequest queryRequest = QueryRequest.builder()
                 .tableName(TABLE_NAME)
-                .filterExpression("create_user = :userId AND SK = :metadata")
+                .indexName("create-user-index")
+                .keyConditionExpression("create_user = :userId")
+                .filterExpression("SK = :metadata")
                 .expressionAttributeValues(Map.of(
                         ":userId", AttributeValue.builder().s(userPK).build(),
                         ":metadata", AttributeValue.builder().s("METADATA").build()
                 ))
+                .scanIndexForward(false) // 최신순 정렬
                 .build();
 
-        ScanResponse response = dynamoDbClient.scan(scanRequest);
+        QueryResponse response = dynamoDbClient.query(queryRequest);
         
         return response.items().stream()
                 .map(this::convertToPromptSummary)
-                .sorted((a, b) -> ((String) b.get("created_at")).compareTo((String) a.get("created_at"))) // 최신순
                 .collect(Collectors.toList());
     }
 

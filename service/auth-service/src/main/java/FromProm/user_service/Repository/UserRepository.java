@@ -226,22 +226,22 @@ public class UserRepository {
     }
 
     /**
-     * 사용자가 작성한 모든 댓글 삭제
+     * 사용자가 작성한 모든 댓글 삭제 (GSI 사용)
      * - 모든 PROMPT#에서 comment_user가 userId인 댓글 찾아서 삭제
      * - 해당 프롬프트의 comment_count 감소
      */
     private void deleteUserComments(String userId) {
-        // Scan으로 comment_user가 userId인 모든 댓글 찾기
-        ScanRequest scanRequest = ScanRequest.builder()
+        // comment-user-index GSI를 사용하여 Query
+        QueryRequest queryRequest = QueryRequest.builder()
                 .tableName(TABLE_NAME)
-                .filterExpression("comment_user = :userId AND begins_with(SK, :commentPrefix)")
+                .indexName("comment-user-index")
+                .keyConditionExpression("comment_user = :userId")
                 .expressionAttributeValues(Map.of(
-                        ":userId", AttributeValue.builder().s(userId).build(),
-                        ":commentPrefix", AttributeValue.builder().s("COMMENT#").build()
+                        ":userId", AttributeValue.builder().s(userId).build()
                 ))
                 .build();
 
-        ScanResponse response = dynamoDbClient.scan(scanRequest);
+        QueryResponse response = dynamoDbClient.query(queryRequest);
         
         for (Map<String, AttributeValue> item : response.items()) {
             String promptPK = item.get("PK").s();
@@ -291,24 +291,26 @@ public class UserRepository {
     }
 
     /**
-     * 사용자가 등록한 모든 프롬프트 삭제
+     * 사용자가 등록한 모든 프롬프트 삭제 (GSI 사용)
      * - create_user가 USER#{userId}인 프롬프트 찾아서 삭제
      * - 프롬프트의 모든 관련 데이터도 삭제 (METADATA, 댓글 등)
      */
     private void deleteUserPrompts(String userId) {
         String userPK = "USER#" + userId;
         
-        // Scan으로 create_user가 userPK인 모든 프롬프트 찾기
-        ScanRequest scanRequest = ScanRequest.builder()
+        // create-user-index GSI를 사용하여 Query
+        QueryRequest queryRequest = QueryRequest.builder()
                 .tableName(TABLE_NAME)
-                .filterExpression("create_user = :userId AND SK = :metadata")
+                .indexName("create-user-index")
+                .keyConditionExpression("create_user = :userId")
+                .filterExpression("SK = :metadata")
                 .expressionAttributeValues(Map.of(
                         ":userId", AttributeValue.builder().s(userPK).build(),
                         ":metadata", AttributeValue.builder().s("METADATA").build()
                 ))
                 .build();
 
-        ScanResponse response = dynamoDbClient.scan(scanRequest);
+        QueryResponse response = dynamoDbClient.query(queryRequest);
         
         for (Map<String, AttributeValue> item : response.items()) {
             String promptPK = item.get("PK").s(); // PROMPT#{promptId}
@@ -354,20 +356,22 @@ public class UserRepository {
     }
 
     /**
-     * 사용자가 등록한 모든 프롬프트의 닉네임 업데이트
+     * 사용자가 등록한 모든 프롬프트의 닉네임 업데이트 (GSI 사용)
      */
     public void updateUserPromptsNickname(String userPK, String newNickname) {
-        // create_user가 userPK인 모든 프롬프트 조회
-        ScanRequest scanRequest = ScanRequest.builder()
+        // create-user-index GSI를 사용하여 Query
+        QueryRequest queryRequest = QueryRequest.builder()
                 .tableName(TABLE_NAME)
-                .filterExpression("create_user = :userId AND SK = :metadata")
+                .indexName("create-user-index")
+                .keyConditionExpression("create_user = :userId")
+                .filterExpression("SK = :metadata")
                 .expressionAttributeValues(Map.of(
                         ":userId", AttributeValue.builder().s(userPK).build(),
                         ":metadata", AttributeValue.builder().s("METADATA").build()
                 ))
                 .build();
 
-        ScanResponse response = dynamoDbClient.scan(scanRequest);
+        QueryResponse response = dynamoDbClient.query(queryRequest);
         
         for (Map<String, AttributeValue> item : response.items()) {
             String promptPK = item.get("PK").s();
@@ -393,20 +397,20 @@ public class UserRepository {
     }
 
     /**
-     * 사용자가 작성한 모든 댓글의 닉네임 업데이트
+     * 사용자가 작성한 모든 댓글의 닉네임 업데이트 (GSI 사용)
      */
     public void updateUserCommentsNickname(String userId, String newNickname) {
-        // comment_user가 userId인 모든 댓글 조회
-        ScanRequest scanRequest = ScanRequest.builder()
+        // comment-user-index GSI를 사용하여 Query
+        QueryRequest queryRequest = QueryRequest.builder()
                 .tableName(TABLE_NAME)
-                .filterExpression("comment_user = :userId AND begins_with(SK, :commentPrefix)")
+                .indexName("comment-user-index")
+                .keyConditionExpression("comment_user = :userId")
                 .expressionAttributeValues(Map.of(
-                        ":userId", AttributeValue.builder().s(userId).build(),
-                        ":commentPrefix", AttributeValue.builder().s("COMMENT#").build()
+                        ":userId", AttributeValue.builder().s(userId).build()
                 ))
                 .build();
 
-        ScanResponse response = dynamoDbClient.scan(scanRequest);
+        QueryResponse response = dynamoDbClient.query(queryRequest);
         
         for (Map<String, AttributeValue> item : response.items()) {
             String promptPK = item.get("PK").s();

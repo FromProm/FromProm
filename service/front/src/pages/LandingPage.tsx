@@ -60,18 +60,29 @@ const LandingPage = () => {
     let animationId: number;
     let scrollPosition = 0;
     let isPaused = false;
-    const speed = 1; // 픽셀/프레임 (속도 조절)
+    const speed = 1.5; // 픽셀/프레임 (속도 조절)
     
     // 모바일 체크 (640px 미만)
     const isMobile = () => window.innerWidth < 640;
+    
+    // 카드 하나의 너비 + gap 계산
+    const getCardWidth = () => {
+      const card = scrollContainer.querySelector('a');
+      if (!card) return 320 + 24; // 기본값
+      const cardWidth = card.offsetWidth;
+      const gap = isMobile() ? 16 : 24; // gap-4 = 16px, gap-6 = 24px
+      return cardWidth + gap;
+    };
     
     const animate = () => {
       if (!isPaused && !isMobile()) {
         scrollPosition += speed;
         
-        // 1/3 지점에 도달하면 리셋 (끊김 없이)
-        const oneThird = scrollContainer.scrollWidth / 3;
-        if (scrollPosition >= oneThird) {
+        // 원본 아이템들의 총 너비에 도달하면 리셋
+        const cardWidth = getCardWidth();
+        const totalOriginalWidth = cardWidth * popularPrompts.length;
+        
+        if (scrollPosition >= totalOriginalWidth) {
           scrollPosition = 0;
         }
         

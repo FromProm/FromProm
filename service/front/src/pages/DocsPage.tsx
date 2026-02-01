@@ -111,6 +111,160 @@ const DocsPage = () => {
           </p>
         </motion.section>
 
+        {/* 프롬프트란? */}
+        <motion.section
+          className="mb-20"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.05 }}
+        >
+          <h2 className="text-3xl font-bold text-white mb-8 flex items-center gap-3">
+            <span className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center text-cyan-400">💡</span>
+            프롬프트란?
+          </h2>
+          <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-8">
+            <p className="text-gray-300 text-lg mb-6 leading-relaxed">
+              <span className="text-white font-semibold">프롬프트(Prompt)</span>는 AI에게 원하는 결과를 얻기 위해 입력하는 <span className="text-cyan-400 font-medium">명령어 또는 질문</span>입니다.
+              잘 작성된 프롬프트는 AI로부터 더 정확하고 유용한 답변을 이끌어낼 수 있습니다.
+            </p>
+            
+            <div className="bg-slate-900/60 rounded-xl p-6 mb-6">
+              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <span className="text-yellow-400">✨</span> 플레이스홀더 사용법
+              </h3>
+              <p className="text-gray-400 mb-4">
+                FromProm의 프롬프트는 <span className="text-yellow-400 font-mono bg-slate-800 px-2 py-0.5 rounded">{'{변수명}'}</span> 형태의 플레이스홀더를 사용합니다.
+                구매 후 플레이스홀더 부분에 원하는 내용을 입력하면 나만의 맞춤형 프롬프트가 완성됩니다.
+              </p>
+              
+              <div className="space-y-4">
+                <div className="bg-slate-800/80 rounded-lg p-4">
+                  <p className="text-sm text-gray-500 mb-2">📝 프롬프트 예시</p>
+                  <p className="text-gray-300 font-mono text-sm leading-relaxed">
+                    "<span className="text-yellow-400">{'{제품명}'}</span>의 특징을 강조하는 마케팅 문구를 작성해줘. 
+                    타겟 고객은 <span className="text-yellow-400">{'{타겟층}'}</span>이고, 
+                    <span className="text-yellow-400">{'{톤앤매너}'}</span> 느낌으로 부탁해."
+                  </p>
+                </div>
+                
+                <div className="bg-slate-800/80 rounded-lg p-4">
+                  <p className="text-sm text-gray-500 mb-2">✅ 실제 사용 예시</p>
+                  <p className="text-gray-300 font-mono text-sm leading-relaxed">
+                    "<span className="text-green-400">무선 이어폰</span>의 특징을 강조하는 마케팅 문구를 작성해줘. 
+                    타겟 고객은 <span className="text-green-400">20대 직장인</span>이고, 
+                    <span className="text-green-400">세련되고 감성적인</span> 느낌으로 부탁해."
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+              <span className="text-blue-400 text-xl">💡</span>
+              <p className="text-gray-300 text-sm">
+                <span className="text-white font-medium">Tip:</span> 플레이스홀더에 구체적인 내용을 입력할수록 AI가 더 정확한 결과를 생성합니다.
+                예를 들어 "제품"보다는 "무선 블루투스 이어폰"처럼 상세하게 입력해보세요.
+              </p>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* 프롬프트 유형 */}
+        <motion.section
+          className="mb-20"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.08 }}
+        >
+          <h2 className="text-3xl font-bold text-white mb-8 flex items-center gap-3">
+            <span className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center text-orange-400">📂</span>
+            프롬프트 유형
+          </h2>
+          <p className="text-gray-400 mb-8">FromProm에서는 프롬프트를 3가지 유형으로 분류합니다. 각 유형에 맞는 프롬프트를 찾아보세요.</p>
+          
+          <div className="grid gap-6">
+            {/* 정보형 */}
+            <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 hover:border-blue-500/50 transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 bg-blue-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <span className="text-3xl">📊</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-xl font-bold text-white">정보형</h3>
+                    <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">사실 / 정보 / 근거</span>
+                  </div>
+                  <p className="text-gray-300 mb-4">
+                    정확한 정보, 사실, 데이터 분석을 요청하는 프롬프트입니다.
+                    리서치, 분석, 설명이 필요한 작업에 적합합니다.
+                  </p>
+                  <div className="bg-slate-900/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-500 mb-2">💬 활용 예시</p>
+                    <ul className="text-gray-400 text-sm space-y-1">
+                      <li>• "2024년 이커머스 시장 트렌드를 분석해줘"</li>
+                      <li>• "개인정보보호법 주요 조항을 쉽게 설명해줘"</li>
+                      <li>• "경쟁사 A와 B의 마케팅 전략을 비교 분석해줘"</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 글 창작형 */}
+            <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 hover:border-green-500/50 transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 bg-green-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <span className="text-3xl">✍️</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-xl font-bold text-white">글 창작형</h3>
+                    <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">글 창작 / 생성</span>
+                  </div>
+                  <p className="text-gray-300 mb-4">
+                    창의적인 글, 스토리, 카피라이팅을 생성하는 프롬프트입니다.
+                    마케팅 문구, 블로그 글, 소설 등 텍스트 콘텐츠 제작에 활용됩니다.
+                  </p>
+                  <div className="bg-slate-900/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-500 mb-2">💬 활용 예시</p>
+                    <ul className="text-gray-400 text-sm space-y-1">
+                      <li>• "MZ세대를 타겟으로 한 감성적인 제품 소개글 써줘"</li>
+                      <li>• "SEO 최적화된 블로그 포스트를 작성해줘"</li>
+                      <li>• "판타지 소설의 흥미로운 도입부를 써줘"</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 이미지 창작형 */}
+            <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 hover:border-purple-500/50 transition-colors">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <span className="text-3xl">🎨</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-xl font-bold text-white">이미지 창작형</h3>
+                    <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full">이미지 창작 / 생성</span>
+                  </div>
+                  <p className="text-gray-300 mb-4">
+                    AI 이미지 생성 도구(Midjourney, DALL-E, Stable Diffusion 등)를 위한 프롬프트입니다.
+                    일러스트, 사진, 디자인 등 시각적 콘텐츠 제작에 활용됩니다.
+                  </p>
+                  <div className="bg-slate-900/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-500 mb-2">💬 활용 예시</p>
+                    <ul className="text-gray-400 text-sm space-y-1">
+                      <li>• "네온 조명이 빛나는 사이버펑크 도시 풍경"</li>
+                      <li>• "귀여운 동물 캐릭터 일러스트, 파스텔톤"</li>
+                      <li>• "미니멀한 제품 목업 이미지, 흰색 배경"</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
         {/* 구매자 가이드 */}
         <motion.section
           className="mb-20"
@@ -180,64 +334,65 @@ const DocsPage = () => {
             <span className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center text-purple-400">📊</span>
             성능 지표 설명
           </h2>
+          <p className="text-gray-400 mb-8">FromProm은 AI를 활용해 프롬프트의 품질을 객관적으로 평가합니다. 각 지표가 높을수록 더 좋은 프롬프트예요!</p>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6">
               <h3 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
-         토큰 사용량 (Token Usage)
+                <span className="text-2xl">📏</span> 토큰 사용량
               </h3>
-              <p className="text-gray-400 mb-4">판매자가 등록한 프롬프트의 토큰 수를 측정합니다. 효율적인 프롬프트일수록 적은 토큰을 사용합니다.</p>
+              <p className="text-gray-400 mb-4">프롬프트의 길이를 측정합니다. 같은 결과를 얻는다면 짧고 간결한 프롬프트가 더 효율적이에요.</p>
               <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500">
-                <strong className="text-gray-300">계산 방식 :</strong> 프롬프트에서 변수 부분을 제외한, 고정된 부분의 토큰 수를 측정하여 제공합니다.
+                <strong className="text-gray-300">쉽게 말하면:</strong> 프롬프트가 얼마나 간결한지 보여줍니다. 숫자가 낮을수록 비용 효율적!
               </div>
             </div>
 
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6">
               <h3 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
-                출력 대비 정보 밀도 (Information Density)
+                <span className="text-2xl">💎</span> 정보 밀도
               </h3>
-              <p className="text-gray-400 mb-4">생성된 출력에 유용한 정보가 얼마나 포함되어 있는지 평가합니다. 불필요한 반복 없이 정보를 전달하는지 측정합니다.</p>
+              <p className="text-gray-400 mb-4">AI 응답에 유용한 정보가 얼마나 알차게 담겨있는지 평가합니다. 같은 말 반복 없이 핵심만 전달하는지 확인해요.</p>
               <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500">
-                <strong className="text-gray-300">계산 방식 :</strong> n-gram을 통해 출력 텍스트의 의미 있는 정보량을 분석하여 제공합니다.
+                <strong className="text-gray-300">쉽게 말하면:</strong> 응답이 뻔한 말 반복 없이 알찬 내용으로 채워져 있는지 측정합니다.
               </div>
             </div>
 
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6">
               <h3 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
-                응답의 일관성 (Consistency)
+                <span className="text-2xl">🎯</span> 응답 일관성
               </h3>
-              <p className="text-gray-400 mb-4">동일한 프롬프트를 같은 모델로 여러 번 실행했을 때 결과가 얼마나 일관되게 나오는지 측정합니다. 높은 일관성은 프롬프트의 안정성을 의미합니다.</p>
+              <p className="text-gray-400 mb-4">같은 프롬프트를 여러 번 사용해도 비슷한 품질의 결과가 나오는지 측정합니다. 일관성이 높으면 매번 안정적인 결과를 기대할 수 있어요.</p>
               <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500">
-                <strong className="text-gray-300">계산 방식:</strong> 동일 조건에서 반복 실행 후 출력 임베딩 간의 유사도를 계산합니다.
+                <strong className="text-gray-300">쉽게 말하면:</strong> "이 프롬프트 쓰면 매번 좋은 결과 나올까?" 에 대한 답이에요.
               </div>
             </div>
 
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6">
               <h3 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
-                버전별 일관성 (Model Consistency)
+                <span className="text-2xl">🔄</span> 버전 호환성
               </h3>
-              <p className="text-gray-400 mb-4">동일한 모델의 다른 버전에서 프롬프트를 실행했을 때 결과가 얼마나 일관되는지 평가합니다. 버전에 덜 의존적인 프롬프트일수록 높은 점수를 받습니다.</p>
+              <p className="text-gray-400 mb-4">AI 모델이 업데이트되어도 프롬프트가 잘 작동하는지 평가합니다. 점수가 높으면 오래 사용할 수 있는 프롬프트예요.</p>
               <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500">
-                <strong className="text-gray-300">계산 방식:</strong> 여러 버전의 출력에 대한 임베딩의 유사도를 계산합니다.
+                <strong className="text-gray-300">쉽게 말하면:</strong> AI가 새 버전으로 바뀌어도 계속 잘 작동하는 프롬프트인지 확인합니다.
               </div>
             </div>
 
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6">
               <h3 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
-                환각 탐지 (Hallucination Detection)
+                <span className="text-2xl">🔍</span> 환각 탐지
               </h3>
-              <p className="text-gray-400 mb-4">AI가 사실이 아닌 정보를 생성하는 '환각' 현상을 탐지합니다. 환각 탐지 점수가 높을수록 프롬프트가 신뢰할 수 있는 결과를 생성함을 의미합니다.</p>
+              <p className="text-gray-400 mb-4">AI가 거짓 정보나 지어낸 내용을 말하는 '환각' 현상이 얼마나 적은지 측정합니다. 점수가 높을수록 신뢰할 수 있는 답변을 생성해요.</p>
               <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500">
-                <strong className="text-gray-300">계산 방식 :</strong> 출력 내 주장(claim)을 추출하고 외부 근거와 대조하여 사실 여부를 검증합니다.
+                <strong className="text-gray-300">쉽게 말하면:</strong> AI가 없는 말 지어내지 않고 정확한 정보만 전달하는지 검증합니다.
               </div>
             </div>
 
             <div className="bg-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6">
               <h3 className="text-xl font-semibold text-white mb-3 flex items-center gap-2">
-                적합성 (Fitness)
+                <span className="text-2xl">✅</span> 적합성
               </h3>
-              <p className="text-gray-400 mb-4">프롬프트의 의도와 생성된 결과가 얼마나 관련성이 높은지 평가합니다. 사용자가 원하는 답변을 정확하게 제공하는지 측정합니다.</p>
+              <p className="text-gray-400 mb-4">프롬프트가 요청한 대로 AI가 정확히 응답하는지 평가합니다. 원하는 형식, 톤, 내용이 잘 반영되는지 확인해요.</p>
               <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500">
-                <strong className="text-gray-300">계산 방식 :</strong> 입력 프롬프트에서 명시된 조건과 방향성이 출력에서 잘 지켜지고 있는지 평가합니다.
+                <strong className="text-gray-300">쉽게 말하면:</strong> "내가 원하는 대로 결과가 나오나?" 를 측정합니다.
               </div>
             </div>
           </div>
@@ -251,7 +406,7 @@ const DocsPage = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
         >
           <h2 className="text-2xl font-bold text-white mb-6">지금 바로 시작하세요</h2>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <Link
               to="/marketplace"
               className="bg-white text-black font-bold px-8 py-3 rounded-lg hover:bg-gray-100 transition-all text-center whitespace-nowrap"
@@ -260,7 +415,7 @@ const DocsPage = () => {
             </Link>
             <Link
               to="/prompt/create"
-              className="border-2 border-slate-500 text-white font-semibold px-8 py-3 rounded-lg hover:border-white hover:bg-white/10 transition-all text-center whitespace-nowrap"
+              className="border-2 border-slate-500 text-white font-bold px-8 py-3 rounded-lg hover:border-white hover:bg-white/10 transition-all text-center whitespace-nowrap"
             >
               프롬프트 등록하기
             </Link>

@@ -171,44 +171,47 @@ const PurchasedPromptsPage = () => {
           <div
             className="bg-gradient-to-br from-blue-100 via-blue-50 to-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-300"
           >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                  {prompt.category}
-                </span>
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-xs text-green-600 font-medium">구매완료</span>
+            {/* 클릭 시 상세 페이지로 이동하는 영역 */}
+            <Link to={`/prompt/${prompt.id}`} className="block">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                    {prompt.category}
+                  </span>
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span className="text-xs text-green-600 font-medium">구매완료</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-gray-900">{prompt.price}P</div>
+                </div>
               </div>
-              <div className="text-right">
-                <div className="text-sm font-medium text-gray-900">{prompt.price}P</div>
+
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-blue-900 transition-colors">
+                {prompt.title}
+              </h3>
+
+              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                {prompt.description}
+              </p>
+
+              <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                <span>by {prompt.sellerName}</span>
+                <div className="flex items-center space-x-1">
+                  <span>⭐</span>
+                  <span>{prompt.rating}</span>
+                </div>
               </div>
-            </div>
 
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {prompt.title}
-            </h3>
-
-            <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-              {prompt.description}
-            </p>
-
-            <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-              <span>by {prompt.sellerName}</span>
-              <div className="flex items-center space-x-1">
-                <span>⭐</span>
-                <span>{prompt.rating}</span>
+              {/* 구매 정보 */}
+              <div className="border-t border-gray-200 pt-4 mb-4">
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>구매일: {new Date(prompt.purchasedAt).toLocaleDateString()}</span>
+                  <span>다운로드: {prompt.downloadCount}회</span>
+                </div>
               </div>
-            </div>
+            </Link>
 
-            {/* 구매 정보 */}
-            <div className="border-t border-gray-200 pt-4 mb-4">
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span>구매일: {new Date(prompt.purchasedAt).toLocaleDateString()}</span>
-                <span>다운로드: {prompt.downloadCount}회</span>
-              </div>
-            </div>
-
-            {/* 액션 버튼 */}
+            {/* 액션 버튼 (클릭 이벤트 분리) */}
             <div className="space-y-2">
               <button
                 onClick={() => handleToggleContent(prompt.id)}

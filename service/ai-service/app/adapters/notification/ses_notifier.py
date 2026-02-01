@@ -244,13 +244,6 @@ class SESNotifier:
                                                 <p style="margin: 12px 0 0; color: #9ca3af; font-size: 12px;">
                                                     이 이메일은 프롬프트 평가 요청에 의해 자동 발송되었습니다.
                                                 </p>
-                                                <p style="margin: 16px 0 0;">
-                                                    <a href="https://fromprom.cloud" style="color: #6366f1; text-decoration: none; font-size: 12px; margin: 0 8px;">웹사이트</a>
-                                                    <span style="color: #d1d5db;">|</span>
-                                                    <a href="https://fromprom.cloud/support" style="color: #6366f1; text-decoration: none; font-size: 12px; margin: 0 8px;">고객지원</a>
-                                                    <span style="color: #d1d5db;">|</span>
-                                                    <a href="https://fromprom.cloud/settings/notifications" style="color: #6366f1; text-decoration: none; font-size: 12px; margin: 0 8px;">알림설정</a>
-                                                </p>
                                             </td>
                                         </tr>
                                     </table>

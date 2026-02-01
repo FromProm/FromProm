@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -54,6 +54,7 @@ interface PromptDetail {
 const PromptDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const [prompt, setPrompt] = useState<PromptDetail | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -68,6 +69,9 @@ const PromptDetailPage = () => {
   const { addToCart, isInCart } = useCartStore();
   const { isPurchased, addPurchasedPrompt } = usePurchaseStore();
   const { userInfo, fetchUserInfo } = useAuthStore();
+
+  // 마켓페이지에서 전달받은 TOP 3 순위
+  const top3Rank = (location.state as { top3Rank?: number })?.top3Rank || 0;
 
   const isAlreadyInCart = prompt ? isInCart(prompt.promptId) : false;
   const isAlreadyPurchased = prompt ? isPurchased(prompt.promptId) : false;
@@ -341,8 +345,14 @@ const PromptDetailPage = () => {
                 <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
                   {promptTypeToCategory[category] || category}
                 </span>
-                {/* 90점 이상 PREMIUM 뱃지 */}
-                {(prompt.evaluationMetrics?.finalScore || 0) >= 90 && (
+                {/* TOP 3 뱃지 */}
+                {top3Rank > 0 && (
+                  <span className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+                    🏆 TOP {top3Rank}
+                  </span>
+                )}
+                {/* 90점 이상 PREMIUM 뱃지 (TOP 3가 아닌 경우) */}
+                {top3Rank === 0 && (prompt.evaluationMetrics?.finalScore || 0) >= 90 && (
                   <span className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm">
                     ⭐ PREMIUM
                   </span>

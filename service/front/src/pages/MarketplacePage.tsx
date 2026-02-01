@@ -72,9 +72,9 @@ const formatModelName = (model: string): string => {
 };
 
 // 카드 색상 설정 함수
-const getCardColors = (category: string, finalScore?: number) => {
-  // 90점 이상이면 황금색 카드
-  if (finalScore && finalScore >= 90) {
+const getCardColors = (category: string, isTop3?: boolean) => {
+  // TOP 3이면 황금색 카드
+  if (isTop3) {
     return {
       gradient: 'from-amber-100 via-yellow-50 to-amber-50',
       border: 'border-amber-300',
@@ -356,26 +356,19 @@ const MarketplacePage = () => {
     return matchesCategory && matchesSearch;
   });
 
-  // 90점 이상 프롬프트를 상단에 배치
-  const sortedPrompts = [...filteredPrompts].sort((a, b) => {
-    const aScore = a.evaluationMetrics?.finalScore || 0;
-    const bScore = b.evaluationMetrics?.finalScore || 0;
-    const aIsGold = aScore >= 90;
-    const bIsGold = bScore >= 90;
-    
-    // 둘 다 골드이거나 둘 다 골드가 아니면 점수 순으로
-    if (aIsGold === bIsGold) {
-      return bScore - aScore;
-    }
-    // 골드가 먼저
-    return aIsGold ? -1 : 1;
-  });
-
-  // TOP 3 프롬프트 ID 추출 (90점 이상 중 상위 3개)
-  const top3PromptIds = sortedPrompts
+  // TOP 3 프롬프트 ID 추출 (90점 이상 중 상위 3개, 점수순 정렬)
+  const top3Prompts = [...allPrompts]
     .filter(p => (p.evaluationMetrics?.finalScore || 0) >= 90)
-    .slice(0, 3)
-    .map(p => p.promptId);
+    .sort((a, b) => (b.evaluationMetrics?.finalScore || 0) - (a.evaluationMetrics?.finalScore || 0))
+    .slice(0, 3);
+  const top3PromptIds = top3Prompts.map(p => p.promptId);
+
+  // TOP 3를 상단에 배치하고 나머지는 기존 순서 유지
+  const sortedPrompts = [
+    ...filteredPrompts.filter(p => top3PromptIds.includes(p.promptId))
+      .sort((a, b) => top3PromptIds.indexOf(a.promptId) - top3PromptIds.indexOf(b.promptId)),
+    ...filteredPrompts.filter(p => !top3PromptIds.includes(p.promptId))
+  ];
 
   return (
     <div className="min-h-screen bg-white">
@@ -481,9 +474,9 @@ const MarketplacePage = () => {
             {/* 프롬프트 그리드 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {sortedPrompts.map((prompt, index) => {
-                const colors = getCardColors(prompt.category, prompt.evaluationMetrics?.finalScore);
                 const isTop3 = top3PromptIds.includes(prompt.promptId);
                 const top3Rank = isTop3 ? top3PromptIds.indexOf(prompt.promptId) + 1 : 0;
+                const colors = getCardColors(prompt.category, isTop3);
                 
                 return (
                   <AnimatedContent
@@ -500,22 +493,10 @@ const MarketplacePage = () => {
                   >
                     <TiltCard
                       className={`relative bg-gradient-to-br ${colors.gradient} border-2 ${colors.border} ${colors.hoverBorder} rounded-xl p-4 sm:p-5 shadow-lg ${colors.shadow} cursor-pointer group flex flex-col transition-colors duration-300 ${colors.isGold ? 'ring-2 ring-amber-400/50' : ''}`}
-                      onClick={() => navigate(`/prompt/${prompt.promptId}`)}
+                      onClick={() => navigate(`/prompt/${prompt.promptId}`, { state: { top3Rank } })}
                       rotateAmplitude={8}
                       scaleOnHover={1.03}
                     >
-                      {/* TOP 3 뱃지 */}
-                      {isTop3 && (
-                        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1">
-                          🏆 TOP {top3Rank}
-                        </div>
-                      )}
-                      {/* 골드 뱃지 (TOP 3가 아닌 90점 이상) */}
-                      {colors.isGold && !isTop3 && (
-                        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg">
-                          ⭐ PREMIUM
-                        </div>
-                      )}
                       {/* 상단: 카테고리 + 가격 */}
                       <div className="flex items-center justify-between mb-2 sm:mb-3">
                         <div className="flex items-center space-x-1.5 sm:space-x-2">
@@ -601,6 +582,16 @@ const MarketplacePage = () => {
                         {(prompt.likeCount || 0) >= 3 && (
                           <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
                             🔥 HOT
+                          </div>
+                        )}
+                        {isTop3 && (
+                          <div className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
+                            🏆 TOP {top3Rank}
+                          </div>
+                        )}
+                        {!isTop3 && (prompt.evaluationMetrics?.finalScore || 0) >= 90 && (
+                          <div className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
+                            ⭐ PREMIUM
                           </div>
                         )}
                       </div>

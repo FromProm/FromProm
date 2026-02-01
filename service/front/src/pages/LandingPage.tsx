@@ -402,8 +402,8 @@ const LandingPage = () => {
                 ref={scrollRef}
                 className="flex gap-4 sm:gap-6 py-6 px-4 animate-scroll-left"
               >
-                {/* 무한 스크롤을 위해 아이템 복제 */}
-                {[...popularPrompts, ...popularPrompts].map((prompt, index) => (
+                {/* 무한 스크롤을 위해 아이템 3번 복제 */}
+                {[...popularPrompts, ...popularPrompts, ...popularPrompts].map((prompt, index) => (
                   <TiltCard
                     key={`${prompt.promptId}-${index}`}
                     rotateAmplitude={10}

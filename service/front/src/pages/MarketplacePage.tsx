@@ -497,6 +497,12 @@ const MarketplacePage = () => {
                       rotateAmplitude={8}
                       scaleOnHover={1.03}
                     >
+                      {/* TOP 3 뱃지 - 카드 우측 상단 */}
+                      {isTop3 && (
+                        <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-lg z-10">
+                          🏆 TOP {top3Rank}
+                        </div>
+                      )}
                       {/* 상단: 카테고리 + 가격 */}
                       <div className="flex items-center justify-between mb-2 sm:mb-3">
                         <div className="flex items-center space-x-1.5 sm:space-x-2">
@@ -579,21 +585,18 @@ const MarketplacePage = () => {
                             <span>{prompt.commentCount || 0}</span>
                           </span>
                         </div>
-                        {(prompt.likeCount || 0) >= 3 && (
-                          <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
-                            🔥 HOT
-                          </div>
-                        )}
-                        {isTop3 && (
-                          <div className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
-                            🏆 TOP {top3Rank}
-                          </div>
-                        )}
-                        {!isTop3 && (prompt.evaluationMetrics?.finalScore || 0) >= 90 && (
-                          <div className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
-                            ⭐ PREMIUM
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {(prompt.likeCount || 0) >= 3 && (
+                            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
+                              🔥 HOT
+                            </div>
+                          )}
+                          {!isTop3 && (prompt.evaluationMetrics?.finalScore || 0) >= 90 && (
+                            <div className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
+                              ⭐ PREMIUM
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* 액션 버튼 */}

@@ -432,9 +432,9 @@ const LandingPage = () => {
               인기 프롬프트
             </h2>
             <div className="relative w-full overflow-hidden">
-              {/* 좌우 페이드 효과 - 랜딩페이지 배경색과 맞춤 */}
-              <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-48 bg-gradient-to-r from-[#020204] to-transparent z-10 pointer-events-none" />
-              <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-48 bg-gradient-to-l from-[#020204] to-transparent z-10 pointer-events-none" />
+              {/* 좌우 페이드 효과 - 모바일에서는 투명도 낮춤 */}
+              <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-48 bg-gradient-to-r from-[#020204]/50 sm:from-[#020204] to-transparent z-10 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-48 bg-gradient-to-l from-[#020204]/50 sm:from-[#020204] to-transparent z-10 pointer-events-none" />
               
               {/* 스크롤 컨테이너 - 자동 애니메이션 */}
               <div

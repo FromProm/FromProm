@@ -359,12 +359,50 @@ const PromptCreatePage = () => {
                       <div className="flex flex-wrap gap-2">
                         {extractedVariables.map((varName, idx) => (
                           <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                            {`{{${varName}}}`}
+                            {varName}
                           </span>
                         ))}
                       </div>
                     </div>
                   )}
+
+                  {/* 플레이스홀더 사용법 안내 */}
+                  <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <span className="text-yellow-500">✨</span> 플레이스홀더 사용법
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-3">
+                      <span className="text-yellow-600 font-mono bg-gray-100 px-1.5 py-0.5 rounded">{'{{변수명}}'}</span> 형태의 플레이스홀더를 사용하세요.
+                      구매자가 플레이스홀더 부분에 원하는 내용을 입력하면 맞춤형 프롬프트가 완성됩니다.
+                    </p>
+                    
+                    <div className="space-y-3">
+                      <div className="bg-white rounded-lg p-3 border border-gray-200">
+                        <p className="text-xs text-gray-500 mb-1.5">📝 프롬프트 예시</p>
+                        <p className="text-gray-700 font-mono text-xs leading-relaxed">
+                          "<span className="text-yellow-600">{'{{제품명}}'}</span>의 특징을 강조하는 마케팅 문구를 작성해줘. 
+                          타겟 고객은 <span className="text-yellow-600">{'{{타겟층}}'}</span>이고, 
+                          <span className="text-yellow-600">{'{{톤앤매너}}'}</span> 느낌으로 부탁해."
+                        </p>
+                      </div>
+                      
+                      <div className="bg-white rounded-lg p-3 border border-gray-200">
+                        <p className="text-xs text-gray-500 mb-1.5">✅ 실제 사용 예시</p>
+                        <p className="text-gray-700 font-mono text-xs leading-relaxed">
+                          "<span className="text-green-600">무선 이어폰</span>의 특징을 강조하는 마케팅 문구를 작성해줘. 
+                          타겟 고객은 <span className="text-green-600">20대 직장인</span>이고, 
+                          <span className="text-green-600">세련되고 감성적인</span> 느낌으로 부탁해."
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2 mt-3 bg-blue-50 border border-blue-100 rounded-lg p-2.5">
+                      <span className="text-blue-500 text-sm">💡</span>
+                      <p className="text-gray-600 text-xs">
+                        <span className="text-gray-800 font-medium">Tip:</span> 플레이스홀더에 구체적인 내용을 입력할수록 AI가 더 정확한 결과를 생성합니다.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -417,7 +455,7 @@ const PromptCreatePage = () => {
                         {extractedVariables.map((varName, varIndex) => (
                           <div key={varIndex}>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                              <span className="text-blue-600 font-mono">{`{{${varName}}}`}</span>
+                              <span className="text-blue-600 font-mono">{varName}</span>
                             </label>
                             <input
                               type="text"

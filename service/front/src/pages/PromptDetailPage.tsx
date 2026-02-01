@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCartStore } from '../store/cartStore';
 import { usePurchaseStore } from '../store/purchaseStore';
 import { useAuthStore } from '../store/authStore';
@@ -53,6 +54,7 @@ interface PromptDetail {
 const PromptDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [prompt, setPrompt] = useState<PromptDetail | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -186,6 +188,8 @@ const PromptDetailPage = () => {
         await interactionApi.addLike(prompt.promptId);
         setPrompt({ ...prompt, isLiked: true, likeCount: currentLikeCount + 1 });
       }
+      // 마켓플레이스 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ['prompts'] });
     } catch (error) {
       console.error('Failed to toggle like:', error);
     }
@@ -208,6 +212,8 @@ const PromptDetailPage = () => {
         await interactionApi.addBookmark(prompt.promptId);
         setPrompt({ ...prompt, isBookmarked: true, bookmarkCount: currentBookmarkCount + 1 });
       }
+      // 마켓플레이스 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ['prompts'] });
     } catch (error) {
       console.error('Failed to toggle bookmark:', error);
     }
@@ -572,6 +578,32 @@ const PromptDetailPage = () => {
               <p className="text-xs text-gray-500 mt-2">입력 대비 응답 관련성</p>
             </div>
           </div>
+
+          {/* 프롬프트 내용 - 프롬프트 등록자에게만 표시 */}
+          {isMyPrompt && prompt.content && (
+            <div className="mt-6 bg-white rounded-lg p-6 border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <span className="mr-2">📝</span> 등록한 프롬프트
+                <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">등록자 전용</span>
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <pre className="text-gray-700 whitespace-pre-wrap leading-relaxed text-sm font-mono overflow-x-auto">
+                  {prompt.content}
+                </pre>
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(prompt.content);
+                    alert('프롬프트가 클립보드에 복사되었습니다!');
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                >
+                  <span>📋</span> 복사하기
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* AI 피드백 - 프롬프트 등록자에게만 표시 */}
           {performanceMetrics.feedback && isMyPrompt && (

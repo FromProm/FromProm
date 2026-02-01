@@ -85,6 +85,12 @@ const MyprofilePage = () => {
   // 검토 중 프롬프트 팝업 상태
   const [showReviewingModal, setShowReviewingModal] = useState(false);
 
+  // 삭제 확인 모달 상태
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingPromptId, setDeletingPromptId] = useState<string | null>(null);
+  const [deletingPromptTitle, setDeletingPromptTitle] = useState<string>('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // 설정 관련 상태
   const [nickname, setNickname] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -270,6 +276,36 @@ const MyprofilePage = () => {
   const closeModal = () => {
     setModalType(null);
     setModalData([]);
+  };
+
+  // 프롬프트 삭제 핸들러
+  const handleDeletePrompt = async () => {
+    if (!deletingPromptId) return;
+    
+    setIsDeleting(true);
+    try {
+      await promptApi.deletePrompt(deletingPromptId);
+      // 삭제 성공 시 목록에서 제거
+      setMyPrompts(prev => prev.filter(p => p.promptId !== deletingPromptId));
+      setMessage({ type: 'success', text: '프롬프트가 삭제되었습니다.' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.response?.data?.message || '프롬프트 삭제에 실패했습니다.' });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+      setDeletingPromptId(null);
+      setDeletingPromptTitle('');
+    }
+  };
+
+  // 삭제 모달 열기
+  const openDeleteModal = (e: React.MouseEvent, promptId: string, title: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeletingPromptId(promptId);
+    setDeletingPromptTitle(title);
+    setShowDeleteModal(true);
   };
 
   // 모달 제목 가져오기
@@ -643,9 +679,15 @@ const MyprofilePage = () => {
                                     </span>
                                   </div>
                                 </div>
-                                <div className="flex sm:flex-col justify-between sm:text-right sm:ml-4 items-center sm:items-end">
+                                <div className="flex sm:flex-col justify-between sm:text-right sm:ml-4 items-center sm:items-end gap-2">
                                   <p className="text-lg sm:text-xl font-bold text-blue-900">{prompt.price}P</p>
                                   <p className="text-xs text-gray-400 sm:mt-1">{new Date(prompt.created_at).toLocaleDateString()}</p>
+                                  <button
+                                    onClick={(e) => openDeleteModal(e, prompt.promptId, prompt.title)}
+                                    className="text-xs px-2 py-1 text-red-500 hover:text-white hover:bg-red-500 border border-red-300 rounded transition-colors"
+                                  >
+                                    삭제
+                                  </button>
                                 </div>
                               </div>
                             </Link>
@@ -674,9 +716,18 @@ const MyprofilePage = () => {
                                     </span>
                                   </div>
                                 </div>
-                                <div className="flex sm:flex-col justify-between sm:text-right sm:ml-4 items-center sm:items-end">
+                                <div className="flex sm:flex-col justify-between sm:text-right sm:ml-4 items-center sm:items-end gap-2">
                                   <p className="text-lg sm:text-xl font-bold text-blue-900">{prompt.price}P</p>
                                   <p className="text-xs text-gray-400 sm:mt-1">{new Date(prompt.created_at).toLocaleDateString()}</p>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openDeleteModal(e, prompt.promptId, prompt.title);
+                                    }}
+                                    className="text-xs px-2 py-1 text-red-500 hover:text-white hover:bg-red-500 border border-red-300 rounded transition-colors"
+                                  >
+                                    삭제
+                                  </button>
                                 </div>
                               </div>
                             </div>
@@ -982,6 +1033,44 @@ const MyprofilePage = () => {
               >
                 확인
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 프롬프트 삭제 확인 모달 */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                <span className="text-3xl">🗑️</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">프롬프트 삭제</h3>
+              <p className="text-gray-600 text-sm mb-2">
+                정말로 이 프롬프트를 삭제하시겠습니까?
+              </p>
+              <p className="text-gray-900 font-medium mb-4 px-4 py-2 bg-gray-100 rounded-lg">
+                "{deletingPromptTitle}"
+              </p>
+              <p className="text-red-500 text-xs mb-6">
+                삭제된 프롬프트는 복구할 수 없습니다.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleDeletePrompt}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors font-medium"
+                >
+                  {isDeleting ? '삭제 중...' : '삭제'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

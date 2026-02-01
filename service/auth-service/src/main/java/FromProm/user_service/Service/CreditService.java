@@ -139,6 +139,7 @@ public class CreditService {
     // Credit 엔티티를 PurchaseHistoryResponse로 변환
     private PurchaseHistoryResponse convertToPurchaseHistoryResponse(Credit credit) {
         List<String> promptTitles = credit.getPrompt_titles();
+        List<String> promptIds = credit.getPrompt_ids();
         int itemCount = promptTitles.size();
         boolean isCartPurchase = itemCount > 1;
         
@@ -158,13 +159,14 @@ public class CreditService {
                 .totalAmount(Math.abs(credit.getAmount())) // 음수를 양수로 변환
                 .itemCount(itemCount)
                 .promptTitles(promptTitles)
+                .promptIds(promptIds)
                 .purchaseDate(credit.getCreated_at())
                 .balanceAfter(credit.getBalance())
                 .displayTitle(displayTitle)
                 .displayDescription(displayDescription)
                 .build();
     }
-    public void transferCreditForPromptPurchase(String buyerAuthHeader, String sellerSub, int promptPrice, String promptTitle) {
+    public void transferCreditForPromptPurchase(String buyerAuthHeader, String sellerSub, int promptPrice, String promptTitle, String promptId) {
         // 판매자 ID 유효성 검사
         if (sellerSub == null || sellerSub.trim().isEmpty()) {
             throw new RuntimeException("판매자 정보가 유효하지 않습니다.");
@@ -210,7 +212,8 @@ public class CreditService {
                 .amount(-promptPrice)
                 .balance(buyerNewBalance)
                 .user_description("Prompt Purchase")
-                .prompt_titles(List.of(promptTitle)) // 단일 프롬프트도 리스트로 저장
+                .prompt_titles(List.of(promptTitle))
+                .prompt_ids(promptId != null ? List.of(promptId) : null)
                 .created_at(now)
                 .build();
 
@@ -223,7 +226,8 @@ public class CreditService {
                 .amount(promptPrice)
                 .balance(sellerNewBalance)
                 .user_description("Prompt Sale")
-                .prompt_titles(List.of(promptTitle)) // 단일 프롬프트도 리스트로 저장
+                .prompt_titles(List.of(promptTitle))
+                .prompt_ids(promptId != null ? List.of(promptId) : null)
                 .created_at(now)
                 .build();
 
@@ -262,9 +266,14 @@ public class CreditService {
         buyer.setCredit(buyerNewBalance);
         buyer.setUpdated_at(now);
         
-        // 4. 프롬프트 타이틀 리스트 생성
+        // 4. 프롬프트 타이틀 및 ID 리스트 생성
         List<String> promptTitles = request.getItems().stream()
                 .map(CartPurchaseRequest.CartItem::getTitle)
+                .collect(java.util.stream.Collectors.toList());
+        
+        List<String> promptIds = request.getItems().stream()
+                .map(CartPurchaseRequest.CartItem::getId)
+                .filter(id -> id != null && !id.isEmpty())
                 .collect(java.util.stream.Collectors.toList());
         
         // 5. 구매자 크레딧 히스토리 저장
@@ -277,6 +286,7 @@ public class CreditService {
                 .balance(buyerNewBalance)
                 .user_description("Cart Purchase")
                 .prompt_titles(promptTitles)
+                .prompt_ids(promptIds.isEmpty() ? null : promptIds)
                 .created_at(now)
                 .build();
         
@@ -299,9 +309,14 @@ public class CreditService {
                         .mapToInt(CartPurchaseRequest.CartItem::getPrice)
                         .sum();
                 
-                // 판매자별 프롬프트 타이틀 리스트
+                // 판매자별 프롬프트 타이틀 및 ID 리스트
                 List<String> sellerPromptTitles = sellerItems.stream()
                         .map(CartPurchaseRequest.CartItem::getTitle)
+                        .collect(java.util.stream.Collectors.toList());
+                
+                List<String> sellerPromptIds = sellerItems.stream()
+                        .map(CartPurchaseRequest.CartItem::getId)
+                        .filter(id -> id != null && !id.isEmpty())
                         .collect(java.util.stream.Collectors.toList());
                 
                 // 판매자 정보 조회 및 크레딧 증가 (최대 보유량 체크)
@@ -325,6 +340,7 @@ public class CreditService {
                         .balance(sellerNewBalance)
                         .user_description("Prompt Sales")
                         .prompt_titles(sellerPromptTitles)
+                        .prompt_ids(sellerPromptIds.isEmpty() ? null : sellerPromptIds)
                         .created_at(now)
                         .build();
                 

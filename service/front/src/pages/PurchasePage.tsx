@@ -32,7 +32,7 @@ interface PromptDetail {
 const PurchasePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addPurchasedPrompt, isPurchased } = usePurchaseStore();
+  const { addPurchasedPrompt, addPurchasedPromptId, isPurchased } = usePurchaseStore();
   const [prompt, setPrompt] = useState<PromptDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -105,6 +105,9 @@ const PurchasePage = () => {
       });
 
       const category = promptTypeToCategory[prompt.promptType] || prompt.promptType;
+
+      // 구매한 프롬프트 ID 추가 (빠른 조회용)
+      addPurchasedPromptId(prompt.promptId);
 
       // 구매한 프롬프트로 추가
       addPurchasedPrompt({

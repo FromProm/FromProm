@@ -18,6 +18,7 @@ public class Credit {
     private int balance;        // 변동 후 잔액
     private String user_description; // 내역 (예: "Credit Charge", "Prompt Purchase")
     private List<String> prompt_titles; // 구매한 프롬프트 타이틀 리스트 (여러 개 구매 시)
+    private List<String> prompt_ids;    // 구매한 프롬프트 ID 리스트
     private String created_at;   // 생성 일시
 
     @DynamoDbPartitionKey
@@ -30,4 +31,7 @@ public class Credit {
 
     @DynamoDbAttribute("prompt_titles")
     public List<String> getPrompt_titles() { return prompt_titles; }
+
+    @DynamoDbAttribute("prompt_ids")
+    public List<String> getPrompt_ids() { return prompt_ids; }
 }

@@ -67,12 +67,14 @@ public class CreditController {
                 authHeader, 
                 request.getSellerSub(), 
                 request.getPromptPrice(), 
-                request.getPromptTitle()
+                request.getPromptTitle(),
+                request.getPromptId()
             );
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "프롬프트 구매가 완료되었습니다.",
                 "promptTitle", request.getPromptTitle(),
+                "promptId", request.getPromptId() != null ? request.getPromptId() : "",
                 "price", request.getPromptPrice()
             ));
         } catch (Exception e) {

@@ -17,6 +17,7 @@ public class PurchaseHistoryResponse {
     private int totalAmount;           // 총 구매 금액
     private int itemCount;             // 구매한 프롬프트 개수
     private List<String> promptTitles; // 구매한 프롬프트 제목들
+    private List<String> promptIds;    // 구매한 프롬프트 ID들
     private String purchaseDate;       // 구매 일시
     private int balanceAfter;          // 구매 후 잔액
     

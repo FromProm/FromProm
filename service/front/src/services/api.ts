@@ -117,10 +117,10 @@ export const creditApi = {
   }>) => api.post('/api/credit/purchase/cart', { items }),
 
   // 구매 내역 조회
-  getPurchaseHistory: () => api.get('/api/credit/purchases'),
+  getPurchaseHistory: () => api.get('/api/credit/history/purchases'),
 
   // 최근 구매 내역 조회 (페이징)
-  getRecentPurchases: (limit: number = 10) => api.get(`/api/credit/purchases/recent?limit=${limit}`),
+  getRecentPurchases: (limit: number = 10) => api.get(`/api/credit/history/purchases/recent?limit=${limit}`),
 
   // 전체 크레딧 히스토리 조회
   getCreditHistory: () => api.get('/api/credit/history'),

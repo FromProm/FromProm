@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { userApi } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
+import { usePurchaseStore } from '../../store/purchaseStore';
 import LightPillar from '../../components/LightPillar';
 import SplitText from '../../components/SplitText';
 import AnimatedContent from '../../components/AnimatedContent';
@@ -14,6 +15,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { checkAuth } = useAuthStore();
+  const { syncWithBackend } = usePurchaseStore();
   
   // 이전 페이지 경로 (state에서 가져오거나 기본값은 마켓플레이스)
   const from = (location.state as { from?: string })?.from || '/marketplace';
@@ -33,6 +35,9 @@ const LoginPage = () => {
       
       // 인증 상태 업데이트
       checkAuth();
+      
+      // 백엔드에서 구매 이력 동기화
+      await syncWithBackend();
       
       // 이전 페이지로 이동 (로그인/회원가입 페이지는 제외)
       const redirectTo = from.startsWith('/auth') ? '/marketplace' : from;

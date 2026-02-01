@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { User, AuthState } from '../types';
 import { useCartStore } from './cartStore';
-import { usePurchaseStore } from './purchaseStore';
 import { userApi } from '../services/api';
 
 // 확장된 사용자 정보 타입
@@ -149,9 +148,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('idToken');
-    // 장바구니 및 구매 내역 비우기
+    // 장바구니만 비우기 (구매 내역은 유지 - 백엔드에서 관리)
     useCartStore.getState().clearCart();
-    usePurchaseStore.getState().clearPurchases();
     // 사용자 정보 초기화
     fetchUserInfoPromise = null;
     set({ 

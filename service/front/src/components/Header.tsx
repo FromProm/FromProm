@@ -197,16 +197,6 @@ const Header = () => {
                   마켓
                 </Link>
                 <Link
-                  to="/prompt/create"
-                  className={`block px-2 py-2 text-center rounded-lg transition-all ${
-                    isCurrentPage('/prompt/create')
-                      ? 'bg-blue-900 text-white font-bold'
-                      : 'bg-blue-200 text-blue-900 font-medium animate-bounce-subtle'
-                  }`}
-                >
-                  프롬프트 등록
-                </Link>
-                <Link
                   to="/cart"
                   className={`flex items-center justify-between px-2 py-2 ${isCurrentPage('/cart') ? 'text-blue-600 bg-blue-50 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'} rounded-lg transition-colors`}
                 >
@@ -222,6 +212,16 @@ const Header = () => {
                   className={`block px-2 py-2 ${isCurrentPage('/dashboard') ? 'text-blue-600 bg-blue-50 font-bold' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-medium'} rounded-lg transition-colors`}
                 >
                   마이페이지
+                </Link>
+                <Link
+                  to="/prompt/create"
+                  className={`block px-2 py-2 text-center rounded-lg transition-all ${
+                    isCurrentPage('/prompt/create')
+                      ? 'bg-blue-900 text-white font-bold'
+                      : 'bg-blue-200 text-blue-900 font-medium animate-bounce-subtle'
+                  }`}
+                >
+                  프롬프트 등록
                 </Link>
                 <button
                   onClick={handleLogout}

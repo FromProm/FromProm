@@ -37,7 +37,7 @@ const LandingPage = () => {
         const response = await promptApi.getAllPrompts(100);
         if (response.data.success) {
           const filtered = (response.data.prompts || [])
-            .filter((p: PopularPrompt) => (p.likeCount || 0) >= 50)
+            .filter((p: PopularPrompt) => (p.likeCount || 0) >= 3)
             .sort((a: PopularPrompt, b: PopularPrompt) => (b.likeCount || 0) - (a.likeCount || 0))
             .slice(0, 10);
           setPopularPrompts(filtered);

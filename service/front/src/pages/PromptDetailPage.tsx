@@ -335,7 +335,7 @@ const PromptDetailPage = () => {
                 <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
                   {promptTypeToCategory[category] || category}
                 </span>
-                {(Number(prompt.likeCount) || 0) >= 50 && (
+                {(Number(prompt.likeCount) || 0) >= 3 && (
                   <span className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-2 py-1 rounded-full text-xs font-bold">
                     🔥 HOT
                   </span>

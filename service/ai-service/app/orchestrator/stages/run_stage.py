@@ -75,7 +75,8 @@ class RunStage:
                 task = runner.invoke(
                     model=model,
                     prompt=filled_prompt,
-                    input_type=example_input.input_type
+                    input_type=example_input.input_type,
+                    max_tokens=2000
                 )
                 all_tasks.append(task)
                 task_info.append({
@@ -95,7 +96,8 @@ class RunStage:
                     task = runner.invoke(
                         model=variance_model,
                         prompt=filled_prompt,
-                        input_type=example_input.input_type
+                        input_type=example_input.input_type,
+                        max_tokens=2000
                     )
                     all_tasks.append(task)
                     task_info.append({

@@ -254,7 +254,7 @@ const LandingPage = () => {
                   <Link
                     to="/prompt/create"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-3 py-2 text-center bg-blue-200 text-blue-900 font-medium rounded-lg hover:bg-blue-900 hover:text-white transition-colors"
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-bold transition-colors"
                   >
                     프롬프트 등록
                   </Link>

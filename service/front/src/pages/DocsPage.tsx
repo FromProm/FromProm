@@ -143,7 +143,7 @@ const DocsPage = () => {
                   <Link
                     to="/prompt/create"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="block px-3 py-2 text-center bg-blue-200 text-blue-900 font-medium rounded-lg hover:bg-blue-900 hover:text-white transition-colors"
+                    className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 rounded-lg font-bold transition-colors"
                   >
                     프롬프트 등록
                   </Link>
@@ -351,12 +351,18 @@ const DocsPage = () => {
                     AI 이미지 생성 도구(Midjourney, DALL-E, Stable Diffusion 등)를 위한 프롬프트입니다.
                     일러스트, 사진, 디자인 등 시각적 콘텐츠 제작에 활용됩니다.
                   </p>
+                  <div className="flex items-start gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                    <span className="text-yellow-400 text-lg">⚠️</span>
+                    <p className="text-gray-300 text-sm">
+                      <span className="text-yellow-400 font-medium">필수:</span> 이미지 창작형 프롬프트는 <span className="text-yellow-400 font-medium">영어로 작성</span>해야 정상적으로 작동합니다.
+                    </p>
+                  </div>
                   <div className="bg-slate-900/50 rounded-lg p-4">
                     <p className="text-sm text-gray-500 mb-2">💬 활용 예시</p>
                     <ul className="text-gray-400 text-sm space-y-1">
-                      <li>• "네온 조명이 빛나는 사이버펑크 도시 풍경"</li>
-                      <li>• "귀여운 동물 캐릭터 일러스트, 파스텔톤"</li>
-                      <li>• "미니멀한 제품 목업 이미지, 흰색 배경"</li>
+                      <li>• "Cyberpunk city with neon lights, night scene"</li>
+                      <li>• "Cute animal character illustration, pastel colors"</li>
+                      <li>• "Minimal product mockup, white background"</li>
                     </ul>
                   </div>
                 </div>

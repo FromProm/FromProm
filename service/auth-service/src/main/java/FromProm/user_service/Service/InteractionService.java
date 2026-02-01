@@ -313,7 +313,7 @@ public class InteractionService {
         }
     }
 
-    // 댓글 수정 시 사용
+    // 댓글 수정 시 사용 - DynamoDB에서 닉네임 조회
     public Map<String, String> getUserInfoFromToken(String accessToken) {
         String token = accessToken.startsWith("Bearer ") ? accessToken.substring(7) : accessToken;
 
@@ -325,20 +325,37 @@ public class InteractionService {
             GetUserResponse userResponse = cognitoClient.getUser(userRequest);
 
             Map<String, String> userInfo = new HashMap<>();
-            userInfo.put("userId", userResponse.username()); // sub (ID)
+            String userId = userResponse.username(); // sub (ID)
+            userInfo.put("userId", userId);
 
-            // Cognito 속성 중 'nickname' 찾기
-            String nickname = userResponse.userAttributes().stream()
-                    .filter(attr -> attr.name().equals("nickname"))
-                    .findFirst()
-                    .map(attr -> attr.value())
-                    .orElse("UnknownUser"); // 닉네임이 없을 경우 대비
-
+            // DynamoDB에서 닉네임 조회
+            String nickname = getNicknameFromDynamoDB(userId);
             userInfo.put("nickname", nickname);
 
             return userInfo;
         } catch (Exception e) {
-            throw new RuntimeException("Cognito 인증 실패: " + e.getMessage());
+            throw new RuntimeException("인증 실패: " + e.getMessage());
         }
+    }
+
+    // DynamoDB에서 사용자 닉네임 조회
+    private String getNicknameFromDynamoDB(String userId) {
+        try {
+            GetItemResponse response = dynamoDbClient.getItem(GetItemRequest.builder()
+                    .tableName(TABLE_NAME)
+                    .key(Map.of(
+                            "PK", AttributeValue.builder().s("USER#" + userId).build(),
+                            "SK", AttributeValue.builder().s("METADATA").build()
+                    ))
+                    .projectionExpression("nickname")
+                    .build());
+
+            if (response.hasItem() && response.item().containsKey("nickname")) {
+                return response.item().get("nickname").s();
+            }
+        } catch (Exception e) {
+            System.err.println("DynamoDB 닉네임 조회 실패: " + e.getMessage());
+        }
+        return "UnknownUser";
     }
 }

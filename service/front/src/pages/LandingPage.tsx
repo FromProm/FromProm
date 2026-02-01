@@ -52,7 +52,7 @@ const LandingPage = () => {
     fetchPopularPrompts();
   }, []);
 
-  // 무한 스크롤 애니메이션 - JavaScript 기반 (데스크톱만)
+  // 무한 스크롤 애니메이션 - JavaScript 기반 (모바일 + 데스크톱 모두)
   useEffect(() => {
     if (!scrollRef.current || popularPrompts.length === 0) return;
     
@@ -65,20 +65,20 @@ const LandingPage = () => {
     // 모바일 체크 (640px 미만)
     const isMobile = () => window.innerWidth < 640;
     
-    // 고정 너비 기반 리셋 포인트 계산 (TiltCard wrapper 고려)
+    // 고정 너비 기반 리셋 포인트 계산
+    // 모바일: 카드 260px + gap 16px = 276px per item
     // 데스크톱: 카드 320px + gap 24px = 344px per item
-    // 원본 아이템 개수만큼의 총 너비
     const getResetPoint = () => {
-      const itemWidth = 320; // sm:w-[320px]
-      const gap = 24; // sm:gap-6 = 24px
+      const itemWidth = isMobile() ? 260 : 320;
+      const gap = isMobile() ? 16 : 24;
       const itemCount = popularPrompts.length;
       return itemCount * (itemWidth + gap);
     };
     
-    const resetPoint = getResetPoint();
+    let resetPoint = getResetPoint();
     
     const animate = () => {
-      if (!isPaused && !isMobile() && resetPoint > 0) {
+      if (!isPaused && resetPoint > 0) {
         scrollPosition += speed;
         
         // 리셋 포인트에 도달하면 0으로 (끊김 없이)
@@ -91,12 +91,18 @@ const LandingPage = () => {
       animationId = requestAnimationFrame(animate);
     };
     
-    // 호버 시 멈춤
+    // 호버 시 멈춤 (데스크톱만)
     const handleMouseEnter = () => { isPaused = true; };
     const handleMouseLeave = () => { isPaused = false; };
     
+    // 리사이즈 시 리셋 포인트 재계산
+    const handleResize = () => {
+      resetPoint = getResetPoint();
+    };
+    
     scrollContainer.addEventListener('mouseenter', handleMouseEnter);
     scrollContainer.addEventListener('mouseleave', handleMouseLeave);
+    window.addEventListener('resize', handleResize);
     
     animationId = requestAnimationFrame(animate);
     
@@ -104,6 +110,7 @@ const LandingPage = () => {
       cancelAnimationFrame(animationId);
       scrollContainer.removeEventListener('mouseenter', handleMouseEnter);
       scrollContainer.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('resize', handleResize);
     };
   }, [popularPrompts]);
 
@@ -429,11 +436,13 @@ const LandingPage = () => {
               <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-48 bg-gradient-to-r from-[#020204] to-transparent z-10 pointer-events-none" />
               <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-48 bg-gradient-to-l from-[#020204] to-transparent z-10 pointer-events-none" />
               
-              {/* 스크롤 컨테이너 - 모바일에서 터치 스크롤 가능, 데스크톱에서 JS 애니메이션 */}
+              {/* 스크롤 컨테이너 - 자동 애니메이션 */}
               <div
                 ref={scrollRef}
-                className="flex gap-4 sm:gap-6 py-6 px-4 overflow-x-auto sm:overflow-x-hidden scrollbar-hide touch-pan-x"
-                style={{ WebkitOverflowScrolling: 'touch' }}
+                className="flex gap-4 sm:gap-6 py-6 px-4"
+                style={{ 
+                  width: 'max-content'
+                }}
               >
                 {/* 무한 스크롤을 위해 아이템 4번 복제 */}
                 {[...popularPrompts, ...popularPrompts, ...popularPrompts, ...popularPrompts].map((prompt, index) => (

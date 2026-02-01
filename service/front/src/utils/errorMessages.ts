@@ -92,7 +92,7 @@ export const getFriendlyErrorMessage = (error: any): string => {
       case 400:
         return '이미 가입된 이메일입니다. 로그인을 시도해주세요.';
       case 401:
-        return '인증이 필요합니다. 다시 로그인해주세요.';
+        return '이메일 또는 비밀번호가 올바르지 않습니다.';
       case 403:
         return '접근 권한이 없습니다.';
       case 404:

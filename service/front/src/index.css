@@ -89,6 +89,13 @@
   }
 }
 
+/* 웹: 20초, 모바일: 12초 */
 .animate-scroll-left {
-  animation: scrollLeft 30s linear infinite;
+  animation: scrollLeft 12s linear infinite;
+}
+
+@media (min-width: 640px) {
+  .animate-scroll-left {
+    animation: scrollLeft 20s linear infinite;
+  }
 }

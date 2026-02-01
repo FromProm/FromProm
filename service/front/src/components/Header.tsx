@@ -215,10 +215,10 @@ const Header = () => {
                 </Link>
                 <Link
                   to="/prompt/create"
-                  className={`block px-2 py-2 text-center rounded-lg transition-all ${
+                  className={`block px-2 py-2 rounded-lg transition-colors ${
                     isCurrentPage('/prompt/create')
-                      ? 'bg-blue-900 text-white font-bold'
-                      : 'bg-blue-200 text-blue-900 font-medium animate-bounce-subtle'
+                      ? 'text-blue-600 bg-blue-50 font-bold'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 font-bold'
                   }`}
                 >
                   프롬프트 등록

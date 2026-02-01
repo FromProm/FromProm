@@ -96,6 +96,11 @@ const MyprofilePage = () => {
   const [deletingPromptTitle, setDeletingPromptTitle] = useState<string>('');
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // 판매중인 프롬프트 내용 펼치기 상태
+  const [expandedPromptId, setExpandedPromptId] = useState<string | null>(null);
+  const [expandedPromptContent, setExpandedPromptContent] = useState<string>('');
+  const [isLoadingContent, setIsLoadingContent] = useState(false);
+
   // 설정 관련 상태
   const [nickname, setNickname] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -364,6 +369,38 @@ const MyprofilePage = () => {
     setDeletingPromptId(promptId);
     setDeletingPromptTitle(title);
     setShowDeleteModal(true);
+  };
+
+  // 판매중인 프롬프트 내용 토글
+  const togglePromptContent = async (e: React.MouseEvent, promptId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (expandedPromptId === promptId) {
+      // 이미 펼쳐진 경우 닫기
+      setExpandedPromptId(null);
+      setExpandedPromptContent('');
+      return;
+    }
+    
+    // 새로운 프롬프트 펼치기
+    setExpandedPromptId(promptId);
+    setIsLoadingContent(true);
+    setExpandedPromptContent('');
+    
+    try {
+      const response = await promptApi.getPromptDetail(promptId, userInfo?.sub);
+      if (response.data?.prompt?.content) {
+        setExpandedPromptContent(response.data.prompt.content);
+      } else {
+        setExpandedPromptContent('프롬프트 내용을 불러올 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('Failed to fetch prompt content:', error);
+      setExpandedPromptContent('프롬프트 내용을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingContent(false);
+    }
   };
 
   // 모달 제목 가져오기
@@ -713,7 +750,7 @@ const MyprofilePage = () => {
                       <div className="space-y-3 sm:space-y-4">
                         {myPrompts.map((prompt) => (
                           prompt.status === 'completed' ? (
-                            <Link key={prompt.promptId} to={`/prompt/${prompt.promptId}`}
+                            <div key={prompt.promptId}
                               className="block bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all group">
                               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-0">
                                 <div className="flex-1">
@@ -741,13 +778,16 @@ const MyprofilePage = () => {
                                   <p className="text-lg sm:text-xl font-bold text-blue-900">{prompt.price}P</p>
                                   <p className="text-xs text-gray-400 sm:mt-1">{new Date(prompt.created_at).toLocaleDateString()}</p>
                                   <div className="flex gap-2">
-                                    <Link
-                                      to={`/prompt/${prompt.promptId}`}
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="text-xs px-2 py-1 text-blue-600 hover:text-white hover:bg-blue-600 border border-blue-300 rounded transition-colors"
+                                    <button
+                                      onClick={(e) => togglePromptContent(e, prompt.promptId)}
+                                      className={`text-xs px-2 py-1 border rounded transition-colors ${
+                                        expandedPromptId === prompt.promptId
+                                          ? 'bg-blue-600 text-white border-blue-600'
+                                          : 'text-blue-600 hover:text-white hover:bg-blue-600 border-blue-300'
+                                      }`}
                                     >
-                                      보기
-                                    </Link>
+                                      {expandedPromptId === prompt.promptId ? '접기' : '보기'}
+                                    </button>
                                     <button
                                       onClick={(e) => openDeleteModal(e, prompt.promptId, prompt.title)}
                                       className="text-xs px-2 py-1 text-red-500 hover:text-white hover:bg-red-500 border border-red-300 rounded transition-colors"
@@ -757,7 +797,23 @@ const MyprofilePage = () => {
                                   </div>
                                 </div>
                               </div>
-                            </Link>
+                              {/* 프롬프트 내용 펼치기 */}
+                              {expandedPromptId === prompt.promptId && (
+                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                  <h4 className="text-sm font-semibold text-gray-700 mb-2">📝 프롬프트 내용</h4>
+                                  {isLoadingContent ? (
+                                    <div className="flex items-center justify-center py-4">
+                                      <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                      <span className="ml-2 text-sm text-gray-500">불러오는 중...</span>
+                                    </div>
+                                  ) : (
+                                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                                      <pre className="whitespace-pre-wrap text-xs sm:text-sm text-gray-800 font-mono leading-relaxed">{expandedPromptContent}</pre>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <div key={prompt.promptId} onClick={() => setShowReviewingModal(true)}
                               className="block bg-white rounded-xl p-4 sm:p-5 border border-gray-200 hover:shadow-lg hover:border-yellow-200 transition-all group cursor-pointer">
@@ -787,13 +843,16 @@ const MyprofilePage = () => {
                                   <p className="text-lg sm:text-xl font-bold text-blue-900">{prompt.price}P</p>
                                   <p className="text-xs text-gray-400 sm:mt-1">{new Date(prompt.created_at).toLocaleDateString()}</p>
                                   <div className="flex gap-2">
-                                    <Link
-                                      to={`/prompt/${prompt.promptId}`}
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="text-xs px-2 py-1 text-blue-600 hover:text-white hover:bg-blue-600 border border-blue-300 rounded transition-colors"
+                                    <button
+                                      onClick={(e) => togglePromptContent(e, prompt.promptId)}
+                                      className={`text-xs px-2 py-1 border rounded transition-colors ${
+                                        expandedPromptId === prompt.promptId
+                                          ? 'bg-blue-600 text-white border-blue-600'
+                                          : 'text-blue-600 hover:text-white hover:bg-blue-600 border-blue-300'
+                                      }`}
                                     >
-                                      보기
-                                    </Link>
+                                      {expandedPromptId === prompt.promptId ? '접기' : '보기'}
+                                    </button>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -806,6 +865,22 @@ const MyprofilePage = () => {
                                   </div>
                                 </div>
                               </div>
+                              {/* 프롬프트 내용 펼치기 */}
+                              {expandedPromptId === prompt.promptId && (
+                                <div className="mt-4 pt-4 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
+                                  <h4 className="text-sm font-semibold text-gray-700 mb-2">📝 프롬프트 내용</h4>
+                                  {isLoadingContent ? (
+                                    <div className="flex items-center justify-center py-4">
+                                      <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                      <span className="ml-2 text-sm text-gray-500">불러오는 중...</span>
+                                    </div>
+                                  ) : (
+                                    <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                                      <pre className="whitespace-pre-wrap text-xs sm:text-sm text-gray-800 font-mono leading-relaxed">{expandedPromptContent}</pre>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )
                         ))}

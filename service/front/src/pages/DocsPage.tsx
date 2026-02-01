@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import LightPillar from '../components/LightPillar';
@@ -7,7 +6,6 @@ import { useAuthStore } from '../store/authStore';
 const DocsPage = () => {
   const { isAuthenticated, logout } = useAuthStore();
   const navigate = useNavigate();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -45,7 +43,7 @@ const DocsPage = () => {
                 </div>
                 <span className="text-xl font-semibold text-white">FromProm</span>
               </Link>
-              {/* 데스크톱 메뉴 */}
+              {/* 메뉴 순서: 사용 가이드 > 마켓 > 장바구니 > 마이페이지 */}
               <nav className="hidden md:flex items-center space-x-6 ml-6">
                 <Link to="/docs" className="text-blue-400 font-bold text-sm transition-colors">
                   사용 가이드
@@ -65,9 +63,7 @@ const DocsPage = () => {
                 )}
               </nav>
             </div>
-            
-            {/* 데스크톱 우측 메뉴 */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="flex items-center space-x-4">
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
                   <Link to="/prompt/create" className="bg-blue-200 text-blue-900 font-medium px-3 py-1.5 rounded-md text-sm hover:bg-blue-900 hover:text-white transition-colors animate-bounce-subtle">
@@ -91,106 +87,7 @@ const DocsPage = () => {
                 </>
               )}
             </div>
-
-            {/* 모바일 햄버거 버튼 */}
-            <button
-              className="md:hidden p-2 text-gray-300 hover:text-white"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isMobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
           </div>
-
-          {/* 모바일 메뉴 */}
-          {isMobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-slate-700/50">
-              {isAuthenticated ? (
-                <div className="space-y-3">
-                  <Link
-                    to="/docs"
-                    className="block px-2 py-2 text-blue-400 bg-blue-900/20 font-bold rounded-lg transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    사용 가이드
-                  </Link>
-                  <Link
-                    to="/marketplace"
-                    className="block px-2 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 font-medium rounded-lg transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    마켓
-                  </Link>
-                  <Link
-                    to="/cart"
-                    className="block px-2 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 font-medium rounded-lg transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    장바구니
-                  </Link>
-                  <Link
-                    to="/dashboard"
-                    className="block px-2 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 font-medium rounded-lg transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    마이페이지
-                  </Link>
-                  <Link
-                    to="/prompt/create"
-                    className="block px-2 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 font-bold rounded-lg transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    프롬프트 등록
-                  </Link>
-                  <button
-                    onClick={() => {
-                      handleLogout();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="w-full text-left px-2 py-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg font-medium transition-colors"
-                  >
-                    로그아웃
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <Link
-                    to="/docs"
-                    className="block px-2 py-2 text-blue-400 bg-blue-900/20 font-bold rounded-lg transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    사용 가이드
-                  </Link>
-                  <Link
-                    to="/marketplace"
-                    className="block px-2 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 font-medium rounded-lg transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    마켓
-                  </Link>
-                  <Link
-                    to="/auth/login"
-                    className="block px-2 py-2 text-gray-300 hover:text-white hover:bg-slate-800/50 font-medium rounded-lg transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    로그인
-                  </Link>
-                  <Link
-                    to="/auth/register"
-                    className="block px-2 py-2 bg-white text-black text-center font-medium rounded-lg hover:bg-gray-100 transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    회원가입
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </header>
 
@@ -444,13 +341,8 @@ const DocsPage = () => {
                 토큰 사용량
               </h3>
               <p className="text-gray-400 mb-4">프롬프트의 길이를 측정합니다. 같은 결과를 얻는다면 짧고 간결한 프롬프트가 더 효율적이에요.</p>
-              <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500 mb-3">
+              <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500">
                 <strong className="text-gray-300">쉽게 말하면:</strong> 프롬프트가 얼마나 간결한지 보여줍니다. 숫자가 낮을수록 비용 효율적!
-              </div>
-              <div className="bg-slate-900/50 rounded-lg p-4 text-sm">
-                <p className="text-gray-500 mb-2">💡 예시</p>
-                <p className="text-red-400 text-xs mb-1">❌ 토큰 많음: "너는 마케팅 전문가야. 아래 제품에 대해서 마케팅 문구를 작성해줘. 문구는 감성적이어야 하고..."</p>
-                <p className="text-green-400 text-xs">✅ 토큰 적음: "{{제품}}의 감성적인 마케팅 문구 작성해줘"</p>
               </div>
             </div>
 
@@ -459,13 +351,8 @@ const DocsPage = () => {
                 정보 밀도
               </h3>
               <p className="text-gray-400 mb-4">AI 응답에 유용한 정보가 얼마나 알차게 담겨있는지 평가합니다. 같은 말 반복 없이 핵심만 전달하는지 확인해요.</p>
-              <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500 mb-3">
+              <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500">
                 <strong className="text-gray-300">쉽게 말하면:</strong> 응답이 뻔한 말 반복 없이 알찬 내용으로 채워져 있는지 측정합니다.
-              </div>
-              <div className="bg-slate-900/50 rounded-lg p-4 text-sm">
-                <p className="text-gray-500 mb-2">💡 예시</p>
-                <p className="text-red-400 text-xs mb-1">❌ 낮은 밀도: "이 제품은 좋습니다. 정말 좋은 제품입니다. 매우 좋습니다..."</p>
-                <p className="text-green-400 text-xs">✅ 높은 밀도: "30시간 재생, 노이즈캔슬링, IPX5 방수 지원"</p>
               </div>
             </div>
 
@@ -474,13 +361,8 @@ const DocsPage = () => {
                 응답 일관성
               </h3>
               <p className="text-gray-400 mb-4">같은 프롬프트를 여러 번 사용해도 비슷한 품질의 결과가 나오는지 측정합니다. 일관성이 높으면 매번 안정적인 결과를 기대할 수 있어요.</p>
-              <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500 mb-3">
+              <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500">
                 <strong className="text-gray-300">쉽게 말하면:</strong> "이 프롬프트 쓰면 매번 좋은 결과 나올까?" 에 대한 답이에요.
-              </div>
-              <div className="bg-slate-900/50 rounded-lg p-4 text-sm">
-                <p className="text-gray-500 mb-2">💡 예시</p>
-                <p className="text-red-400 text-xs mb-1">❌ 낮은 일관성: 같은 프롬프트인데 어떨 땐 3줄, 어떨 땐 30줄 응답</p>
-                <p className="text-green-400 text-xs">✅ 높은 일관성: 매번 비슷한 구조와 길이의 응답 생성</p>
               </div>
             </div>
 
@@ -489,13 +371,8 @@ const DocsPage = () => {
                 버전 호환성
               </h3>
               <p className="text-gray-400 mb-4">AI 모델이 업데이트되어도 프롬프트가 잘 작동하는지 평가합니다. 점수가 높으면 오래 사용할 수 있는 프롬프트예요.</p>
-              <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500 mb-3">
+              <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500">
                 <strong className="text-gray-300">쉽게 말하면:</strong> AI가 새 버전으로 바뀌어도 계속 잘 작동하는 프롬프트인지 확인합니다.
-              </div>
-              <div className="bg-slate-900/50 rounded-lg p-4 text-sm">
-                <p className="text-gray-500 mb-2">💡 예시</p>
-                <p className="text-red-400 text-xs mb-1">❌ 낮은 호환성: GPT-3.5에서만 작동, GPT-4에서는 다른 결과</p>
-                <p className="text-green-400 text-xs">✅ 높은 호환성: 어떤 버전에서도 일관된 품질의 결과</p>
               </div>
             </div>
 
@@ -504,13 +381,8 @@ const DocsPage = () => {
                 환각 탐지
               </h3>
               <p className="text-gray-400 mb-4">AI가 거짓 정보나 지어낸 내용을 말하는 '환각' 현상이 얼마나 적은지 측정합니다. 점수가 높을수록 신뢰할 수 있는 답변을 생성해요.</p>
-              <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500 mb-3">
+              <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500">
                 <strong className="text-gray-300">쉽게 말하면:</strong> AI가 없는 말 지어내지 않고 정확한 정보만 전달하는지 검증합니다.
-              </div>
-              <div className="bg-slate-900/50 rounded-lg p-4 text-sm">
-                <p className="text-gray-500 mb-2">💡 예시</p>
-                <p className="text-red-400 text-xs mb-1">❌ 환각 발생: "아인슈타인은 1950년 노벨 물리학상을 수상했습니다" (실제: 1921년)</p>
-                <p className="text-green-400 text-xs">✅ 환각 없음: 검증 가능한 사실만 포함된 정확한 응답</p>
               </div>
             </div>
 
@@ -519,13 +391,8 @@ const DocsPage = () => {
                 적합성
               </h3>
               <p className="text-gray-400 mb-4">프롬프트가 요청한 대로 AI가 정확히 응답하는지 평가합니다. 원하는 형식, 톤, 내용이 잘 반영되는지 확인해요.</p>
-              <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500 mb-3">
+              <div className="bg-slate-900/50 rounded-lg p-4 text-sm text-gray-500">
                 <strong className="text-gray-300">쉽게 말하면:</strong> "내가 원하는 대로 결과가 나오나?" 를 측정합니다.
-              </div>
-              <div className="bg-slate-900/50 rounded-lg p-4 text-sm">
-                <p className="text-gray-500 mb-2">💡 예시</p>
-                <p className="text-red-400 text-xs mb-1">❌ 낮은 적합성: "3줄로 요약해줘" 요청에 10줄 응답</p>
-                <p className="text-green-400 text-xs">✅ 높은 적합성: 요청한 형식, 길이, 톤에 맞는 정확한 응답</p>
               </div>
             </div>
           </div>

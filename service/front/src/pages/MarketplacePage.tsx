@@ -525,7 +525,7 @@ const MarketplacePage = () => {
                       </h3>
 
                       {/* 설명 */}
-                      <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2">
+                      <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-2 min-h-[2.5rem] sm:min-h-[2.75rem]">
                         {prompt.description || '설명 없음'}
                       </p>
 

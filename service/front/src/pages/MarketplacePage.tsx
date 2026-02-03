@@ -608,7 +608,7 @@ const MarketplacePage = () => {
                               🔥 HOT
                             </div>
                           )}
-                          {!isTop3 && Math.round(prompt.evaluationMetrics?.finalScore || 0) >= 90 && (
+                          {Math.round(prompt.evaluationMetrics?.finalScore || 0) >= 90 && (
                             <div className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
                               ⭐ PREMIUM
                             </div>

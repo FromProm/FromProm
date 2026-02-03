@@ -351,8 +351,8 @@ const PromptDetailPage = () => {
                     🏆 TOP {top3Rank}
                   </span>
                 )}
-                {/* 90점 이상 PREMIUM 뱃지 (TOP 3가 아닌 경우) */}
-                {top3Rank === 0 && (prompt.evaluationMetrics?.finalScore || 0) >= 90 && (
+                {/* 90점 이상 PREMIUM 뱃지 */}
+                {(prompt.evaluationMetrics?.finalScore || 0) >= 90 && (
                   <span className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm">
                     ⭐ PREMIUM
                   </span>

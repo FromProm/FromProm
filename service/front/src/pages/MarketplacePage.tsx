@@ -349,8 +349,8 @@ const MarketplacePage = () => {
   // 카테고리 및 검색 필터링
   const filteredPrompts = useMemo(() => {
     return allPrompts.filter(prompt => {
-      // 삭제된 프롬프트 제외 (제목이 없거나 빈 문자열인 경우)
-      if (!prompt.title || prompt.title.trim() === '') return false;
+      // 삭제된 프롬프트 제외 (제목이 없거나 빈 문자열, undefined, null인 경우)
+      if (!prompt.title || prompt.title === '' || prompt.title === '제목 없음') return false;
       
       const promptCategory = promptTypeToCategory[prompt.category] || prompt.category;
       const matchesCategory = selectedCategory === 'All' || promptCategory === selectedCategory;
@@ -366,7 +366,7 @@ const MarketplacePage = () => {
   // allPrompts가 변경될 때마다 자동으로 재계산
   const { top3PromptIds, top3Prompts } = useMemo(() => {
     const top3 = [...allPrompts]
-      .filter(p => p.title && p.title.trim() !== '') // 삭제된 프롬프트 제외
+      .filter(p => p.title && p.title !== '' && p.title !== '제목 없음') // 삭제된 프롬프트 제외
       .filter(p => Math.round(p.evaluationMetrics?.finalScore || 0) >= 90)
       .sort((a, b) => (b.evaluationMetrics?.finalScore || 0) - (a.evaluationMetrics?.finalScore || 0))
       .slice(0, 3);

@@ -232,8 +232,8 @@ class RunStage:
         if not has_placeholder:
             result = f"{result}\n\n{input_content}"
         
-        # 4. 표/그래프 생성 제약 추가
-        constraint = "\n\n[중요: 답변은 일반 텍스트로만 작성해주세요. 표(table), 그래프, 차트, 다이어그램 등의 시각적 요소는 사용하지 말고, 모든 내용을 문장 형태의 텍스트로 설명해주세요.]"
+        # 4. 표/그래프 생성 제약 + 글자 수 제한 추가
+        constraint = "\n\n[중요: 답변은 일반 텍스트로만 작성해주세요. 표(table), 그래프, 차트, 다이어그램 등의 시각적 요소는 사용하지 말고, 모든 내용을 문장 형태의 텍스트로 설명해주세요. 또한 답변은 2000자 이내에서 자연스럽게 마무리해주세요. 문장이 중간에 끊기지 않도록 완결된 형태로 작성해주세요.]"
         result = result + constraint
         
         return result

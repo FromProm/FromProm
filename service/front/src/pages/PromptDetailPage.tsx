@@ -416,12 +416,6 @@ const PromptDetailPage = () => {
                   <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg text-sm font-medium">
                     ✏️ 내가 등록한 프롬프트입니다
                   </div>
-                  <Link
-                    to="/dashboard/selling"
-                    className="block bg-blue-900 text-white font-semibold px-8 py-3 rounded-lg hover:bg-blue-800 transition-colors text-center"
-                  >
-                    판매 관리
-                  </Link>
                 </div>
               ) : isAlreadyPurchased ? (
                 <div className="space-y-2">

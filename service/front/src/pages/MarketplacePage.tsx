@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categories, promptTypeToCategory } from '../services/dummyData';
@@ -347,33 +347,41 @@ const MarketplacePage = () => {
   };
 
   // 카테고리 및 검색 필터링
-  const filteredPrompts = allPrompts.filter(prompt => {
-    const promptCategory = promptTypeToCategory[prompt.category] || prompt.category;
-    const matchesCategory = selectedCategory === 'All' || promptCategory === selectedCategory;
-    const title = prompt.title || '';
-    const description = prompt.description || '';
-    const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredPrompts = useMemo(() => {
+    return allPrompts.filter(prompt => {
+      const promptCategory = promptTypeToCategory[prompt.category] || prompt.category;
+      const matchesCategory = selectedCategory === 'All' || promptCategory === selectedCategory;
+      const title = prompt.title || '';
+      const description = prompt.description || '';
+      const matchesSearch = title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [allPrompts, selectedCategory, searchQuery]);
 
   // TOP 3 프롬프트 ID 추출 (전체 프롬프트 중 90점 이상 상위 3개, 점수순 정렬)
-  // 필터링과 관계없이 전체 프롬프트에서 TOP 3 선정
-  const top3Prompts = [...allPrompts]
-    .filter(p => (p.evaluationMetrics?.finalScore || 0) >= 90)
-    .sort((a, b) => (b.evaluationMetrics?.finalScore || 0) - (a.evaluationMetrics?.finalScore || 0))
-    .slice(0, 3);
-  const top3PromptIds = top3Prompts.map(p => p.promptId);
+  // allPrompts가 변경될 때마다 자동으로 재계산
+  const { top3PromptIds, top3Prompts } = useMemo(() => {
+    const top3 = [...allPrompts]
+      .filter(p => Math.round(p.evaluationMetrics?.finalScore || 0) >= 90)
+      .sort((a, b) => (b.evaluationMetrics?.finalScore || 0) - (a.evaluationMetrics?.finalScore || 0))
+      .slice(0, 3);
+    return {
+      top3Prompts: top3,
+      top3PromptIds: top3.map(p => p.promptId)
+    };
+  }, [allPrompts]);
 
-  // 필터링된 프롬프트 중 TOP 3에 해당하는 것들을 상단에 배치
-  const filteredTop3 = filteredPrompts.filter(p => top3PromptIds.includes(p.promptId));
-  const filteredNonTop3 = filteredPrompts.filter(p => !top3PromptIds.includes(p.promptId));
-  
-  // TOP 3를 상단에 배치하고 나머지는 기존 순서 유지
-  const sortedPrompts = [
-    ...filteredTop3.sort((a, b) => top3PromptIds.indexOf(a.promptId) - top3PromptIds.indexOf(b.promptId)),
-    ...filteredNonTop3
-  ];
+  // 필터링된 프롬프트 정렬 (TOP 3 상단 배치)
+  const sortedPrompts = useMemo(() => {
+    const filteredTop3 = filteredPrompts.filter(p => top3PromptIds.includes(p.promptId));
+    const filteredNonTop3 = filteredPrompts.filter(p => !top3PromptIds.includes(p.promptId));
+    
+    return [
+      ...filteredTop3.sort((a, b) => top3PromptIds.indexOf(a.promptId) - top3PromptIds.indexOf(b.promptId)),
+      ...filteredNonTop3
+    ];
+  }, [filteredPrompts, top3PromptIds]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -596,7 +604,7 @@ const MarketplacePage = () => {
                               🔥 HOT
                             </div>
                           )}
-                          {!isTop3 && (prompt.evaluationMetrics?.finalScore || 0) >= 90 && (
+                          {!isTop3 && Math.round(prompt.evaluationMetrics?.finalScore || 0) >= 90 && (
                             <div className="bg-gradient-to-r from-amber-400 to-yellow-500 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-bold">
                               ⭐ PREMIUM
                             </div>

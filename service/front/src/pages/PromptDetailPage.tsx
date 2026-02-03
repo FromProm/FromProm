@@ -419,7 +419,7 @@ const PromptDetailPage = () => {
                 </div>
               ) : isAlreadyPurchased ? (
                 <div className="space-y-2">
-                  <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg text-sm font-medium">
+                  <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg text-sm font-medium text-center">
                     ✓ 구매 완료
                   </div>
                   <Link
@@ -739,6 +739,7 @@ const PromptDetailPage = () => {
                         </pre>
                       )}
                     </div>
+                    <p className="text-xs text-gray-400 mt-2">※ 예시 출력은 2,000 토큰까지만 제공됩니다.</p>
                   </div>
                 </div>
               </div>

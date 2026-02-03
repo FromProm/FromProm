@@ -171,7 +171,8 @@ const MarketplacePage = () => {
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.hasNext ? lastPage.nextCursor : undefined,
-    staleTime: 1000 * 60 * 2, // 2분
+    staleTime: 1000 * 30, // 30초 (더 자주 새로고침)
+    refetchOnWindowFocus: true, // 창 포커스 시 새로고침
   });
 
   // 모든 페이지의 프롬프트를 하나의 배열로 합침
@@ -356,18 +357,22 @@ const MarketplacePage = () => {
     return matchesCategory && matchesSearch;
   });
 
-  // TOP 3 프롬프트 ID 추출 (90점 이상 중 상위 3개, 점수순 정렬)
+  // TOP 3 프롬프트 ID 추출 (전체 프롬프트 중 90점 이상 상위 3개, 점수순 정렬)
+  // 필터링과 관계없이 전체 프롬프트에서 TOP 3 선정
   const top3Prompts = [...allPrompts]
     .filter(p => (p.evaluationMetrics?.finalScore || 0) >= 90)
     .sort((a, b) => (b.evaluationMetrics?.finalScore || 0) - (a.evaluationMetrics?.finalScore || 0))
     .slice(0, 3);
   const top3PromptIds = top3Prompts.map(p => p.promptId);
 
+  // 필터링된 프롬프트 중 TOP 3에 해당하는 것들을 상단에 배치
+  const filteredTop3 = filteredPrompts.filter(p => top3PromptIds.includes(p.promptId));
+  const filteredNonTop3 = filteredPrompts.filter(p => !top3PromptIds.includes(p.promptId));
+  
   // TOP 3를 상단에 배치하고 나머지는 기존 순서 유지
   const sortedPrompts = [
-    ...filteredPrompts.filter(p => top3PromptIds.includes(p.promptId))
-      .sort((a, b) => top3PromptIds.indexOf(a.promptId) - top3PromptIds.indexOf(b.promptId)),
-    ...filteredPrompts.filter(p => !top3PromptIds.includes(p.promptId))
+    ...filteredTop3.sort((a, b) => top3PromptIds.indexOf(a.promptId) - top3PromptIds.indexOf(b.promptId)),
+    ...filteredNonTop3
   ];
 
   return (

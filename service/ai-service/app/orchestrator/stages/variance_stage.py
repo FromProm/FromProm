@@ -143,8 +143,8 @@ class VarianceStage:
                 model_names = list(valid_embeddings.keys())
                 
                 # 선택된 모델의 임베딩
-                if recommended_model in valid_embeddings:
-                    main_emb_dict = valid_embeddings[recommended_model]
+                if model_str in valid_embeddings:
+                    main_emb_dict = valid_embeddings[model_str]
                     
                     for comp_model in comparison_models:
                         if comp_model in valid_embeddings:
@@ -175,8 +175,8 @@ class VarianceStage:
                             similarity = sum(valid_sims) / len(valid_sims) if valid_sims else 0.0
                             
                             pairwise_scores.append({
-                                'model_pair': f"{self._get_model_short_name(recommended_model)} vs {self._get_model_short_name(comp_model)}",
-                                'main_model': recommended_model,
+                                'model_pair': f"{self._get_model_short_name(model_str)} vs {self._get_model_short_name(comp_model)}",
+                                'main_model': model_str,
                                 'comparison_model': comp_model,
                                 'similarity': similarity,
                                 'score': similarity * 100,

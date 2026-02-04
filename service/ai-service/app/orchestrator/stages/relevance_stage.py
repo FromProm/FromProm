@@ -41,14 +41,11 @@ class RelevanceStage:
                 # 1. 입력 프롬프트에서 조건과 방향성 추출
                 conditions = await self._extract_conditions(judge, prompt, example_input.content)
                 
+                # 조건이 없어도 방향성이 있으면 평가 진행
                 if not conditions.get('explicit_conditions') and not conditions.get('direction'):
-                    logger.warning(f"No conditions extracted for input {i}")
-                    return {
-                        'input_index': i,
-                        'score': 50.0,
-                        'conditions': conditions,
-                        'evaluation_details': []
-                    }
+                    logger.warning(f"No conditions extracted for input {i}, using default direction")
+                    # 기본 방향성 설정 (이미지 프롬프트 등)
+                    conditions['direction'] = "프롬프트의 의도에 맞는 출력 생성"
                 
                 # 해당 입력의 출력들 찾기
                 exec_data = next((e for e in executions if e['input_index'] == i), None)

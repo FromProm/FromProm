@@ -127,12 +127,24 @@ class VarianceStage:
                 # 유효한 임베딩만 필터링
                 valid_embeddings = {k: v for k, v in embeddings.items() if v is not None}
                 
-                if len(valid_embeddings) < 2:
-                    logger.warning(f"Not enough valid embeddings for input {i}")
+                if len(valid_embeddings) < 1:
+                    logger.warning(f"No valid embeddings for input {i}")
                     input_results.append({
                         'input_index': i,
                         'score': 0.0,
-                        'reason': 'insufficient_valid_outputs',
+                        'reason': 'no_valid_outputs',
+                        'valid_models': list(valid_embeddings.keys()),
+                        'model_outputs': {k: v[:100] + "..." if len(v) > 100 else v for k, v in model_outputs.items()}
+                    })
+                    continue
+                
+                # 1개 모델만 있는 경우 기본 점수 부여
+                if len(valid_embeddings) == 1:
+                    logger.warning(f"Only 1 model available for input {i}, assigning default score")
+                    input_results.append({
+                        'input_index': i,
+                        'score': 70.0,  # 비교 불가능하므로 중간 점수
+                        'reason': 'single_model_only',
                         'valid_models': list(valid_embeddings.keys()),
                         'model_outputs': {k: v[:100] + "..." if len(v) > 100 else v for k, v in model_outputs.items()}
                     })

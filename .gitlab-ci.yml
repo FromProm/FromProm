@@ -356,3 +356,5 @@ update-manifest-ai:
     SERVICE_DIR: "ai-service"
     ECR_REPO: "fromprom/ai"
     MANIFEST_FILE: "ai-service.yaml"
+  rules:
+    - when: never  # AI 서비스는 AgentCore로 배포되므로 manifest 업데이트 불필요

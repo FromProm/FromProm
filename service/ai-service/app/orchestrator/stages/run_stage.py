@@ -75,7 +75,8 @@ class RunStage:
                 task = runner.invoke(
                     model=model,
                     prompt=filled_prompt,
-                    input_type=example_input.input_type
+                    input_type=example_input.input_type,
+                    max_tokens=2000
                 )
                 all_tasks.append(task)
                 task_info.append({
@@ -95,7 +96,8 @@ class RunStage:
                     task = runner.invoke(
                         model=variance_model,
                         prompt=filled_prompt,
-                        input_type=example_input.input_type
+                        input_type=example_input.input_type,
+                        max_tokens=2000
                     )
                     all_tasks.append(task)
                     task_info.append({
@@ -229,5 +231,9 @@ class RunStage:
         # 3. 플레이스홀더가 없었으면 맨 뒤에 입력 추가
         if not has_placeholder:
             result = f"{result}\n\n{input_content}"
+        
+        # 4. 표/그래프 생성 제약 + 글자 수 제한 추가
+        constraint = "\n\n[중요: 답변은 일반 텍스트로만 작성해주세요. 표(table), 그래프, 차트, 다이어그램 등의 시각적 요소는 사용하지 말고, 모든 내용을 문장 형태의 텍스트로 설명해주세요.]"
+        result = result + constraint
         
         return result

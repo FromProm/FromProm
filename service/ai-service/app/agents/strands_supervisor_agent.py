@@ -79,7 +79,7 @@ class StrandsSupervisorAgent:
             step4_start = time.time()
             logger.info(f"[{execution_id}] 📊 Step 4: Integrating results...")
             final_score, weighted_scores, metrics = await self._integrate_results(
-                workflow_results, job_request.prompt_type
+                workflow_results, job_request.prompt_type, job_request.prompt
             )
             step4_duration = time.time() - step4_start
             logger.info(f"[{execution_id}] 📊 Step 4 Complete (가중치 적용 및 최종 점수 계산) - {format_duration(step4_duration)}")
@@ -216,17 +216,34 @@ class StrandsSupervisorAgent:
     async def _integrate_results(
         self,
         workflow_results: Dict[str, Any],
-        prompt_type: PromptType
+        prompt_type: PromptType,
+        prompt: str
     ) -> tuple[float, Dict[str, float], Dict[str, Any]]:
         """결과 통합"""
-        
+
+        # 프롬프트 길이에 따른 페널티 적용
+        prompt_length = len(prompt)
+        if prompt_length <= 10:
+            penalty = 0.1
+        elif prompt_length <= 50:
+            penalty = 0.4
+        elif prompt_length <= 100:
+            penalty = 0.7
+        else:
+            penalty = 1.0
+
+        if penalty < 1.0:
+            logger.info(f"📉 Short prompt penalty applied (length: {prompt_length}): scores × {penalty}")
+
         metrics = {}
-        
+
         for agent_type, result in workflow_results.items():
             if result and result.get("success"):
-                score = result.get("score", 0.0)
+                raw_score = result.get("score", 0.0)
+                # token_usage는 글자수와 관계없으므로 페널티 제외
+                score = raw_score if agent_type == "token_usage" else raw_score * penalty
                 details = result.get("details", {})
-                
+
                 if agent_type == "token_usage":
                     metrics[agent_type] = TokenMetricScore(score=score, details=details)
                 else:
@@ -336,13 +353,13 @@ class StrandsSupervisorAgent:
     ):
         """평가 완료 이메일 발송"""
         try:
-            # PK에서 UUID 추출 (PROMPT#uuid -> uuid)
-            pk = job_request.PK
-            if not pk or not pk.startswith("PROMPT#"):
-                logger.warning(f"[{execution_id}] ⚠️ Invalid PK format: {pk}")
+            # create_user에서 USER# prefix 제거하여 user_id 추출
+            create_user = job_request.create_user
+            if not create_user or not create_user.startswith("USER#"):
+                logger.warning(f"[{execution_id}] ⚠️ Invalid create_user format: {create_user}")
                 return
 
-            user_id = pk.replace("PROMPT#", "")
+            user_id = create_user.replace("USER#", "")
             logger.info(f"[{execution_id}] 📧 Preparing to send completion email for user_id: {user_id}")
 
             # 1. User ID로 이메일 조회
@@ -354,18 +371,18 @@ class StrandsSupervisorAgent:
 
             logger.info(f"[{execution_id}] 📧 Sending completion email to {user_email}")
 
-            # 2. S3 URL 생성 (필요시)
-            s3_result_url = None
-            # TODO: S3에 결과 저장했다면 URL 생성
-            # s3_result_url = f"https://your-bucket.s3.amazonaws.com/results/{job_id}.json"
+            # 2. prompt_id 추출 (PROMPT#xxx에서 xxx만)
+            prompt_id = None
+            if job_request.PK and job_request.PK.startswith("PROMPT#"):
+                prompt_id = job_request.PK.replace("PROMPT#", "")
 
             # 3. 이메일 발송
             result = await self.ses_notifier.send_evaluation_complete_email(
                 recipient_email=user_email,
-                job_id=user_id,  # PK에서 추출한 UUID 사용
                 final_score=final_score,
                 prompt_type=job_request.prompt_type.value,
-                s3_result_url=s3_result_url
+                prompt_title=job_request.title,
+                prompt_id=prompt_id
             )
 
             if result.get("success"):

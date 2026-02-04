@@ -187,7 +187,7 @@ aws:
 
 ## 👥 팀원
 
-AWS Cloud School 11기 3조
+AWS Cloud School 11기 3조 신의진, 김영동, 이찬종, 오지은, 고유나
 
 ## 📄 라이선스
 
